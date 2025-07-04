@@ -1147,6 +1147,33 @@ def security_stats():
         app.logger.error(f"Security stats error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/quick-stats')
+@login_required
+def quick_security_stats():
+    """إحصائيات أمان سريعة"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # إحصائيات الحظر الحالي
+        current_time = int(time.time())
+        active_blocks = sum(1 for data in suspicious_sessions.values() 
+                          if data['blocked_until'] > current_time)
+        
+        # إحصائيات النشاط المشبوه
+        high_risk_ips = sum(1 for data in suspicious_sessions.values() 
+                          if data['suspicious_score'] >= 5)
+        
+        return jsonify({
+            'active_blocks': active_blocks,
+            'high_risk_ips': high_risk_ips,
+            'total_tracked_sessions': len(suspicious_sessions),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/security-actions', methods=['POST'])
 @login_required
 @advanced_rate_limit(per_minute=5, per_hour=20)
@@ -1185,6 +1212,30 @@ def security_actions():
             
     except Exception as e:
         app.logger.error(f"Security action error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/reset-blocks', methods=['POST'])
+@login_required
+def reset_all_blocks():
+    """إعادة تعيين جميع عمليات الحظر - للطوارئ"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # مسح جميع الحظوريات
+        suspicious_sessions.clear()
+        smart_limiter.suspicious_ips.clear()
+        
+        # مسح من Redis إذا متاح
+        if smart_limiter.redis_client:
+            for key in smart_limiter.redis_client.scan_iter("temp_block:*"):
+                smart_limiter.redis_client.delete(key)
+        
+        app.logger.info(f"Admin {current_user.email} reset all blocks")
+        return jsonify({'success': True, 'message': 'All blocks cleared successfully'})
+        
+    except Exception as e:
+        app.logger.error(f"Reset blocks error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/setup-admin', methods=['GET', 'POST'])

@@ -12,6 +12,13 @@ import requests
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+import ipaddress
+from functools import wraps
+import json
+from collections import defaultdict, deque
+from threading import Lock
+import uuid
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
@@ -25,6 +32,235 @@ import atexit
 
 # إعداد المهام الدورية لـ APScheduler
 scheduler = BackgroundScheduler()
+
+class SmartRateLimiter:
+    """نظام Rate Limiting ذكي ومتقدم"""
+    
+    def __init__(self, app=None, redis_client=None):
+        self.app = app
+        self.redis_client = redis_client
+        self.memory_store = defaultdict(lambda: defaultdict(deque))
+        self.lock = Lock()
+        
+        # إعدادات الشبكات الموثوقة
+        self.trusted_networks = [
+            ipaddress.ip_network('127.0.0.0/8'),    # localhost
+            ipaddress.ip_network('10.0.0.0/8'),     # private networks
+            ipaddress.ip_network('172.16.0.0/12'),  # private networks
+            ipaddress.ip_network('192.168.0.0/16'), # private networks
+        ]
+        
+        # User Agents للخدمات الموثوقة
+        self.trusted_user_agents = [
+            'uptimerobot',
+            'pingdom',
+            'googlebot',
+            'bingbot',
+            'monitor',
+            'health-check'
+        ]
+        
+        if app:
+            self.init_app(app)
+    
+    def init_app(self, app):
+        """تهيئة التطبيق"""
+        self.app = app
+        
+        # محاولة الاتصال بـ Redis
+        try:
+            import redis
+            redis_url = app.config.get('REDIS_URL', os.environ.get('REDIS_URL'))
+            if redis_url and redis_url != 'memory://':
+                self.redis_client = redis.from_url(redis_url, decode_responses=True)
+                # اختبار الاتصال
+                self.redis_client.ping()
+                app.logger.info("Connected to Redis for rate limiting")
+            else:
+                self.redis_client = None
+                app.logger.info("Using memory storage for rate limiting")
+        except Exception as e:
+            app.logger.warning(f"Redis connection failed, using memory storage: {e}")
+            self.redis_client = None
+    
+    def is_trusted_source(self, request):
+        """فحص ما إذا كان المصدر موثوقاً"""
+        try:
+            # فحص IP
+            client_ip = ipaddress.ip_address(get_remote_address())
+            for network in self.trusted_networks:
+                if client_ip in network:
+                    return True
+        except:
+            pass
+        
+        # فحص User-Agent
+        user_agent = request.headers.get('User-Agent', '').lower()
+        for trusted_agent in self.trusted_user_agents:
+            if trusted_agent in user_agent:
+                return True
+        
+        return False
+    
+    def get_client_identifier(self, request):
+        """الحصول على معرف فريد للعميل"""
+        # استخدام عدة عوامل لتحديد العميل
+        ip = get_remote_address()
+        user_agent = request.headers.get('User-Agent', '')
+        
+        # إنشاء hash فريد
+        client_data = f"{ip}:{user_agent[:50]}"
+        return hashlib.md5(client_data.encode()).hexdigest()
+    
+    def check_rate_limit(self, identifier, limit_per_minute, limit_per_hour, window_minutes=1):
+        """فحص حدود المعدل"""
+        current_time = int(time.time())
+        
+        if self.redis_client:
+            return self._check_rate_limit_redis(identifier, limit_per_minute, limit_per_hour, current_time)
+        else:
+            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+    
+    def _check_rate_limit_redis(self, identifier, limit_per_minute, limit_per_hour, current_time):
+        """فحص Rate Limit باستخدام Redis"""
+        try:
+            pipe = self.redis_client.pipeline()
+            
+            # مفاتيح للدقيقة والساعة
+            minute_key = f"rate_limit:{identifier}:minute:{current_time // 60}"
+            hour_key = f"rate_limit:{identifier}:hour:{current_time // 3600}"
+            
+            # زيادة العدادات
+            pipe.incr(minute_key)
+            pipe.expire(minute_key, 120)  # انتهاء صلاحية بعد دقيقتين
+            pipe.incr(hour_key)
+            pipe.expire(hour_key, 7200)  # انتهاء صلاحية بعد ساعتين
+            
+            results = pipe.execute()
+            minute_count = results[0]
+            hour_count = results[2]
+            
+            # فحص الحدود
+            if minute_count > limit_per_minute:
+                return False, f"Rate limit exceeded: {minute_count}/{limit_per_minute} per minute"
+            
+            if hour_count > limit_per_hour:
+                return False, f"Rate limit exceeded: {hour_count}/{limit_per_hour} per hour"
+            
+            return True, None
+            
+        except Exception as e:
+            self.app.logger.error(f"Redis rate limit error: {e}")
+            # استخدام الذاكرة كبديل
+            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+    
+    def _check_rate_limit_memory(self, identifier, limit_per_minute, limit_per_hour, current_time):
+        """فحص Rate Limit باستخدام الذاكرة"""
+        with self.lock:
+            minute_window = current_time // 60
+            hour_window = current_time // 3600
+            
+            # تنظيف البيانات القديمة
+            self._cleanup_old_data(current_time)
+            
+            # إضافة الطلب الحالي
+            self.memory_store[identifier]['minute'].append(minute_window)
+            self.memory_store[identifier]['hour'].append(hour_window)
+            
+            # عد الطلبات في النافذة الزمنية الحالية
+            minute_count = sum(1 for t in self.memory_store[identifier]['minute'] if t == minute_window)
+            hour_count = sum(1 for t in self.memory_store[identifier]['hour'] if t == hour_window)
+            
+            # فحص الحدود
+            if minute_count > limit_per_minute:
+                return False, f"Rate limit exceeded: {minute_count}/{limit_per_minute} per minute"
+            
+            if hour_count > limit_per_hour:
+                return False, f"Rate limit exceeded: {hour_count}/{limit_per_hour} per hour"
+            
+            return True, None
+    
+    def _cleanup_old_data(self, current_time):
+        """تنظيف البيانات القديمة من الذاكرة"""
+        minute_threshold = (current_time // 60) - 2  # آخر دقيقتين
+        hour_threshold = (current_time // 3600) - 2  # آخر ساعتين
+        
+        for identifier in list(self.memory_store.keys()):
+            # تنظيف بيانات الدقائق
+            minute_queue = self.memory_store[identifier]['minute']
+            while minute_queue and minute_queue[0] < minute_threshold:
+                minute_queue.popleft()
+            
+            # تنظيف بيانات الساعات
+            hour_queue = self.memory_store[identifier]['hour']
+            while hour_queue and hour_queue[0] < hour_threshold:
+                hour_queue.popleft()
+            
+            # حذف المعرف إذا لم تعد هناك بيانات
+            if not minute_queue and not hour_queue:
+                del self.memory_store[identifier]
+
+# إنشاء instance من SmartRateLimiter
+smart_limiter = SmartRateLimiter()
+
+def smart_rate_limit(per_minute=10, per_hour=100, skip_trusted=True):
+    """ديكوريتر للـ Rate Limiting الذكي"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # فحص المصادر الموثوقة
+            if skip_trusted and smart_limiter.is_trusted_source(request):
+                return f(*args, **kwargs)
+            
+            # فحص الـ endpoints المستثناة
+            if any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS):
+                return f(*args, **kwargs)
+            
+            # الحصول على معرف العميل
+            client_id = smart_limiter.get_client_identifier(request)
+            
+            # فحص Rate Limit
+            allowed, error_msg = smart_limiter.check_rate_limit(
+                client_id, per_minute, per_hour
+            )
+            
+            if not allowed:
+                app.logger.warning(f"Rate limit exceeded for {get_remote_address()}: {error_msg}")
+                
+                # إرجاع استجابة JSON للـ API endpoints
+                if request.path.startswith('/api/') or request.is_json:
+                    return jsonify({
+                        'error': 'Rate limit exceeded',
+                        'message': 'Too many requests. Please try again later.',
+                        'retry_after': 60
+                    }), 429
+                
+                # إرجاع صفحة HTML للمستخدمين العاديين
+                flash('تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة بعد قليل.', 'error')
+                return render_template('429.html'), 429
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def get_adaptive_limits(endpoint):
+    """الحصول على حدود تكيفية حسب الـ endpoint"""
+    limits = {
+        'login': {'per_minute': 5, 'per_hour': 20},
+        'register': {'per_minute': 3, 'per_hour': 10},
+        'verify-email': {'per_minute': 10, 'per_hour': 30},
+        'resend-verification': {'per_minute': 2, 'per_hour': 5},
+        'setup-admin': {'per_minute': 2, 'per_hour': 5},
+        'reset-admin-password': {'per_minute': 3, 'per_hour': 10},
+        'new-order': {'per_minute': 5, 'per_hour': 50},
+        'default': {'per_minute': 30, 'per_hour': 200}
+    }
+    
+    for key, limit in limits.items():
+        if key in endpoint:
+            return limit
+    
+    return limits['default']
 
 def scheduled_cleanup():
     """مهمة دورية لتنظيف البيانات"""
@@ -94,14 +330,17 @@ if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
 db = SQLAlchemy(app)
 mail = Mail(app)
 
-# إعداد Rate Limiter المتقدم مع Redis
+# إعداد Rate Limiter التقليدي (كبديل)
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
-    default_limits=["1000 per day", "100 per hour"],
+    default_limits=["1000 per day", "200 per hour"],
     storage_uri=os.environ.get('REDIS_URL', 'memory://'),
     strategy="moving-window"
 )
+
+# تهيئة Smart Rate Limiter
+smart_limiter.init_app(app)
 
 # إعدادات reCAPTCHA
 app.config['RECAPTCHA_SITE_KEY'] = os.environ.get('RECAPTCHA_SITE_KEY', '')
@@ -497,7 +736,7 @@ def reset_admin_password():
     return render_template('reset_admin_password.html')
 
 @app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")  # تحديد عدد محاولات التسجيل
+@smart_rate_limit(per_minute=3, per_hour=10)  # حدود صارمة للتسجيل
 def register():
     if request.method == 'GET':
         # إنشاء time token للنموذج
@@ -619,9 +858,21 @@ def verify_email():
     return render_template('verify_email.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@smart_rate_limit(per_minute=5, per_hour=20)  # حدود متوسطة لتسجيل الدخول
 def login():
+    if request.method == 'GET':
+        # إنشاء time token للنموذج
+        time_token, timestamp = generate_time_token()
+        return render_template('login.html', time_token=time_token, timestamp=timestamp)
+    
     if request.method == 'POST':
         try:
+            # فحص Captcha الشامل
+            if not comprehensive_captcha_check(request, request.form):
+                flash('فشل في التحقق من الأمان. يرجى المحاولة مرة أخرى.', 'error')
+                time_token, timestamp = generate_time_token()
+                return render_template('login.html', time_token=time_token, timestamp=timestamp)
+            
             email = request.form['email'].lower().strip()
             password = request.form['password']
             
@@ -651,10 +902,12 @@ def login():
                 flash('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'error')
                 
         except Exception as e:
-            print(f"Login error: {e}")
+            app.logger.error(f"Login error: {e}")
             flash('حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى', 'error')
-    
-    return render_template('login.html')
+        
+        # في حالة الخطأ، إنشاء tokens جديدة
+        time_token, timestamp = generate_time_token()
+        return render_template('login.html', time_token=time_token, timestamp=timestamp)
 
 @app.route('/logout')
 @login_required

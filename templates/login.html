@@ -10,9 +10,22 @@
                 <h3><i class="fas fa-sign-in-alt text-primary"></i> تسجيل الدخول</h3>
             </div>
             <div class="card-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">البريد الإلكتروني</label>
+<form method="POST" id="loginForm">
+    <!-- Hidden Captcha Fields -->
+    <input type="hidden" name="time_token" value="{{ time_token }}">
+    <input type="hidden" name="timestamp" value="{{ timestamp }}">
+    <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+    
+    <!-- Honeypot Fields (مخفية للمستخدمين البشريين) -->
+    <div style="position: absolute; left: -9999px;">
+        <input type="text" name="website" tabindex="-1" autocomplete="off">
+        <input type="text" name="url" tabindex="-1" autocomplete="off">
+        <input type="text" name="homepage" tabindex="-1" autocomplete="off">
+        <input type="text" name="company" tabindex="-1" autocomplete="off">
+    </div>
+    
+    <div class="mb-3">
+        <label for="email" class="form-label">البريد الإلكتروني</label>
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
                     <div class="mb-3">
@@ -33,4 +46,35 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Google reCAPTCHA v3 -->
+{% if config.RECAPTCHA_SITE_KEY %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ config.RECAPTCHA_SITE_KEY }}"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    grecaptcha.ready(function() {
+        grecaptcha.execute('{{ config.RECAPTCHA_SITE_KEY }}', {action: 'login'}).then(function(token) {
+            document.getElementById('g-recaptcha-response').value = token;
+            document.getElementById('loginForm').submit();
+        });
+    });
+});
+</script>
+{% endif %}
+
+<!-- JavaScript Challenge -->
+<script>
+// تحدي JavaScript بسيط
+(function() {
+    var challenge = document.createElement('input');
+    challenge.type = 'hidden';
+    challenge.name = 'js_challenge';
+    challenge.value = btoa(Date.now().toString());
+    document.getElementById('loginForm').appendChild(challenge);
+})();
+</script>
 {% endblock %}

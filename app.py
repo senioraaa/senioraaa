@@ -888,35 +888,42 @@ def is_bot_behavior(request):
     return False
 
 def comprehensive_captcha_check(request, form_data):
-    """فحص شامل محسن للـ Captcha مع طبقات حماية متعددة"""
+    """فحص شامل محسن ومتقدم للـ Captcha مع طبقات حماية متعددة"""
     client_ip = get_remote_address()
     
     # فحص الـ endpoints المستثناة
     if any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS):
         return True
     
+    # فحص الحظر المؤقت أولاً
+    is_blocked, remaining_time = is_session_blocked(client_ip)
+    if is_blocked:
+        app.logger.warning(f"Request from blocked session {client_ip}")
+        return False
+    
     # 1. فحص سلوك البوت الأساسي
     if is_bot_behavior(request):
+        track_suspicious_session(client_ip, 'bot_behavior', 3)
         app.logger.warning(f"Bot behavior detected from {client_ip}")
         return False
     
     # 2. فحص Honeypot (الأولوية الأولى)
     if not check_honeypot(form_data):
+        track_suspicious_session(client_ip, 'honeypot_hit', 5)
         app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
         return False
     
-    # 3. فحص User-Agent مشبوه
-    user_agent = request.headers.get('User-Agent', '').lower()
-    suspicious_agents = ['python-requests', 'curl', 'wget', 'scrapy', 'selenium', 'phantomjs']
-    if any(agent in user_agent for agent in suspicious_agents):
-        app.logger.warning(f"Suspicious User-Agent from {client_ip}: {user_agent}")
+    # 3. فحص Device Fingerprint
+    fingerprint_hash, fingerprint_data = generate_device_fingerprint(request)
+    if is_suspicious_fingerprint(fingerprint_data):
+        track_suspicious_session(client_ip, 'suspicious_fingerprint', 2)
+        app.logger.warning(f"Suspicious fingerprint from {client_ip}")
         return False
     
-    # 4. فحص Headers مفقودة (علامة على البوت)
-    required_headers = ['Accept', 'Accept-Language', 'Accept-Encoding']
-    missing_headers = [h for h in required_headers if not request.headers.get(h)]
-    if missing_headers:
-        app.logger.warning(f"Missing headers from {client_ip}: {missing_headers}")
+    # 4. تحليل النموذج المتقدم
+    if not advanced_form_analysis(form_data, client_ip):
+        track_suspicious_session(client_ip, 'suspicious_form_data', 3)
+        app.logger.warning(f"Suspicious form data from {client_ip}")
         return False
     
     # 5. فحص Time Token
@@ -924,58 +931,30 @@ def comprehensive_captcha_check(request, form_data):
     timestamp = form_data.get('timestamp', '')
     
     if not verify_time_token(time_token, timestamp):
+        track_suspicious_session(client_ip, 'invalid_time_token', 2)
         app.logger.warning(f"Time token verification failed for IP: {client_ip}")
         return False
     
     # 6. فحص JavaScript Challenge
     js_challenge = form_data.get('js_challenge', '')
     if not js_challenge:
+        track_suspicious_session(client_ip, 'missing_js_challenge', 2)
         app.logger.warning(f"JavaScript challenge missing from {client_ip}")
-        return False
-    
-    # التحقق من صحة JavaScript Challenge
-    try:
-        import base64
-        decoded_challenge = base64.b64decode(js_challenge).decode('utf-8')
-        challenge_timestamp = int(decoded_challenge)
-        current_time = int(time.time() * 1000)  # milliseconds
-        
-        # التحقق من أن التحدي تم إنشاؤه في آخر 30 دقيقة
-        if abs(current_time - challenge_timestamp) > 1800000:  # 30 minutes
-            app.logger.warning(f"JavaScript challenge expired from {client_ip}")
-            return False
-    except:
-        app.logger.warning(f"Invalid JavaScript challenge from {client_ip}")
         return False
     
     # 7. فحص reCAPTCHA v3 (الأهم)
     recaptcha_token = form_data.get('g-recaptcha-response', '')
     if recaptcha_token:
         if not verify_recaptcha(recaptcha_token):
+            track_suspicious_session(client_ip, 'recaptcha_failed', 4)
             app.logger.warning(f"reCAPTCHA v3 verification failed for IP: {client_ip}")
             return False
     else:
+        track_suspicious_session(client_ip, 'missing_recaptcha', 3)
         app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
         return False
     
-    # 8. فحص إضافي: تحليل نمط الإدخال
-    email = form_data.get('email', '')
-    password = form_data.get('password', '')
-    
-    # فحص البريد الإلكتروني المشبوه
-    if email:
-        suspicious_patterns = ['test@test', '+', 'temp', 'disposable', '10minutemail']
-        if any(pattern in email.lower() for pattern in suspicious_patterns):
-            app.logger.warning(f"Suspicious email pattern from {client_ip}: {email}")
-            return False
-    
-    # فحص كلمة المرور المشبوهة
-    if password:
-        if len(password) < 6 or password in ['123456', 'password', 'test123']:
-            app.logger.warning(f"Weak/suspicious password from {client_ip}")
-            return False
-    
-    app.logger.info(f"All captcha checks passed for IP: {client_ip}")
+    app.logger.info(f"All advanced captcha checks passed for IP: {client_ip}")
     return True
 
 def generate_device_fingerprint(request):

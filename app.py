@@ -806,7 +806,7 @@ def send_verification_email(email, code):
 # السطر الذي يسبق الكتلة مباشرة:
         return True  # Don't block registration if email fails
 
-# تحديث دالة verify_recaptcha
+#  تحديث دالة verify_recaptcha_advanced في ملف app.py
 def verify_recaptcha_advanced(token, request):
     """التحقق المحسن من رمز reCAPTCHA v3 مع تحليل متعدد العوامل"""
     if not app.config['RECAPTCHA_SECRET_KEY']:
@@ -818,7 +818,6 @@ def verify_recaptcha_advanced(token, request):
         return {'success': False, 'penalty': 4}
     
     try:
-        # إرسال طلب التحقق مع معلومات إضافية
         response = requests.post(
             'https://www.google.com/recaptcha/api/siteverify',
             data={
@@ -838,7 +837,6 @@ def verify_recaptcha_advanced(token, request):
         
         app.logger.info(f"reCAPTCHA result - Success: {success}, Score: {score}, Action: {action}")
         
-        # تحليل محسن للنتائج
         penalty_score = 0
         
         if not success:
@@ -846,26 +844,28 @@ def verify_recaptcha_advanced(token, request):
             app.logger.warning(f"reCAPTCHA failed - Errors: {result.get('error-codes', [])}")
             return {'success': False, 'penalty': penalty_score}
         
-        # تحليل النقاط مع معايير محسنة
-        if score < 0.3:
-            penalty_score = 5  # مشبوه جداً
-        elif score < 0.5:
-            penalty_score = 3  # مشبوه
-        elif score < 0.7:
-            penalty_score = 1  # مشبوه قليلاً
+        # تحليل النقاط مع معايير أكثر صرامة
+        if score < 0.2:
+            penalty_score = 6  # مشبوه جداً
+        elif score < 0.4:
+            penalty_score = 4  # مشبوه
+        elif score < 0.6:
+            penalty_score = 3  # مشبوه قليلاً
+        elif score < 0.8:
+            penalty_score = 2  # حذر
         else:
             penalty_score = 0  # آمن
         
         # فحص Action consistency
         expected_actions = ['login', 'register', 'submit']
         if action not in expected_actions:
-            penalty_score += 1
+            penalty_score += 2
             app.logger.warning(f"Unexpected reCAPTCHA action: {action}")
         
         # فحص الـ hostname
         expected_hostnames = ['senioraa.onrender.com', 'localhost']
         if hostname and not any(host in hostname for host in expected_hostnames):
-            penalty_score += 2
+            penalty_score += 3
             app.logger.warning(f"Unexpected hostname in reCAPTCHA: {hostname}")
         
         # فحص التوقيت
@@ -878,13 +878,13 @@ def verify_recaptcha_advanced(token, request):
                 time_diff = (current_time - challenge_time).total_seconds()
                 
                 if time_diff > 300:  # أكثر من 5 دقائق
-                    penalty_score += 2
+                    penalty_score += 3
                     app.logger.warning(f"Old reCAPTCHA token used: {time_diff}s old")
             except:
-                penalty_score += 1
+                penalty_score += 2
         
-        # تحديد النتيجة النهائية
-        final_success = penalty_score < 3
+        # العتبة الجديدة الأكثر صرامة
+        final_success = penalty_score < 2
         
         app.logger.info(f"reCAPTCHA advanced verification - Final: {final_success}, Penalty: {penalty_score}")
         
@@ -892,7 +892,7 @@ def verify_recaptcha_advanced(token, request):
             
     except Exception as e:
         app.logger.error(f"reCAPTCHA verification error: {e}")
-        return {'success': True, 'penalty': 0}  # السماح بالمرور لتجنب منع المستخدمين الشرعيين
+        return {'success': True, 'penalty': 0}
 
 # السطر الذي يلي الكتلة مباشرة:
 def check_honeypot(form_data):
@@ -999,42 +999,55 @@ def comprehensive_captcha_check(request, form_data):
     except:
         pass
     
-    # فحص الحظر المؤقت أولاً (إلا للمصادر الموثوقة)
+    # فحص الحظر المؤقت أولاً
     if not is_trusted_ip:
         is_blocked, remaining_time = is_session_blocked(client_ip)
         if is_blocked:
             app.logger.warning(f"Request from blocked session {client_ip}")
             return False
     
-    # 1. فحص Browser Automation (طبقة جديدة)
+    # 1. فحص VPN/Proxy Detection الجديد
+    if not is_trusted_ip and not detect_vpn_proxy(request):
+        track_suspicious_session(client_ip, 'vpn_proxy_detected', 6)
+        app.logger.warning(f"VPN/Proxy detected from {client_ip}")
+        return False
+    
+    # 2. فحص Browser Fingerprint المتقدم
+    fingerprint_hash, fingerprint_data = generate_device_fingerprint_advanced(request)
+    if not is_trusted_ip and fingerprint_data['inconsistency_score'] > 4:
+        track_suspicious_session(client_ip, 'fingerprint_inconsistency', 5)
+        app.logger.warning(f"Browser fingerprint inconsistency from {client_ip}: score {fingerprint_data['inconsistency_score']}")
+        return False
+    
+    # 3. فحص Browser Automation
     if not is_trusted_ip and not detect_automation(request):
         track_suspicious_session(client_ip, 'automation_detected', 8)
         app.logger.warning(f"Browser automation detected from {client_ip}")
         return False
     
-    # 2. فحص سلوك البوت الأساسي (مخفف للمصادر الموثوقة)
+    # 4. فحص سلوك البوت الأساسي
     if not is_trusted_ip and is_bot_behavior(request):
-        track_suspicious_session(client_ip, 'bot_behavior', 1)
+        track_suspicious_session(client_ip, 'bot_behavior', 2)
         app.logger.warning(f"Bot behavior detected from {client_ip}")
         return False
     
-    # 3. فحص Honeypot (ينطبق على الجميع)
+    # 5. فحص Honeypot
     if not check_honeypot(form_data):
-        track_suspicious_session(client_ip, 'honeypot_hit', 5)
+        track_suspicious_session(client_ip, 'honeypot_hit', 8)
         app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
         return False
     
-    # 4. فحص Time Token مع تحليل سلوكي متقدم
+    # 6. فحص Time Token متقدم
     time_token = form_data.get('time_token', '')
     timestamp = form_data.get('timestamp', '')
     
     if not verify_time_token_advanced(time_token, timestamp, form_data):
         if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'invalid_time_token', 2)
+            track_suspicious_session(client_ip, 'invalid_time_token', 3)
         app.logger.warning(f"Advanced time token verification failed for IP: {client_ip}")
         return False
     
-    # 5. فحص reCAPTCHA v3 مع تحليل محسن
+    # 7. فحص reCAPTCHA v3 المحسن
     recaptcha_token = form_data.get('g-recaptcha-response', '')
     if recaptcha_token:
         recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
@@ -1045,27 +1058,30 @@ def comprehensive_captcha_check(request, form_data):
             return False
     else:
         if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'missing_recaptcha', 3)
+            track_suspicious_session(client_ip, 'missing_recaptcha', 4)
         app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
         
         if not is_trusted_ip:
             return False
     
-    # 6. فحص التحليل السلوكي المتقدم للنموذج
+    # 8. فحص التحليل السلوكي المتقدم
     if not is_trusted_ip:
         behavioral_score = advanced_behavioral_analysis(form_data, request)
-        if behavioral_score > 6:  # عتبة السلوك المشبوه
+        if behavioral_score > 5:
             track_suspicious_session(client_ip, 'suspicious_behavior', behavioral_score)
             app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
             return False
     
-    app.logger.info(f"All captcha checks passed for IP: {client_ip} (Trusted: {is_trusted_ip})")
+    app.logger.info(f"All enhanced captcha checks passed for IP: {client_ip} (Trusted: {is_trusted_ip})")
     return True
 
 # السطر الذي يلي الكتلة مباشرة:
-def generate_device_fingerprint(request):
-    """إنشاء بصمة الجهاز للكشف عن البوتات"""
-    fingerprint_data = {
+def generate_device_fingerprint_advanced(request):
+    """إنشاء بصمة جهاز متقدمة للكشف عن التلاعب"""
+    ip = get_remote_address()
+    
+    # جمع بيانات أكثر تفصيلاً
+    advanced_data = {
         'user_agent': request.headers.get('User-Agent', '')[:200],
         'accept': request.headers.get('Accept', '')[:100],
         'accept_language': request.headers.get('Accept-Language', '')[:50],
@@ -1074,15 +1090,58 @@ def generate_device_fingerprint(request):
         'upgrade_insecure_requests': request.headers.get('Upgrade-Insecure-Requests', ''),
         'sec_fetch_site': request.headers.get('Sec-Fetch-Site', ''),
         'sec_fetch_mode': request.headers.get('Sec-Fetch-Mode', ''),
-        'cache_control': request.headers.get('Cache-Control', '')[:50]
+        'sec_fetch_user': request.headers.get('Sec-Fetch-User', ''),
+        'sec_fetch_dest': request.headers.get('Sec-Fetch-Dest', ''),
+        'cache_control': request.headers.get('Cache-Control', '')[:50],
+        'pragma': request.headers.get('Pragma', ''),
+        'dnt': request.headers.get('DNT', ''),
+        'te': request.headers.get('TE', ''),
+        'sec_ch_ua': request.headers.get('Sec-CH-UA', '')[:100],
+        'sec_ch_ua_mobile': request.headers.get('Sec-CH-UA-Mobile', ''),
+        'sec_ch_ua_platform': request.headers.get('Sec-CH-UA-Platform', ''),
+        'viewport': request.headers.get('Viewport-Width', '')
     }
     
-    # حساب hash للبصمة
-    fingerprint_string = '|'.join(str(v) for v in fingerprint_data.values())
+    # تحليل التناقضات في البيانات
+    inconsistency_score = 0
+    
+    # فحص User-Agent vs Sec-CH-UA
+    ua = advanced_data['user_agent'].lower()
+    sec_ua = advanced_data['sec_ch_ua'].lower()
+    
+    if 'chrome' in ua and 'chrome' not in sec_ua and sec_ua:
+        inconsistency_score += 3
+    elif 'firefox' in ua and 'chrome' in sec_ua:
+        inconsistency_score += 3
+    
+    # فحص Mobile indicators
+    is_mobile_ua = any(mobile in ua for mobile in ['mobile', 'android', 'iphone'])
+    sec_mobile = advanced_data['sec_ch_ua_mobile'] == '?1'
+    
+    if is_mobile_ua != sec_mobile and advanced_data['sec_ch_ua_mobile']:
+        inconsistency_score += 2
+    
+    # فحص Platform consistency
+    platform = advanced_data['sec_ch_ua_platform'].lower()
+    if 'windows' in ua and 'android' in platform:
+        inconsistency_score += 3
+    elif 'mac' in ua and 'windows' in platform:
+        inconsistency_score += 3
+    
+    # فحص Headers المفقودة المشبوهة
+    modern_headers = ['sec_fetch_site', 'sec_fetch_mode', 'sec_ch_ua']
+    missing_modern = sum(1 for h in modern_headers if not advanced_data[h])
+    
+    if missing_modern >= 2 and 'chrome' in ua:
+        inconsistency_score += 2
+    
+    # حساب hash البصمة
+    fingerprint_string = '|'.join(str(v) for v in advanced_data.values())
     fingerprint_hash = hashlib.sha256(fingerprint_string.encode()).hexdigest()[:16]
     
-# السطر الذي يسبق الكتلة مباشرة:
-    return fingerprint_hash, fingerprint_data
+    advanced_data['inconsistency_score'] = inconsistency_score
+    
+    return fingerprint_hash, advanced_data
 
 ##   إضافة دالة detect_automation
 def detect_automation(request):
@@ -1136,9 +1195,72 @@ def detect_automation(request):
     
     app.logger.info(f"Automation detection score for {client_ip}: {automation_score}")
     
+# السطر السابق:
     return automation_score < 8  # السماح إذا كان أقل من 8 نقاط
 
-# السطر الذي يلي الكتلة مباشرة:
+# ✅ إضافة دالة detect_vpn_proxy جديدة في ملف app.py
+def detect_vpn_proxy(request):
+    """كشف VPN والـ Proxy المتقدم"""
+    client_ip = get_remote_address()
+    vpn_score = 0
+    
+    # قائمة مؤشرات VPN/Proxy
+    vpn_indicators = []
+    
+    # فحص headers مشبوهة للـ proxy
+    proxy_headers = [
+        'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_X_CLUSTER_CLIENT_IP',
+        'HTTP_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED',
+        'HTTP_VIA', 'HTTP_X_FORWARDED_PROTO'
+    ]
+    
+    for header in proxy_headers:
+        if request.environ.get(header):
+            vpn_score += 1
+            vpn_indicators.append(f"proxy_header_{header}")
+    
+    # فحص User-Agent patterns للـ VPN clients
+    user_agent = request.headers.get('User-Agent', '').lower()
+    vpn_patterns = [
+        'openvpn', 'nordvpn', 'expressvpn', 'cyberghost', 'protonvpn',
+        'surfshark', 'tunnelbear', 'hotspot shield', 'windscribe'
+    ]
+    
+    for pattern in vpn_patterns:
+        if pattern in user_agent:
+            vpn_score += 3
+            vpn_indicators.append(f"vpn_ua_{pattern}")
+    
+    # فحص timezone inconsistency
+    timezone_header = request.headers.get('X-Timezone', '')
+    accept_language = request.headers.get('Accept-Language', '')
+    
+    if timezone_header and accept_language:
+        # تحليل بسيط للتناقض الجغرافي
+        if ('us' in accept_language.lower() and 'europe' in timezone_header.lower()) or \
+           ('gb' in accept_language.lower() and 'america' in timezone_header.lower()):
+            vpn_score += 2
+            vpn_indicators.append("timezone_mismatch")
+    
+    # فحص DNS leaks (إذا توفرت معلومات)
+    x_real_ip = request.headers.get('X-Real-IP', '')
+    x_forwarded_for = request.headers.get('X-Forwarded-For', '')
+    
+    if x_real_ip and x_forwarded_for and x_real_ip != x_forwarded_for:
+        vpn_score += 2
+        vpn_indicators.append("ip_mismatch")
+    
+    # فحص connection patterns
+    connection = request.headers.get('Connection', '').lower()
+    if 'keep-alive' not in connection and connection:
+        vpn_score += 1
+        vpn_indicators.append("unusual_connection")
+    
+    app.logger.info(f"VPN/Proxy detection for {client_ip}: score = {vpn_score}, indicators = {vpn_indicators}")
+    
+    return vpn_score < 6  # السماح إذا كان أقل من 6 نقاط
+
+# السطر التالي:
 def is_suspicious_fingerprint(fingerprint_data):
     """فحص بصمة الجهاز للعلامات المشبوهة"""
     suspicious_indicators = 0
@@ -1651,94 +1773,93 @@ def advanced_form_analysis(form_data, client_ip):
 # السطر الذي يسبق الكتلة مباشرة:
     return suspicious_score < 5  # السماح إذا كان أقل من 5 نقاط مشبوهة
 
-##   إضافة دالة advanced_behavioral_analysis
-def advanced_behavioral_analysis(form_data, request):
-    """تحليل سلوكي متقدم للكشف عن الأنماط المشبوهة"""
-    suspicion_score = 0
-    client_ip = get_remote_address()
+#  إضافة نظام IP Reputation في ملف app.py
+class IPReputationSystem:
+    def __init__(self):
+        self.ip_history = defaultdict(lambda: {
+            'attempts': 0,
+            'successful_logins': 0,
+            'failed_logins': 0,
+            'registrations': 0,
+            'last_activity': 0,
+            'reputation_score': 100,
+            'countries': set(),
+            'user_agents': set()
+        })
+        self.lock = Lock()
     
-    # 1. تحليل تفاعل المستخدم مع الصفحة
-    interaction_data = form_data.get('interaction_data', '')
-    if interaction_data:
-        try:
-            interactions = json.loads(interaction_data)
+    def update_ip_activity(self, ip, activity_type, success=True):
+        """تحديث نشاط IP"""
+        with self.lock:
+            current_time = int(time.time())
+            data = self.ip_history[ip]
             
-            # فحص حركة الماوس
-            mouse_events = interactions.get('mouse_events', 0)
-            if mouse_events < 5:  # حركة ماوس قليلة جداً
-                suspicion_score += 2
-                app.logger.warning(f"Low mouse interaction from {client_ip}: {mouse_events} events")
+            data['attempts'] += 1
+            data['last_activity'] = current_time
             
-            # فحص clicks على elements
-            click_events = interactions.get('click_events', 0)
-            if click_events == 0:  # لا توجد clicks طبيعية
-                suspicion_score += 1
+            if activity_type == 'login':
+                if success:
+                    data['successful_logins'] += 1
+                    data['reputation_score'] = min(150, data['reputation_score'] + 5)
+                else:
+                    data['failed_logins'] += 1
+                    data['reputation_score'] = max(0, data['reputation_score'] - 10)
             
-            # فحص keyboard events
-            keyboard_events = interactions.get('keyboard_events', 0)
-            typing_speed = interactions.get('typing_speed', 0)
+            elif activity_type == 'register':
+                data['registrations'] += 1
+                if success:
+                    data['reputation_score'] = min(150, data['reputation_score'] + 10)
+                else:
+                    data['reputation_score'] = max(0, data['reputation_score'] - 15)
             
-            if keyboard_events > 0 and typing_speed > 300:  # سرعة كتابة غير طبيعية
-                suspicion_score += 3
-                app.logger.warning(f"Unusual typing speed from {client_ip}: {typing_speed} chars/min")
+            # تحليل patterns مشبوهة
+            if data['failed_logins'] > 5:
+                data['reputation_score'] = max(0, data['reputation_score'] - 20)
             
-            # فحص scroll behavior
-            scroll_events = interactions.get('scroll_events', 0)
-            if scroll_events == 0 and request.referrer:  # لا يوجد scroll من صفحة أخرى
-                suspicion_score += 1
-            
-            # فحص وقت البقاء على الصفحة
-            page_time = interactions.get('page_time', 0)
-            if page_time < 3000:  # أقل من 3 ثوان
-                suspicion_score += 2
-            elif page_time > 1800000:  # أكثر من 30 دقيقة
-                suspicion_score += 1
-                
-        except json.JSONDecodeError:
-            suspicion_score += 2  # بيانات تفاعل غير صالحة
-            app.logger.warning(f"Invalid interaction data from {client_ip}")
-    else:
-        suspicion_score += 3  # لا توجد بيانات تفاعل
+            if data['registrations'] > 3:
+                data['reputation_score'] = max(0, data['reputation_score'] - 15)
     
-    # 2. تحليل نمط ملء النموذج
-    form_timing = form_data.get('form_timing', '')
-    if form_timing:
-        try:
-            timing = json.loads(form_timing)
-            
-            # فحص الوقت بين focus و blur للحقول
-            email_time = timing.get('email_fill_time', 0)
-            password_time = timing.get('password_fill_time', 0)
-            
-            if email_time < 500 or password_time < 500:  # ملء سريع جداً
-                suspicion_score += 2
-                app.logger.warning(f"Fast form filling from {client_ip}")
-            
-            # فحص نمط التنقل بين الحقول
-            tab_sequence = timing.get('tab_sequence', [])
-            if len(tab_sequence) < 2:  # تنقل غير طبيعي
-                suspicion_score += 1
-                
-        except json.JSONDecodeError:
-            suspicion_score += 1
+    def get_ip_reputation(self, ip):
+        """الحصول على سمعة IP"""
+        return self.ip_history[ip]['reputation_score']
     
-    # 3. فحص التناسق في البيانات
-    email = form_data.get('email', '').lower()
-    if email:
-        # فحص domains تم إنشاؤها حديثاً أو مؤقتة
-        domain = email.split('@')[1] if '@' in email else ''
-        temp_domains = [
-            'tempmail.org', '10minutemail.com', 'guerrillamail.com',
-            'mailinator.com', 'yopmail.com', 'temp-mail.org'
-        ]
+    def is_ip_suspicious(self, ip):
+        """فحص ما إذا كان IP مشبوه"""
+        data = self.ip_history[ip]
         
-        if any(temp_domain in domain for temp_domain in temp_domains):
-            suspicion_score += 4
-            app.logger.warning(f"Temporary email domain from {client_ip}: {domain}")
+        # IP جديد تماماً
+        if data['attempts'] == 0:
+            return False
+        
+        # سمعة منخفضة
+        if data['reputation_score'] < 30:
+            return True
+        
+        # نسبة فشل عالية
+        total_attempts = data['successful_logins'] + data['failed_logins']
+        if total_attempts > 3 and (data['failed_logins'] / total_attempts) > 0.7:
+            return True
+        
+        # تسجيلات كثيرة
+        if data['registrations'] > 2:
+            return True
+        
+        return False
     
-    app.logger.info(f"Behavioral analysis for {client_ip}: score = {suspicion_score}")
-    
-    return suspicion_score
+    def cleanup_old_data(self):
+        """تنظيف البيانات القديمة"""
+        current_time = int(time.time())
+        threshold = current_time - (7 * 24 * 3600)  # أسبوع
+        
+        old_ips = [ip for ip, data in self.ip_history.items() 
+                  if data['last_activity'] < threshold]
+        
+        for ip in old_ips:
+            del self.ip_history[ip]
+
+# إنشاء instance من نظام السمعة
+ip_reputation = IPReputationSystem()
+
 
 # السطر الذي يلي الكتلة مباشرة:
 @app.route('/verify-email', methods=['GET', 'POST'])

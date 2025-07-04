@@ -806,7 +806,7 @@ def send_verification_email(email, code):
 # السطر الذي يسبق الكتلة مباشرة:
         return True  # Don't block registration if email fails
 
-تحديث دالة verify_recaptcha في ملف app.py
+تحديث دالة verify_recaptcha
 def verify_recaptcha_advanced(token, request):
     """التحقق المحسن من رمز reCAPTCHA v3 مع تحليل متعدد العوامل"""
     if not app.config['RECAPTCHA_SECRET_KEY']:
@@ -913,7 +913,7 @@ def generate_time_token():
 # السطر الذي يسبق الكتلة مباشرة:
     return hashlib.md5((timestamp + secret).encode()).hexdigest(), timestamp
 
-تحديث دالة verify_time_token في ملف app.py
+تحديث دالة verify_time_token
 def verify_time_token_advanced(token, timestamp, form_data):
     """التحقق المتقدم من الرمز المؤقت مع تحليل سلوكي"""
     try:
@@ -981,7 +981,7 @@ def is_bot_behavior(request):
 # السطر الذي يسبق الكتلة مباشرة:
     return False
 
-تحديث دالة comprehensive_captcha_check في ملف app.py
+تحديث دالة comprehensive_captcha_check
 def comprehensive_captcha_check(request, form_data):
     """فحص شامل محسن مع طبقات حماية متقدمة"""
     client_ip = get_remote_address()
@@ -1084,7 +1084,7 @@ def generate_device_fingerprint(request):
 # السطر الذي يسبق الكتلة مباشرة:
     return fingerprint_hash, fingerprint_data
 
-##   إضافة دالة detect_automation جديدة في ملف app.py
+##   إضافة دالة detect_automation
 def detect_automation(request):
     """كشف أدوات التشغيل الآلي المتقدم"""
     automation_score = 0
@@ -1651,7 +1651,7 @@ def advanced_form_analysis(form_data, client_ip):
 # السطر الذي يسبق الكتلة مباشرة:
     return suspicious_score < 5  # السماح إذا كان أقل من 5 نقاط مشبوهة
 
-##   إضافة دالة advanced_behavioral_analysis جديدة في ملف app.py
+##   إضافة دالة advanced_behavioral_analysis
 def advanced_behavioral_analysis(form_data, request):
     """تحليل سلوكي متقدم للكشف عن الأنماط المشبوهة"""
     suspicion_score = 0

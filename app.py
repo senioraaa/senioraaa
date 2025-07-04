@@ -1780,7 +1780,7 @@ def cleanup_old_verification_codes():
 
 @app.before_request
 def before_request():
-    """معالج محسن قبل كل طلب لمراقبة النشاط المشبوه"""
+    """معالج محسن مع تساهل للمصادر الموثوقة"""
     # تجاهل الملفات الثابتة والـ endpoints المستثناة
     if (request.path.startswith('/static/') or 
         any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS)):
@@ -1788,62 +1788,55 @@ def before_request():
     
     client_ip = get_remote_address()
     
-    # 1. فحص الحظر المؤقت
-    is_blocked, remaining_time = is_session_blocked(client_ip)
-    if is_blocked:
-        app.logger.warning(f"Blocked request from {client_ip}, remaining time: {remaining_time}s")
-        return jsonify({
-            'error': 'Access temporarily restricted',
-            'retry_after': remaining_time
-        }), 429
+    # فحص ما إذا كان مصدر موثوق
+    is_trusted_ip = False
+    try:
+        ip_obj = ipaddress.ip_address(client_ip)
+        if ip_obj.is_private or ip_obj.is_loopback:
+            is_trusted_ip = True
+    except:
+        pass
     
-    # 2. إنشاء وفحص Device Fingerprint
-    fingerprint_hash, fingerprint_data = generate_device_fingerprint(request)
+    # 1. فحص الحظر المؤقت (إلا للمصادر الموثوقة)
+    if not is_trusted_ip:
+        is_blocked, remaining_time = is_session_blocked(client_ip)
+        if is_blocked:
+            app.logger.warning(f"Blocked request from {client_ip}, remaining time: {remaining_time}s")
+            return jsonify({
+                'error': 'Access temporarily restricted',
+                'retry_after': remaining_time
+            }), 429
     
-    if is_suspicious_fingerprint(fingerprint_data):
-        track_suspicious_session(client_ip, 'suspicious_fingerprint', 2)
-        app.logger.warning(f"Suspicious device fingerprint from {client_ip}: {fingerprint_hash}")
-    
-    # 3. فحص User-Agent المشبوه المتقدم
+    # 2. فحص User-Agent المشبوه (مخفف للمصادر الموثوقة)
     user_agent = request.headers.get('User-Agent', '')
     
-    # قائمة موسعة من User-Agents المشبوهة
-    advanced_suspicious_agents = [
-        'python-requests', 'curl', 'wget', 'scrapy', 'selenium', 'phantomjs',
-        'headlesschrome', 'httpx', 'aiohttp', 'requests-html', 'mechanize',
-        'beautifulsoup', 'urllib', 'httpclient', 'apache-httpclient'
-    ]
+    if not is_trusted_ip:
+        # قائمة مخففة من User-Agents المشبوهة
+        highly_suspicious_agents = [
+            'python-requests', 'curl', 'wget', 'scrapy', 'selenium'
+        ]
+        
+        if any(agent in user_agent.lower() for agent in highly_suspicious_agents):
+            if not smart_limiter.is_trusted_source(request):
+                track_suspicious_session(client_ip, 'suspicious_user_agent', 1)  # تخفيف العقوبة
+                app.logger.warning(f"Suspicious user agent from {client_ip}: {user_agent}")
     
-    if any(agent in user_agent.lower() for agent in advanced_suspicious_agents):
-        if not smart_limiter.is_trusted_source(request):
-            track_suspicious_session(client_ip, 'suspicious_user_agent', 3)
-            app.logger.warning(f"Suspicious user agent from {client_ip}: {user_agent}")
+    # 3. فحص الطلبات السريعة (مخفف)
+    if not is_trusted_ip:
+        session_key = f"last_request_time:{client_ip}"
+        last_request_time = session.get(session_key, 0)
+        current_time = time.time()
+        
+        if current_time - last_request_time < 0.1:  # أقل من 0.1 ثانية
+            track_suspicious_session(client_ip, 'rapid_requests', 1)
+        
+        session[session_key] = current_time
     
-    # 4. فحص Request Patterns المشبوهة
-    # طلبات سريعة جداً
-    session_key = f"last_request_time:{client_ip}"
-    last_request_time = session.get(session_key, 0)
-    current_time = time.time()
-    
-    if current_time - last_request_time < 0.5:  # أقل من نصف ثانية
-        track_suspicious_session(client_ip, 'rapid_requests', 1)
-    
-    session[session_key] = current_time
-    
-    # 5. فحص طلبات 404 المتكررة
+    # 4. فحص طلبات 404 المتكررة (للجميع)
     if request.endpoint is None:  # 404 error
-        track_suspicious_session(client_ip, '404_requests', 1)
+        if not is_trusted_ip:
+            track_suspicious_session(client_ip, '404_requests', 0.5)  # تخفيف العقوبة
         app.logger.info(f"404 request from {client_ip}: {request.path}")
-    
-    # 6. فحص Headers غير العادية
-    if len(request.headers) < 5:  # عدد قليل جداً من الـ headers
-        track_suspicious_session(client_ip, 'few_headers', 1)
-    
-    # 7. فحص Content-Length غير طبيعي للـ POST requests
-    if request.method == 'POST':
-        content_length = request.content_length or 0
-        if content_length > 10000:  # أكبر من 10KB
-            track_suspicious_session(client_ip, 'large_post', 1)
 
 @app.after_request
 def after_request(response):

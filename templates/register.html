@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}إنشاء حساب - موقع الفريلانسر{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3><i class="fas fa-user-plus text-primary"></i> إنشاء حساب جديد</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">يجب استخدام Gmail أو Hotmail أو iCloud</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">كلمة المرور</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text">6 أحرف على الأقل</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> إنشاء الحساب
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>لديك حساب بالفعل؟ <a href="{{ url_for('login') }}">سجل دخولك</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

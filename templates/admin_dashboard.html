@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الإدارة - موقع الفريلانسر{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-tachometer-alt"></i> لوحة الإدارة</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <h5>{{ users|length }}</h5>
+                                <p>إجمالي المستخدمين</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                                <h5>{{ orders|length }}</h5>
+                                <p>إجمالي الطلبات</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <h5>{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</h5>
+                                <p>طلبات قيد الانتظار</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <h5>{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</h5>
+                                <p>طلبات مكتملة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-list"></i> جميع الطلبات</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>رقم الطلب</th>
+                                <th>المستخدم</th>
+                                <th>المنصة</th>
+                                <th>الكمية</th>
+                                <th>طريقة الدفع</th>
+                                <th>الحالة</th>
+                                <th>التاريخ</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.user.email }}</td>
+                                <td>{{ order.platform }}</td>
+                                <td>{{ "{:,}".format(order.coins_amount) }} كوين</td>
+                                <td>{{ order.payment_method }}</td>
+                                <td>
+                                    <select class="form-select form-select-sm" onchange="updateStatus({{ order.id }}, this.value)">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>قيد الانتظار</option>
+                                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>مكتمل</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+                                    </select>
+                                </td>
+                                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="viewOrder({{ order.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateStatus(orderId, newStatus) {
+    fetch(`/admin/order/${orderId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('حدث خطأ في تحديث الحالة');
+        }
+    });
+}
+
+function viewOrder(orderId) {
+    alert(`تفاصيل الطلب رقم ${orderId}`);
+}
+</script>
+{% endblock %}

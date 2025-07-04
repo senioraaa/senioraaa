@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}طلب جديد - موقع الفريلانسر{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3><i class="fas fa-plus text-primary"></i> طلب جديد</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="platform" class="form-label">المنصة</label>
+                        <select class="form-control" id="platform" name="platform" required>
+                            <option value="">اختر المنصة</option>
+                            {% for platform in platforms %}
+                            <option value="{{ platform }}">{{ platform }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="coins_amount" class="form-label">عدد الكوينز</label>
+                        <input type="number" class="form-control" id="coins_amount" name="coins_amount" min="300000" required>
+                        <div class="form-text">الحد الأدنى 300,000 كوين</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">طريقة الدفع</label>
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="">اختر طريقة الدفع</option>
+                            {% for method in payment_methods %}
+                            <option value="{{ method }}">{{ method }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane"></i> إرسال الطلب
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-link">
+                        <i class="fas fa-arrow-left"></i> العودة لوحة التحكم
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

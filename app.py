@@ -1,8 +1,3 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Mail, Message
 import os
 import random
 import string
@@ -11,11 +6,19 @@ import re
 from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
+
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Mail, Message
+from sqlalchemy import text # <--- هذا هو السطر الذي تم إضافته لإصلاح مشكلة Textual SQL expression
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import atexit
 
-# إعداد المهام الدورية
+# إعداد المهام الدورية لـ APScheduler
 scheduler = BackgroundScheduler()
 
 def scheduled_cleanup():

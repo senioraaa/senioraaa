@@ -687,14 +687,20 @@ def track_suspicious_session(client_ip, action_type, severity=1):
     app.logger.info(f"Suspicious activity tracked for {client_ip}: {action_type} (Score: {session_data['suspicious_score']})")
 
 def is_session_blocked(client_ip):
-    """فحص ما إذا كانت الجلسة محظورة"""
+    """فحص ما إذا كانت الجلسة محظورة مع استثناءات للمصادر الموثوقة"""
     current_time = int(time.time())
     session_data = suspicious_sessions[client_ip]
     
+    # استثناء للـ localhost والشبكات الخاصة
+    try:
+        ip_obj = ipaddress.ip_address(client_ip)
+        if ip_obj.is_private or ip_obj.is_loopback:
+            return False, 0
+    except:
+        pass
+    
     if session_data['blocked_until'] > current_time:
         return True, session_data['blocked_until'] - current_time
-    
-    return False, 0
     
     return False, 0
 

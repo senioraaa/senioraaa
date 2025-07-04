@@ -94,11 +94,13 @@ if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
 db = SQLAlchemy(app)
 mail = Mail(app)
 
-# إعداد Rate Limiter
+# إعداد Rate Limiter المتقدم مع Redis
 limiter = Limiter(
-    app,
     key_func=get_remote_address,
-    default_limits=["1000 per day", "100 per hour"]
+    app=app,
+    default_limits=["1000 per day", "100 per hour"],
+    storage_uri=os.environ.get('REDIS_URL', 'memory://'),
+    strategy="moving-window"
 )
 
 # إعدادات reCAPTCHA

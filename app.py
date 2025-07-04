@@ -803,51 +803,98 @@ def send_verification_email(email, code):
         return True
     except Exception as e:
         print(f"Error sending email: {e}")
+# السطر الذي يسبق الكتلة مباشرة:
         return True  # Don't block registration if email fails
 
-def verify_recaptcha(token):
-    """التحقق من رمز reCAPTCHA v3 مع تسجيل مفصل"""
+🔄 تحديث دالة verify_recaptcha في ملف app.py
+def verify_recaptcha_advanced(token, request):
+    """التحقق المحسن من رمز reCAPTCHA v3 مع تحليل متعدد العوامل"""
     if not app.config['RECAPTCHA_SECRET_KEY']:
         app.logger.warning("reCAPTCHA not configured - allowing request to pass")
-        return True  # إذا لم يتم تكوين reCAPTCHA، اسمح بالمرور
+        return {'success': True, 'penalty': 0}
     
     if not token:
         app.logger.warning("No reCAPTCHA token provided")
-        return False
+        return {'success': False, 'penalty': 4}
     
     try:
+        # إرسال طلب التحقق مع معلومات إضافية
         response = requests.post(
             'https://www.google.com/recaptcha/api/siteverify',
             data={
                 'secret': app.config['RECAPTCHA_SECRET_KEY'],
-                'response': token
+                'response': token,
+                'remoteip': get_remote_address()
             },
             timeout=10
         )
         result = response.json()
         
-        # تسجيل مفصل للنتائج
-        app.logger.info(f"reCAPTCHA verification result: {result}")
-        
         success = result.get('success', False)
         score = result.get('score', 0)
         action = result.get('action', 'unknown')
+        hostname = result.get('hostname', '')
+        challenge_ts = result.get('challenge_ts', '')
         
-        app.logger.info(f"reCAPTCHA details - Success: {success}, Score: {score}, Action: {action}")
+        app.logger.info(f"reCAPTCHA result - Success: {success}, Score: {score}, Action: {action}")
         
-        # التحقق من النتيجة والدرجة
-        if success and score >= 0.5:
-            app.logger.info(f"reCAPTCHA passed with score: {score}")
-            return True
+        # تحليل محسن للنتائج
+        penalty_score = 0
+        
+        if not success:
+            penalty_score = 5
+            app.logger.warning(f"reCAPTCHA failed - Errors: {result.get('error-codes', [])}")
+            return {'success': False, 'penalty': penalty_score}
+        
+        # تحليل النقاط مع معايير محسنة
+        if score < 0.3:
+            penalty_score = 5  # مشبوه جداً
+        elif score < 0.5:
+            penalty_score = 3  # مشبوه
+        elif score < 0.7:
+            penalty_score = 1  # مشبوه قليلاً
         else:
-            app.logger.warning(f"reCAPTCHA failed - Success: {success}, Score: {score}, Errors: {result.get('error-codes', [])}")
-            return False
+            penalty_score = 0  # آمن
+        
+        # فحص Action consistency
+        expected_actions = ['login', 'register', 'submit']
+        if action not in expected_actions:
+            penalty_score += 1
+            app.logger.warning(f"Unexpected reCAPTCHA action: {action}")
+        
+        # فحص الـ hostname
+        expected_hostnames = ['senioraa.onrender.com', 'localhost']
+        if hostname and not any(host in hostname for host in expected_hostnames):
+            penalty_score += 2
+            app.logger.warning(f"Unexpected hostname in reCAPTCHA: {hostname}")
+        
+        # فحص التوقيت
+        if challenge_ts:
+            try:
+                from datetime import datetime
+                import dateutil.parser
+                challenge_time = dateutil.parser.parse(challenge_ts)
+                current_time = datetime.utcnow()
+                time_diff = (current_time - challenge_time).total_seconds()
+                
+                if time_diff > 300:  # أكثر من 5 دقائق
+                    penalty_score += 2
+                    app.logger.warning(f"Old reCAPTCHA token used: {time_diff}s old")
+            except:
+                penalty_score += 1
+        
+        # تحديد النتيجة النهائية
+        final_success = penalty_score < 3
+        
+        app.logger.info(f"reCAPTCHA advanced verification - Final: {final_success}, Penalty: {penalty_score}")
+        
+        return {'success': final_success, 'penalty': penalty_score}
             
     except Exception as e:
         app.logger.error(f"reCAPTCHA verification error: {e}")
-        # في حالة الخطأ، استخدم نظام fallback
-        return True  # السماح بالمرور لتجنب منع المستخدمين الشرعيين
+        return {'success': True, 'penalty': 0}  # السماح بالمرور لتجنب منع المستخدمين الشرعيين
 
+# السطر الذي يلي الكتلة مباشرة:
 def check_honeypot(form_data):
     """فحص Honeypot fields (فخاخ البوتات)"""
     honeypot_fields = ['website', 'url', 'homepage', 'company']
@@ -863,30 +910,58 @@ def generate_time_token():
     """إنشاء رمز مؤقت للتحقق من الوقت"""
     timestamp = str(int(time.time()))
     secret = app.config['CAPTCHA_SECRET']
+# السطر الذي يسبق الكتلة مباشرة:
     return hashlib.md5((timestamp + secret).encode()).hexdigest(), timestamp
 
-def verify_time_token(token, timestamp):
-    """التحقق من الرمز المؤقت"""
+🔄 تحديث دالة verify_time_token في ملف app.py
+def verify_time_token_advanced(token, timestamp, form_data):
+    """التحقق المتقدم من الرمز المؤقت مع تحليل سلوكي"""
     try:
         current_time = int(time.time())
         form_time = int(timestamp)
+        time_diff = current_time - form_time
         
-        # التحقق من أن النموذج لم يتم إرساله بسرعة مشبوهة (أقل من 3 ثواني)
-        if current_time - form_time < 3:
+        # تحليل وقت ملء النموذج
+        if time_diff < 2:  # أقل من ثانيتين = مشبوه جداً
+            app.logger.warning(f"Form submitted too quickly: {time_diff}s")
             return False
         
-        # التحقق من أن النموذج لم يتم إرساله بعد وقت طويل جداً (أكثر من 30 دقيقة)
-        if current_time - form_time > 1800:
+        if time_diff > 3600:  # أكثر من ساعة = منتهي الصلاحية
+            app.logger.warning(f"Form token expired: {time_diff}s old")
+            return False
+        
+        # فحص التوقيت المناسب للبيانات المُدخلة
+        email = form_data.get('email', '')
+        password = form_data.get('password', '')
+        
+        # تقدير الوقت المطلوب لملء النموذج
+        estimated_time = 0
+        if email:
+            estimated_time += len(email) * 0.1  # 100ms لكل حرف
+        if password:
+            estimated_time += len(password) * 0.15  # 150ms لكل حرف
+        
+        estimated_time += 3  # وقت إضافي للقراءة والتفكير
+        
+        if time_diff < estimated_time:
+            app.logger.warning(f"Form filled faster than humanly possible: {time_diff}s vs estimated {estimated_time}s")
             return False
         
         # التحقق من صحة الرمز
         secret = app.config['CAPTCHA_SECRET']
         expected_token = hashlib.md5((timestamp + secret).encode()).hexdigest()
         
-        return token == expected_token
-    except:
+        if token != expected_token:
+            app.logger.warning("Invalid time token signature")
+            return False
+        
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"Time token verification error: {e}")
         return False
 
+# السطر الذي يلي الكتلة مباشرة:
 def is_bot_behavior(request):
     """فحص سلوك البوت"""
     # فحص User-Agent
@@ -903,10 +978,12 @@ def is_bot_behavior(request):
     if not request.headers.get('Accept-Language'):
         return True
     
+# السطر الذي يسبق الكتلة مباشرة:
     return False
 
+🔄 تحديث دالة comprehensive_captcha_check في ملف app.py
 def comprehensive_captcha_check(request, form_data):
-    """فحص شامل محسن مع تساهل أكبر للمصادر الموثوقة"""
+    """فحص شامل محسن مع طبقات حماية متقدمة"""
     client_ip = get_remote_address()
     
     # فحص الـ endpoints المستثناة
@@ -929,48 +1006,63 @@ def comprehensive_captcha_check(request, form_data):
             app.logger.warning(f"Request from blocked session {client_ip}")
             return False
     
-    # 1. فحص سلوك البوت الأساسي (مخفف للمصادر الموثوقة)
+    # 1. فحص Browser Automation (طبقة جديدة)
+    if not is_trusted_ip and not detect_automation(request):
+        track_suspicious_session(client_ip, 'automation_detected', 8)
+        app.logger.warning(f"Browser automation detected from {client_ip}")
+        return False
+    
+    # 2. فحص سلوك البوت الأساسي (مخفف للمصادر الموثوقة)
     if not is_trusted_ip and is_bot_behavior(request):
-        track_suspicious_session(client_ip, 'bot_behavior', 1)  # تخفيف العقوبة
+        track_suspicious_session(client_ip, 'bot_behavior', 1)
         app.logger.warning(f"Bot behavior detected from {client_ip}")
         return False
     
-    # 2. فحص Honeypot (ينطبق على الجميع)
+    # 3. فحص Honeypot (ينطبق على الجميع)
     if not check_honeypot(form_data):
         track_suspicious_session(client_ip, 'honeypot_hit', 5)
         app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
         return False
     
-    # 3. فحص Time Token (مطلوب للجميع)
+    # 4. فحص Time Token مع تحليل سلوكي متقدم
     time_token = form_data.get('time_token', '')
     timestamp = form_data.get('timestamp', '')
     
-    if not verify_time_token(time_token, timestamp):
+    if not verify_time_token_advanced(time_token, timestamp, form_data):
         if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'invalid_time_token', 1)  # تخفيف العقوبة
-        app.logger.warning(f"Time token verification failed for IP: {client_ip}")
+            track_suspicious_session(client_ip, 'invalid_time_token', 2)
+        app.logger.warning(f"Advanced time token verification failed for IP: {client_ip}")
         return False
     
-    # 4. فحص reCAPTCHA v3 (مخفف للمصادر الموثوقة)
+    # 5. فحص reCAPTCHA v3 مع تحليل محسن
     recaptcha_token = form_data.get('g-recaptcha-response', '')
     if recaptcha_token:
-        if not verify_recaptcha(recaptcha_token):
+        recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
+        if not recaptcha_result['success']:
             if not is_trusted_ip:
-                track_suspicious_session(client_ip, 'recaptcha_failed', 2)  # تخفيف العقوبة
-            app.logger.warning(f"reCAPTCHA v3 verification failed for IP: {client_ip}")
+                track_suspicious_session(client_ip, 'recaptcha_failed', recaptcha_result['penalty'])
+            app.logger.warning(f"Advanced reCAPTCHA verification failed for IP: {client_ip}")
             return False
     else:
         if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'missing_recaptcha', 1)  # تخفيف العقوبة
+            track_suspicious_session(client_ip, 'missing_recaptcha', 3)
         app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
         
-        # السماح للمصادر الموثوقة بالمرور حتى بدون reCAPTCHA
         if not is_trusted_ip:
             return False
     
-    app.logger.info(f"Captcha checks passed for IP: {client_ip} (Trusted: {is_trusted_ip})")
+    # 6. فحص التحليل السلوكي المتقدم للنموذج
+    if not is_trusted_ip:
+        behavioral_score = advanced_behavioral_analysis(form_data, request)
+        if behavioral_score > 6:  # عتبة السلوك المشبوه
+            track_suspicious_session(client_ip, 'suspicious_behavior', behavioral_score)
+            app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
+            return False
+    
+    app.logger.info(f"All captcha checks passed for IP: {client_ip} (Trusted: {is_trusted_ip})")
     return True
 
+# السطر الذي يلي الكتلة مباشرة:
 def generate_device_fingerprint(request):
     """إنشاء بصمة الجهاز للكشف عن البوتات"""
     fingerprint_data = {
@@ -989,8 +1081,64 @@ def generate_device_fingerprint(request):
     fingerprint_string = '|'.join(str(v) for v in fingerprint_data.values())
     fingerprint_hash = hashlib.sha256(fingerprint_string.encode()).hexdigest()[:16]
     
+# السطر الذي يسبق الكتلة مباشرة:
     return fingerprint_hash, fingerprint_data
 
+## ✅ إضافة دالة detect_automation جديدة في ملف app.py
+def detect_automation(request):
+    """كشف أدوات التشغيل الآلي المتقدم"""
+    automation_score = 0
+    client_ip = get_remote_address()
+    
+    # فحص WebDriver properties (يتم إضافتها في JavaScript)
+    automation_indicators = request.form.get('automation_check', '')
+    if automation_indicators:
+        indicators = json.loads(automation_indicators) if automation_indicators else {}
+        
+        # فحص وجود WebDriver
+        if indicators.get('webdriver', False):
+            automation_score += 5
+            app.logger.warning(f"WebDriver detected from {client_ip}")
+        
+        # فحص أدوات التطوير
+        if indicators.get('devtools', False):
+            automation_score += 3
+        
+        # فحص الـ plugins المشبوهة
+        if indicators.get('suspicious_plugins', 0) > 0:
+            automation_score += 2
+        
+        # فحص سلوك المتصفح غير الطبيعي
+        if indicators.get('screen_inconsistency', False):
+            automation_score += 4
+        
+        # فحص عدم وجود events طبيعية
+        if indicators.get('no_mouse_movement', False):
+            automation_score += 3
+    
+    # فحص headers مشبوهة للـ automation
+    user_agent = request.headers.get('User-Agent', '').lower()
+    automation_keywords = [
+        'headless', 'phantomjs', 'selenium', 'webdriver', 
+        'chrome-lighthouse', 'chromedriver', 'geckodriver',
+        'puppeteer', 'playwright'
+    ]
+    
+    for keyword in automation_keywords:
+        if keyword in user_agent:
+            automation_score += 4
+            app.logger.warning(f"Automation keyword '{keyword}' in UA from {client_ip}")
+    
+    # فحص عدم وجود referrer طبيعي
+    referrer = request.headers.get('Referer', '')
+    if not referrer and request.method == 'POST':
+        automation_score += 2
+    
+    app.logger.info(f"Automation detection score for {client_ip}: {automation_score}")
+    
+    return automation_score < 8  # السماح إذا كان أقل من 8 نقاط
+
+# السطر الذي يلي الكتلة مباشرة:
 def is_suspicious_fingerprint(fingerprint_data):
     """فحص بصمة الجهاز للعلامات المشبوهة"""
     suspicious_indicators = 0
@@ -1500,8 +1648,99 @@ def advanced_form_analysis(form_data, client_ip):
     
     app.logger.info(f"Form analysis for {client_ip}: suspicious_score = {suspicious_score}")
     
+# السطر الذي يسبق الكتلة مباشرة:
     return suspicious_score < 5  # السماح إذا كان أقل من 5 نقاط مشبوهة
 
+## ✅ إضافة دالة advanced_behavioral_analysis جديدة في ملف app.py
+def advanced_behavioral_analysis(form_data, request):
+    """تحليل سلوكي متقدم للكشف عن الأنماط المشبوهة"""
+    suspicion_score = 0
+    client_ip = get_remote_address()
+    
+    # 1. تحليل تفاعل المستخدم مع الصفحة
+    interaction_data = form_data.get('interaction_data', '')
+    if interaction_data:
+        try:
+            interactions = json.loads(interaction_data)
+            
+            # فحص حركة الماوس
+            mouse_events = interactions.get('mouse_events', 0)
+            if mouse_events < 5:  # حركة ماوس قليلة جداً
+                suspicion_score += 2
+                app.logger.warning(f"Low mouse interaction from {client_ip}: {mouse_events} events")
+            
+            # فحص clicks على elements
+            click_events = interactions.get('click_events', 0)
+            if click_events == 0:  # لا توجد clicks طبيعية
+                suspicion_score += 1
+            
+            # فحص keyboard events
+            keyboard_events = interactions.get('keyboard_events', 0)
+            typing_speed = interactions.get('typing_speed', 0)
+            
+            if keyboard_events > 0 and typing_speed > 300:  # سرعة كتابة غير طبيعية
+                suspicion_score += 3
+                app.logger.warning(f"Unusual typing speed from {client_ip}: {typing_speed} chars/min")
+            
+            # فحص scroll behavior
+            scroll_events = interactions.get('scroll_events', 0)
+            if scroll_events == 0 and request.referrer:  # لا يوجد scroll من صفحة أخرى
+                suspicion_score += 1
+            
+            # فحص وقت البقاء على الصفحة
+            page_time = interactions.get('page_time', 0)
+            if page_time < 3000:  # أقل من 3 ثوان
+                suspicion_score += 2
+            elif page_time > 1800000:  # أكثر من 30 دقيقة
+                suspicion_score += 1
+                
+        except json.JSONDecodeError:
+            suspicion_score += 2  # بيانات تفاعل غير صالحة
+            app.logger.warning(f"Invalid interaction data from {client_ip}")
+    else:
+        suspicion_score += 3  # لا توجد بيانات تفاعل
+    
+    # 2. تحليل نمط ملء النموذج
+    form_timing = form_data.get('form_timing', '')
+    if form_timing:
+        try:
+            timing = json.loads(form_timing)
+            
+            # فحص الوقت بين focus و blur للحقول
+            email_time = timing.get('email_fill_time', 0)
+            password_time = timing.get('password_fill_time', 0)
+            
+            if email_time < 500 or password_time < 500:  # ملء سريع جداً
+                suspicion_score += 2
+                app.logger.warning(f"Fast form filling from {client_ip}")
+            
+            # فحص نمط التنقل بين الحقول
+            tab_sequence = timing.get('tab_sequence', [])
+            if len(tab_sequence) < 2:  # تنقل غير طبيعي
+                suspicion_score += 1
+                
+        except json.JSONDecodeError:
+            suspicion_score += 1
+    
+    # 3. فحص التناسق في البيانات
+    email = form_data.get('email', '').lower()
+    if email:
+        # فحص domains تم إنشاؤها حديثاً أو مؤقتة
+        domain = email.split('@')[1] if '@' in email else ''
+        temp_domains = [
+            'tempmail.org', '10minutemail.com', 'guerrillamail.com',
+            'mailinator.com', 'yopmail.com', 'temp-mail.org'
+        ]
+        
+        if any(temp_domain in domain for temp_domain in temp_domains):
+            suspicion_score += 4
+            app.logger.warning(f"Temporary email domain from {client_ip}: {domain}")
+    
+    app.logger.info(f"Behavioral analysis for {client_ip}: score = {suspicion_score}")
+    
+    return suspicion_score
+
+# السطر الذي يلي الكتلة مباشرة:
 @app.route('/verify-email', methods=['GET', 'POST'])
 @advanced_rate_limit(per_minute=10, per_hour=30)
 def verify_email():

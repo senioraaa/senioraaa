@@ -254,6 +254,109 @@ def stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/setup-admin', methods=['GET', 'POST'])
+def setup_admin():
+    """صفحة إعداد المستخدم الإداري الأولي"""
+    
+    # التحقق من وجود مستخدم إداري
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
+    existing_admin = User.query.filter_by(email=admin_email).first()
+    
+    if existing_admin:
+        return render_template('admin_exists.html')
+    
+    if request.method == 'POST':
+        try:
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            setup_key = request.form.get('setup_key', '')
+            
+            # التحقق من مفتاح الإعداد (اختياري للأمان الإضافي)
+            expected_setup_key = os.environ.get('SETUP_KEY', '')
+            if expected_setup_key and setup_key != expected_setup_key:
+                flash('مفتاح الإعداد غير صحيح', 'error')
+                return render_template('setup_admin.html')
+            
+            # التحقق من صحة البيانات
+            if not email or not password:
+                flash('البريد الإلكتروني وكلمة المرور مطلوبان', 'error')
+                return render_template('setup_admin.html')
+            
+            if password != confirm_password:
+                flash('كلمات المرور غير متطابقة', 'error')
+                return render_template('setup_admin.html')
+            
+            if len(password) < 8:
+                flash('كلمة المرور يجب أن تكون 8 أحرف على الأقل', 'error')
+                return render_template('setup_admin.html')
+            
+            # إنشاء المستخدم الإداري
+            admin = User(
+                email=email,
+                password_hash=generate_password_hash(password),
+                is_verified=True,
+                is_admin=True
+            )
+            
+            db.session.add(admin)
+            db.session.commit()
+            
+            app.logger.info(f"Admin user created: {email}")
+            flash('تم إنشاء المستخدم الإداري بنجاح!', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error creating admin user: {e}")
+            flash('حدث خطأ أثناء إنشاء المستخدم الإداري', 'error')
+    
+    return render_template('setup_admin.html')
+
+@app.route('/reset-admin-password', methods=['GET', 'POST'])
+@login_required
+def reset_admin_password():
+    """صفحة إعادة تعيين كلمة مرور المستخدم الإداري"""
+    
+    if not current_user.is_admin:
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        try:
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            
+            # التحقق من كلمة المرور الحالية
+            if not check_password_hash(current_user.password_hash, current_password):
+                flash('كلمة المرور الحالية غير صحيحة', 'error')
+                return render_template('reset_admin_password.html')
+            
+            # التحقق من كلمة المرور الجديدة
+            if not new_password or len(new_password) < 8:
+                flash('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل', 'error')
+                return render_template('reset_admin_password.html')
+            
+            if new_password != confirm_password:
+                flash('كلمات المرور غير متطابقة', 'error')
+                return render_template('reset_admin_password.html')
+            
+            # تحديث كلمة المرور
+            current_user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            
+            app.logger.info(f"Admin password reset for user: {current_user.email}")
+            flash('تم تغيير كلمة المرور بنجاح!', 'success')
+            return redirect(url_for('admin_dashboard'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error resetting admin password: {e}")
+            flash('حدث خطأ أثناء تغيير كلمة المرور', 'error')
+    
+    return render_template('reset_admin_password.html')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -539,19 +642,16 @@ def init_database():
         # تنظيف البيانات القديمة
         cleanup_old_verification_codes()
         
-        # Create default admin user
-        
+        # التحقق من وجود مستخدم إداري
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
         admin = User.query.filter_by(email=admin_email).first()
+        
         if not admin:
-            admin = User(
-                email=admin_email,
-                password_hash=generate_password_hash(admin_password),
-                is_verified=True,
-                is_admin=True
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Default admin user created successfully")
+            print("=" * 60)
+            print("لا يوجد مستخدم إداري في قاعدة البيانات")
+            print("يرجى إنشاء المستخدم الإداري عبر الرابط:")
+            print(f"https://senioraa.onrender.com/setup-admin")
+            print("=" * 60)
         else:
             print("Admin user already exists")
             

@@ -34,12 +34,14 @@ import atexit
 scheduler = BackgroundScheduler()
 
 class SmartRateLimiter:
-    """نظام Rate Limiting ذكي ومتقدم"""
+    """نظام Rate Limiting ذكي ومتقدم متعدد المستويات"""
     
     def __init__(self, app=None, redis_client=None):
         self.app = app
         self.redis_client = redis_client
         self.memory_store = defaultdict(lambda: defaultdict(deque))
+        self.suspicious_ips = defaultdict(lambda: {"score": 0, "last_seen": 0})
+        self.user_reputation = defaultdict(lambda: {"score": 100, "last_activity": 0})
         self.lock = Lock()
         
         # إعدادات الشبكات الموثوقة
@@ -52,13 +54,20 @@ class SmartRateLimiter:
         
         # User Agents للخدمات الموثوقة
         self.trusted_user_agents = [
-            'uptimerobot',
-            'pingdom',
-            'googlebot',
-            'bingbot',
-            'monitor',
-            'health-check'
+            'uptimerobot', 'pingdom', 'googlebot', 'bingbot', 'monitor', 
+            'health-check', 'render', 'nginx', 'apache', 'cloudflare'
         ]
+        
+        # نقاط السلوك المشبوه
+        self.suspicious_patterns = {
+            'rapid_requests': -10,      # طلبات سريعة جداً
+            'failed_login': -15,        # فشل في تسجيل الدخول
+            'invalid_form': -5,         # نموذج غير صالح
+            'honeypot_hit': -25,        # وقوع في فخ البوتات
+            'successful_action': +5,     # عمل ناجح
+            'normal_browsing': +2,       # تصفح طبيعي
+            'account_verified': +20      # تفعيل حساب
+        }
         
         if app:
             self.init_app(app)
@@ -75,7 +84,7 @@ class SmartRateLimiter:
                 self.redis_client = redis.from_url(redis_url, decode_responses=True)
                 # اختبار الاتصال
                 self.redis_client.ping()
-                app.logger.info("Connected to Redis for rate limiting")
+                app.logger.info("Connected to Redis for advanced rate limiting")
             else:
                 self.redis_client = None
                 app.logger.info("Using memory storage for rate limiting")
@@ -102,60 +111,193 @@ class SmartRateLimiter:
         
         return False
     
-    def get_client_identifier(self, request):
-        """الحصول على معرف فريد للعميل"""
-        # استخدام عدة عوامل لتحديد العميل
+    def get_client_fingerprint(self, request):
+        """إنشاء بصمة فريدة للعميل"""
         ip = get_remote_address()
-        user_agent = request.headers.get('User-Agent', '')
+        user_agent = request.headers.get('User-Agent', '')[:100]
+        accept_language = request.headers.get('Accept-Language', '')[:50]
+        accept_encoding = request.headers.get('Accept-Encoding', '')[:50]
         
-        # إنشاء hash فريد
-        client_data = f"{ip}:{user_agent[:50]}"
-        return hashlib.md5(client_data.encode()).hexdigest()
+        # إنشاء بصمة مركبة
+        fingerprint_data = f"{ip}:{user_agent}:{accept_language}:{accept_encoding}"
+        return hashlib.sha256(fingerprint_data.encode()).hexdigest()[:16]
     
-    def check_rate_limit(self, identifier, limit_per_minute, limit_per_hour, window_minutes=1):
-        """فحص حدود المعدل"""
+    def update_reputation(self, identifier, action, user_id=None):
+        """تحديث سمعة العميل أو المستخدم"""
+        current_time = int(time.time())
+        score_change = self.suspicious_patterns.get(action, 0)
+        
+        # تحديث سمعة IP
+        if identifier in self.suspicious_ips:
+            self.suspicious_ips[identifier]["score"] = max(
+                -100, min(100, self.suspicious_ips[identifier]["score"] + score_change)
+            )
+        else:
+            self.suspicious_ips[identifier] = {
+                "score": score_change,
+                "last_seen": current_time
+            }
+        
+        self.suspicious_ips[identifier]["last_seen"] = current_time
+        
+        # تحديث سمعة المستخدم إذا كان مسجل الدخول
+        if user_id:
+            if user_id in self.user_reputation:
+                self.user_reputation[user_id]["score"] = max(
+                    0, min(200, self.user_reputation[user_id]["score"] + score_change)
+                )
+            else:
+                self.user_reputation[user_id] = {
+                    "score": 100 + score_change,
+                    "last_activity": current_time
+                }
+            
+            self.user_reputation[user_id]["last_activity"] = current_time
+        
+        # حفظ في Redis إذا متاح
+        if self.redis_client:
+            try:
+                self.redis_client.hset(
+                    f"reputation:ip:{identifier}", 
+                    mapping={
+                        "score": self.suspicious_ips[identifier]["score"],
+                        "last_seen": current_time
+                    }
+                )
+                self.redis_client.expire(f"reputation:ip:{identifier}", 86400)  # 24 ساعة
+                
+                if user_id:
+                    self.redis_client.hset(
+                        f"reputation:user:{user_id}",
+                        mapping={
+                            "score": self.user_reputation[user_id]["score"],
+                            "last_activity": current_time
+                        }
+                    )
+                    self.redis_client.expire(f"reputation:user:{user_id}", 604800)  # 7 أيام
+            except:
+                pass
+    
+    def get_dynamic_limits(self, identifier, base_per_minute, base_per_hour, user_id=None):
+        """حساب حدود ديناميكية بناءً على السمعة"""
+        # الحصول على نقاط السمعة
+        ip_score = self.suspicious_ips.get(identifier, {}).get("score", 0)
+        user_score = 100  # افتراضي للمستخدمين غير مسجلي الدخول
+        
+        if user_id:
+            user_score = self.user_reputation.get(user_id, {}).get("score", 100)
+        
+        # حساب المضاعف بناءً على السمعة
+        if ip_score < -50 or user_score < 20:
+            # سمعة سيئة جداً - حدود صارمة
+            multiplier = 0.2
+        elif ip_score < -20 or user_score < 50:
+            # سمعة سيئة - حدود منخفضة
+            multiplier = 0.5
+        elif ip_score > 20 and user_score > 150:
+            # سمعة ممتازة - حدود مرتفعة
+            multiplier = 2.0
+        elif ip_score > 10 and user_score > 120:
+            # سمعة جيدة - حدود أعلى قليلاً
+            multiplier = 1.5
+        else:
+            # سمعة طبيعية - حدود افتراضية
+            multiplier = 1.0
+        
+        return {
+            'per_minute': max(1, int(base_per_minute * multiplier)),
+            'per_hour': max(5, int(base_per_hour * multiplier)),
+            'multiplier': multiplier
+        }
+    
+    def check_advanced_rate_limit(self, identifier, base_per_minute, base_per_hour, 
+                                  endpoint, user_id=None):
+        """فحص معدل متقدم مع تحليل سلوكي"""
         current_time = int(time.time())
         
+        # الحصول على حدود ديناميكية
+        limits = self.get_dynamic_limits(identifier, base_per_minute, base_per_hour, user_id)
+        
+        # فحص التردد السريع (أقل من ثانية واحدة)
         if self.redis_client:
-            return self._check_rate_limit_redis(identifier, limit_per_minute, limit_per_hour, current_time)
+            last_request_key = f"last_request:{identifier}"
+            last_request = self.redis_client.get(last_request_key)
+            if last_request and (current_time - int(last_request)) < 1:
+                self.update_reputation(identifier, 'rapid_requests', user_id)
+                return False, "Requests too frequent", limits['multiplier']
+            
+            self.redis_client.setex(last_request_key, 5, current_time)
+        
+        # فحص Rate Limit العادي
+        if self.redis_client:
+            allowed, error_msg = self._check_rate_limit_redis_advanced(
+                identifier, limits['per_minute'], limits['per_hour'], current_time, endpoint
+            )
         else:
-            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+            allowed, error_msg = self._check_rate_limit_memory_advanced(
+                identifier, limits['per_minute'], limits['per_hour'], current_time, endpoint
+            )
+        
+        if not allowed:
+            self.update_reputation(identifier, 'rapid_requests', user_id)
+        else:
+            self.update_reputation(identifier, 'normal_browsing', user_id)
+        
+        return allowed, error_msg, limits['multiplier']
     
-    def _check_rate_limit_redis(self, identifier, limit_per_minute, limit_per_hour, current_time):
-        """فحص Rate Limit باستخدام Redis"""
+    def _check_rate_limit_redis_advanced(self, identifier, limit_per_minute, 
+                                        limit_per_hour, current_time, endpoint):
+        """فحص Rate Limit متقدم باستخدام Redis"""
         try:
             pipe = self.redis_client.pipeline()
             
-            # مفاتيح للدقيقة والساعة
-            minute_key = f"rate_limit:{identifier}:minute:{current_time // 60}"
-            hour_key = f"rate_limit:{identifier}:hour:{current_time // 3600}"
+            # مفاتيح مختلفة للـ endpoints المختلفة
+            minute_key = f"rate_limit:{identifier}:{endpoint}:minute:{current_time // 60}"
+            hour_key = f"rate_limit:{identifier}:{endpoint}:hour:{current_time // 3600}"
+            global_minute_key = f"rate_limit:{identifier}:global:minute:{current_time // 60}"
+            global_hour_key = f"rate_limit:{identifier}:global:hour:{current_time // 3600}"
             
             # زيادة العدادات
             pipe.incr(minute_key)
-            pipe.expire(minute_key, 120)  # انتهاء صلاحية بعد دقيقتين
+            pipe.expire(minute_key, 120)
             pipe.incr(hour_key)
-            pipe.expire(hour_key, 7200)  # انتهاء صلاحية بعد ساعتين
+            pipe.expire(hour_key, 7200)
+            pipe.incr(global_minute_key)
+            pipe.expire(global_minute_key, 120)
+            pipe.incr(global_hour_key)
+            pipe.expire(global_hour_key, 7200)
             
             results = pipe.execute()
-            minute_count = results[0]
-            hour_count = results[2]
+            endpoint_minute_count = results[0]
+            endpoint_hour_count = results[2]
+            global_minute_count = results[4]
+            global_hour_count = results[6]
             
-            # فحص الحدود
-            if minute_count > limit_per_minute:
-                return False, f"Rate limit exceeded: {minute_count}/{limit_per_minute} per minute"
+            # فحص حدود الـ endpoint المحدد
+            if endpoint_minute_count > limit_per_minute:
+                return False, f"Endpoint rate limit exceeded: {endpoint_minute_count}/{limit_per_minute} per minute"
             
-            if hour_count > limit_per_hour:
-                return False, f"Rate limit exceeded: {hour_count}/{limit_per_hour} per hour"
+            if endpoint_hour_count > limit_per_hour:
+                return False, f"Endpoint rate limit exceeded: {endpoint_hour_count}/{limit_per_hour} per hour"
+            
+            # فحص الحدود العامة (لمنع إساءة الاستخدام العام)
+            if global_minute_count > limit_per_minute * 3:
+                return False, f"Global rate limit exceeded: {global_minute_count} per minute"
+            
+            if global_hour_count > limit_per_hour * 3:
+                return False, f"Global rate limit exceeded: {global_hour_count} per hour"
             
             return True, None
             
         except Exception as e:
-            self.app.logger.error(f"Redis rate limit error: {e}")
-            # استخدام الذاكرة كبديل
-            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+            self.app.logger.error(f"Redis advanced rate limit error: {e}")
+            return self._check_rate_limit_memory_advanced(
+                identifier, limit_per_minute, limit_per_hour, current_time, endpoint
+            )
     
-    def _check_rate_limit_memory(self, identifier, limit_per_minute, limit_per_hour, current_time):
-        """فحص Rate Limit باستخدام الذاكرة"""
+    def _check_rate_limit_memory_advanced(self, identifier, limit_per_minute, 
+                                         limit_per_hour, current_time, endpoint):
+        """فحص Rate Limit متقدم باستخدام الذاكرة"""
         with self.lock:
             minute_window = current_time // 60
             hour_window = current_time // 3600
@@ -163,13 +305,21 @@ class SmartRateLimiter:
             # تنظيف البيانات القديمة
             self._cleanup_old_data(current_time)
             
+            # مفاتيح مختلفة للـ endpoints
+            endpoint_key = f"{identifier}:{endpoint}"
+            
             # إضافة الطلب الحالي
-            self.memory_store[identifier]['minute'].append(minute_window)
-            self.memory_store[identifier]['hour'].append(hour_window)
+            if endpoint_key not in self.memory_store:
+                self.memory_store[endpoint_key] = defaultdict(deque)
+            
+            self.memory_store[endpoint_key]['minute'].append(minute_window)
+            self.memory_store[endpoint_key]['hour'].append(hour_window)
             
             # عد الطلبات في النافذة الزمنية الحالية
-            minute_count = sum(1 for t in self.memory_store[identifier]['minute'] if t == minute_window)
-            hour_count = sum(1 for t in self.memory_store[identifier]['hour'] if t == hour_window)
+            minute_count = sum(1 for t in self.memory_store[endpoint_key]['minute'] 
+                             if t == minute_window)
+            hour_count = sum(1 for t in self.memory_store[endpoint_key]['hour'] 
+                           if t == hour_window)
             
             # فحص الحدود
             if minute_count > limit_per_minute:
@@ -182,26 +332,112 @@ class SmartRateLimiter:
     
     def _cleanup_old_data(self, current_time):
         """تنظيف البيانات القديمة من الذاكرة"""
-        minute_threshold = (current_time // 60) - 2  # آخر دقيقتين
-        hour_threshold = (current_time // 3600) - 2  # آخر ساعتين
+        minute_threshold = (current_time // 60) - 2
+        hour_threshold = (current_time // 3600) - 2
+        reputation_threshold = current_time - 86400  # 24 ساعة
         
-        for identifier in list(self.memory_store.keys()):
-            # تنظيف بيانات الدقائق
-            minute_queue = self.memory_store[identifier]['minute']
+        # تنظيف بيانات Rate Limiting
+        for key in list(self.memory_store.keys()):
+            minute_queue = self.memory_store[key]['minute']
             while minute_queue and minute_queue[0] < minute_threshold:
                 minute_queue.popleft()
             
-            # تنظيف بيانات الساعات
-            hour_queue = self.memory_store[identifier]['hour']
+            hour_queue = self.memory_store[key]['hour']
             while hour_queue and hour_queue[0] < hour_threshold:
                 hour_queue.popleft()
             
-            # حذف المعرف إذا لم تعد هناك بيانات
             if not minute_queue and not hour_queue:
-                del self.memory_store[identifier]
+                del self.memory_store[key]
+        
+        # تنظيف بيانات السمعة القديمة
+        for ip in list(self.suspicious_ips.keys()):
+            if self.suspicious_ips[ip]["last_seen"] < reputation_threshold:
+                del self.suspicious_ips[ip]
+        
+        for user_id in list(self.user_reputation.keys()):
+            if self.user_reputation[user_id]["last_activity"] < reputation_threshold:
+                del self.user_reputation[user_id]
+    
+    def is_temporarily_blocked(self, identifier):
+        """فحص ما إذا كان IP محظور مؤقتاً"""
+        if self.redis_client:
+            block_key = f"temp_block:{identifier}"
+            return self.redis_client.exists(block_key)
+        else:
+            # في الذاكرة، نعتمد على النقاط فقط
+            return self.suspicious_ips.get(identifier, {}).get("score", 0) < -75
+    
+    def temporary_block(self, identifier, duration_minutes=15):
+        """حظر مؤقت للـ IP"""
+        if self.redis_client:
+            block_key = f"temp_block:{identifier}"
+            self.redis_client.setex(block_key, duration_minutes * 60, "blocked")
+            self.app.logger.warning(f"Temporarily blocked IP {identifier} for {duration_minutes} minutes")
 
 # إنشاء instance من SmartRateLimiter
 smart_limiter = SmartRateLimiter()
+
+def advanced_rate_limit(per_minute=10, per_hour=100, skip_trusted=True, block_on_abuse=True):
+    """ديكوريتر للـ Rate Limiting المتقدم مع تحليل سلوكي"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # فحص المصادر الموثوقة
+            if skip_trusted and smart_limiter.is_trusted_source(request):
+                return f(*args, **kwargs)
+            
+            # فحص الـ endpoints المستثناة
+            if any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS):
+                return f(*args, **kwargs)
+            
+            # الحصول على معرف العميل ومعرف المستخدم
+            client_fingerprint = smart_limiter.get_client_fingerprint(request)
+            user_id = current_user.id if current_user.is_authenticated else None
+            endpoint = request.endpoint or request.path.split('/')[-1]
+            
+            # فحص الحظر المؤقت
+            if smart_limiter.is_temporarily_blocked(client_fingerprint):
+                app.logger.warning(f"Access denied for temporarily blocked client: {get_remote_address()}")
+                
+                if request.path.startswith('/api/') or request.is_json:
+                    return jsonify({
+                        'error': 'Temporarily blocked',
+                        'message': 'Your access has been temporarily restricted due to suspicious activity.',
+                        'retry_after': 900  # 15 دقيقة
+                    }), 429
+                
+                flash('تم حظر وصولك مؤقتاً بسبب نشاط مشبوه. يرجى المحاولة بعد 15 دقيقة.', 'error')
+                return render_template('429.html'), 429
+            
+            # فحص Rate Limit المتقدم
+            allowed, error_msg, reputation_multiplier = smart_limiter.check_advanced_rate_limit(
+                client_fingerprint, per_minute, per_hour, endpoint, user_id
+            )
+            
+            if not allowed:
+                app.logger.warning(f"Rate limit exceeded for {get_remote_address()}: {error_msg}")
+                
+                # في حالة تجاوز الحد عدة مرات، تطبيق حظر مؤقت
+                if block_on_abuse and reputation_multiplier < 0.5:
+                    smart_limiter.temporary_block(client_fingerprint, 15)
+                
+                # تحديد مدة الانتظار بناءً على السمعة
+                retry_after = int(60 / max(0.1, reputation_multiplier))
+                
+                if request.path.startswith('/api/') or request.is_json:
+                    return jsonify({
+                        'error': 'Rate limit exceeded',
+                        'message': 'Too many requests. Please try again later.',
+                        'retry_after': retry_after,
+                        'reputation': f"{reputation_multiplier:.1f}x"
+                    }), 429
+                
+                flash(f'تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة بعد {retry_after} ثانية.', 'error')
+                return render_template('429.html'), 429
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def smart_rate_limit(per_minute=10, per_hour=100, skip_trusted=True):
     """ديكوريتر للـ Rate Limiting الذكي"""
@@ -632,6 +868,93 @@ def stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/security-stats')
+@login_required
+@advanced_rate_limit(per_minute=10, per_hour=50)
+def security_stats():
+    """إحصائيات الأمان للمدير"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # إحصائيات Rate Limiting
+        total_ips = len(smart_limiter.suspicious_ips)
+        blocked_ips = sum(1 for ip_data in smart_limiter.suspicious_ips.values() 
+                         if ip_data['score'] < -50)
+        trusted_ips = sum(1 for ip_data in smart_limiter.suspicious_ips.values() 
+                         if ip_data['score'] > 50)
+        
+        # إحصائيات المستخدمين
+        total_users = User.query.count()
+        verified_users = User.query.filter_by(is_verified=True).count()
+        
+        # إحصائيات الطلبات الأخيرة
+        recent_time = datetime.utcnow() - timedelta(hours=1)
+        recent_registrations = User.query.filter(User.created_at >= recent_time).count()
+        
+        return jsonify({
+            'rate_limiting': {
+                'total_tracked_ips': total_ips,
+                'blocked_ips': blocked_ips,
+                'trusted_ips': trusted_ips,
+                'suspicious_ratio': round(blocked_ips / max(1, total_ips) * 100, 2)
+            },
+            'users': {
+                'total_users': total_users,
+                'verified_users': verified_users,
+                'verification_rate': round(verified_users / max(1, total_users) * 100, 2),
+                'recent_registrations': recent_registrations
+            },
+            'system': {
+                'redis_connected': smart_limiter.redis_client is not None,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Security stats error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/security-actions', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=5, per_hour=20)
+def security_actions():
+    """إجراءات أمنية للمدير"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        action = request.json.get('action')
+        target = request.json.get('target')
+        
+        if action == 'unblock_ip':
+            if smart_limiter.redis_client:
+                smart_limiter.redis_client.delete(f"temp_block:{target}")
+            if target in smart_limiter.suspicious_ips:
+                smart_limiter.suspicious_ips[target]['score'] = 0
+            app.logger.info(f"Admin {current_user.email} unblocked IP {target}")
+            return jsonify({'success': True, 'message': 'IP unblocked successfully'})
+        
+        elif action == 'reset_reputation':
+            if target in smart_limiter.suspicious_ips:
+                smart_limiter.suspicious_ips[target]['score'] = 0
+            if smart_limiter.redis_client:
+                smart_limiter.redis_client.delete(f"reputation:ip:{target}")
+            app.logger.info(f"Admin {current_user.email} reset reputation for {target}")
+            return jsonify({'success': True, 'message': 'Reputation reset successfully'})
+        
+        elif action == 'cleanup_old_data':
+            smart_limiter._cleanup_old_data(int(time.time()))
+            app.logger.info(f"Admin {current_user.email} triggered data cleanup")
+            return jsonify({'success': True, 'message': 'Old data cleaned successfully'})
+        
+        else:
+            return jsonify({'error': 'Invalid action'}), 400
+            
+    except Exception as e:
+        app.logger.error(f"Security action error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/setup-admin', methods=['GET', 'POST'])
 def setup_admin():
     """صفحة إعداد المستخدم الإداري الأولي"""
@@ -736,7 +1059,7 @@ def reset_admin_password():
     return render_template('reset_admin_password.html')
 
 @app.route('/register', methods=['GET', 'POST'])
-@smart_rate_limit(per_minute=3, per_hour=10)  # حدود صارمة للتسجيل
+@advanced_rate_limit(per_minute=3, per_hour=10, block_on_abuse=True)
 def register():
     if request.method == 'GET':
         # إنشاء time token للنموذج
@@ -744,9 +1067,12 @@ def register():
         return render_template('register.html', time_token=time_token, timestamp=timestamp)
     
     if request.method == 'POST':
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        
         try:
             # فحص Captcha الشامل
             if not comprehensive_captcha_check(request, request.form):
+                smart_limiter.update_reputation(client_fingerprint, 'honeypot_hit')
                 flash('فشل في التحقق من الأمان. يرجى المحاولة مرة أخرى.', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('register.html', time_token=time_token, timestamp=timestamp)
@@ -756,18 +1082,21 @@ def register():
             
             # Validate email format
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('البريد الإلكتروني غير صالح', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Check if email is from trusted domain
             if not is_valid_email(email):
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('يجب استخدام بريد إلكتروني من Gmail أو Hotmail أو iCloud أو Yahoo', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Check password length
             if len(password) < 6:
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('register.html', time_token=time_token, timestamp=timestamp)
@@ -775,6 +1104,7 @@ def register():
             # Check if user already exists
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('هذا البريد الإلكتروني مستخدم بالفعل', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('register.html', time_token=time_token, timestamp=timestamp)
@@ -796,6 +1126,10 @@ def register():
                 db.session.add(user)
                 db.session.commit()
                 session['user_email'] = email
+                
+                # تحديث السمعة إيجابياً للتسجيل الناجح
+                smart_limiter.update_reputation(client_fingerprint, 'successful_action')
+                
                 flash('تم إرسال كود التفعيل إلى بريدك الإلكتروني', 'success')
                 return redirect(url_for('verify_email'))
             else:
@@ -803,6 +1137,7 @@ def register():
                 
         except Exception as e:
             app.logger.error(f"Registration error: {e}")
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
             flash('حدث خطأ أثناء التسجيل، حاول مرة أخرى', 'error')
         
         # في حالة الخطأ، إنشاء tokens جديدة
@@ -810,12 +1145,15 @@ def register():
         return render_template('register.html', time_token=time_token, timestamp=timestamp)
 
 @app.route('/verify-email', methods=['GET', 'POST'])
+@advanced_rate_limit(per_minute=10, per_hour=30)
 def verify_email():
     if 'user_email' not in session:
         flash('يجب التسجيل أولاً', 'error')
         return redirect(url_for('register'))
     
     if request.method == 'POST':
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        
         try:
             code = request.form['code'].strip()
             user = User.query.filter_by(email=session['user_email']).first()
@@ -834,12 +1172,34 @@ def verify_email():
                 return render_template('verify_email.html')
             
             if user.verification_code != code:
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('كود التفعيل غير صحيح', 'error')
                 return render_template('verify_email.html')
             
             if datetime.utcnow() > user.code_expiry:
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
                 flash('كود التفعيل منتهي الصلاحية، يرجى طلب كود جديد', 'error')
                 return render_template('verify_email.html')
+            
+            # تفعيل المستخدم
+            user.is_verified = True
+            user.verification_code = None
+            user.code_expiry = None
+            db.session.commit()
+            
+            # تحديث السمعة إيجابياً لتفعيل الحساب
+            smart_limiter.update_reputation(client_fingerprint, 'account_verified')
+            
+            session.pop('user_email', None)
+            flash('تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            app.logger.error(f"Verification error: {e}")
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
+            flash('حدث خطأ أثناء التفعيل، حاول مرة أخرى', 'error')
+    
+    return render_template('verify_email.html')
             
             # تفعيل المستخدم
             user.is_verified = True
@@ -858,7 +1218,7 @@ def verify_email():
     return render_template('verify_email.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@smart_rate_limit(per_minute=5, per_hour=20)  # حدود متوسطة لتسجيل الدخول
+@advanced_rate_limit(per_minute=5, per_hour=20, block_on_abuse=True)
 def login():
     if request.method == 'GET':
         # إنشاء time token للنموذج
@@ -866,9 +1226,12 @@ def login():
         return render_template('login.html', time_token=time_token, timestamp=timestamp)
     
     if request.method == 'POST':
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        
         try:
             # فحص Captcha الشامل
             if not comprehensive_captcha_check(request, request.form):
+                smart_limiter.update_reputation(client_fingerprint, 'honeypot_hit')
                 flash('فشل في التحقق من الأمان. يرجى المحاولة مرة أخرى.', 'error')
                 time_token, timestamp = generate_time_token()
                 return render_template('login.html', time_token=time_token, timestamp=timestamp)
@@ -881,6 +1244,10 @@ def login():
             if user and check_password_hash(user.password_hash, password):
                 if user.is_verified:
                     login_user(user)
+                    
+                    # تحديث السمعة إيجابياً لتسجيل الدخول الناجح
+                    smart_limiter.update_reputation(client_fingerprint, 'successful_action', user.id)
+                    
                     next_page = request.args.get('next')
                     return redirect(next_page) if next_page else redirect(url_for('dashboard'))
                 else:
@@ -899,10 +1266,13 @@ def login():
                     send_verification_email(email, verification_code)
                     return redirect(url_for('verify_email'))
             else:
+                # تحديث السمعة سلبياً لفشل تسجيل الدخول
+                smart_limiter.update_reputation(client_fingerprint, 'failed_login')
                 flash('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'error')
                 
         except Exception as e:
             app.logger.error(f"Login error: {e}")
+            smart_limiter.update_reputation(client_fingerprint, 'failed_login')
             flash('حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى', 'error')
         
         # في حالة الخطأ، إنشاء tokens جديدة
@@ -932,14 +1302,18 @@ def dashboard():
 
 @app.route('/new-order', methods=['GET', 'POST'])
 @login_required
+@advanced_rate_limit(per_minute=5, per_hour=30)
 def new_order():
     if request.method == 'POST':
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        
         try:
             platform = request.form['platform']
             payment_method = request.form['payment_method']
             coins_amount = int(request.form['coins_amount'])
             
             if coins_amount < 300000:
+                smart_limiter.update_reputation(client_fingerprint, 'invalid_form', current_user.id)
                 flash('الحد الأدنى للكوينز هو 300,000', 'error')
                 return render_template('new_order.html', 
                                      platforms=['PS', 'Xbox', 'PC'],
@@ -955,11 +1329,15 @@ def new_order():
             db.session.add(order)
             db.session.commit()
             
+            # تحديث السمعة إيجابياً لإنشاء طلب ناجح
+            smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
+            
             flash('تم إرسال طلبك بنجاح! سيتم التواصل معك قريباً', 'success')
             return redirect(url_for('dashboard'))
             
         except Exception as e:
-            print(f"New order error: {e}")
+            app.logger.error(f"New order error: {e}")
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form', current_user.id)
             flash('حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى', 'error')
     
     platforms = ['PS', 'Xbox', 'PC']
@@ -968,15 +1346,19 @@ def new_order():
     return render_template('new_order.html', platforms=platforms, payment_methods=payment_methods)
 
 @app.route('/resend-verification', methods=['POST'])
+@advanced_rate_limit(per_minute=2, per_hour=5, block_on_abuse=True)
 def resend_verification():
     if 'user_email' not in session:
         flash('يجب التسجيل أولاً', 'error')
         return redirect(url_for('register'))
     
+    client_fingerprint = smart_limiter.get_client_fingerprint(request)
+    
     try:
         user = User.query.filter_by(email=session['user_email']).first()
         
         if not user:
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
             flash('المستخدم غير موجود', 'error')
             return redirect(url_for('register'))
         
@@ -994,12 +1376,15 @@ def resend_verification():
         
         # إرسال الكود الجديد
         if send_verification_email(user.email, verification_code):
+            smart_limiter.update_reputation(client_fingerprint, 'successful_action')
             flash('تم إرسال كود تفعيل جديد إلى بريدك الإلكتروني', 'success')
         else:
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
             flash('خطأ في إرسال البريد الإلكتروني', 'error')
             
     except Exception as e:
-        print(f"Resend verification error: {e}")
+        app.logger.error(f"Resend verification error: {e}")
+        smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
         flash('حدث خطأ، حاول مرة أخرى', 'error')
     
     return redirect(url_for('verify_email'))
@@ -1101,6 +1486,38 @@ def cleanup_old_verification_codes():
             print(f"Cleaned up {len(expired_users)} expired verification codes")
     except Exception as e:
         print(f"Cleanup error: {e}")
+
+@app.before_request
+def before_request():
+    """معالج قبل كل طلب لمراقبة النشاط"""
+    # تجاهل الملفات الثابتة والـ endpoints المستثناة
+    if (request.path.startswith('/static/') or 
+        any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS)):
+        return
+    
+    # تسجيل الطلبات المشبوهة
+    client_ip = get_remote_address()
+    user_agent = request.headers.get('User-Agent', '')
+    
+    # فحص User-Agent المشبوه
+    suspicious_agents = ['python-requests', 'curl', 'wget', 'scanner', 'bot']
+    if any(agent in user_agent.lower() for agent in suspicious_agents):
+        if not smart_limiter.is_trusted_source(request):
+            app.logger.warning(f"Suspicious user agent from {client_ip}: {user_agent}")
+    
+    # فحص طلبات 404 المتكررة
+    if request.endpoint is None:  # 404 error
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
+
+@app.after_request
+def after_request(response):
+    """معالج بعد كل طلب لتنظيف البيانات"""
+    # تنظيف دوري للبيانات القديمة (كل 100 طلب تقريباً)
+    if random.randint(1, 100) == 1:
+        smart_limiter._cleanup_old_data(int(time.time()))
+    
+    return response
 
 # Error handlers
 @app.errorhandler(404)

@@ -806,7 +806,7 @@ def send_verification_email(email, code):
 # السطر الذي يسبق الكتلة مباشرة:
         return True  # Don't block registration if email fails
 
-تحديث دالة verify_recaptcha
+# تحديث دالة verify_recaptcha
 def verify_recaptcha_advanced(token, request):
     """التحقق المحسن من رمز reCAPTCHA v3 مع تحليل متعدد العوامل"""
     if not app.config['RECAPTCHA_SECRET_KEY']:
@@ -913,7 +913,7 @@ def generate_time_token():
 # السطر الذي يسبق الكتلة مباشرة:
     return hashlib.md5((timestamp + secret).encode()).hexdigest(), timestamp
 
-تحديث دالة verify_time_token
+# تحديث دالة verify_time_token
 def verify_time_token_advanced(token, timestamp, form_data):
     """التحقق المتقدم من الرمز المؤقت مع تحليل سلوكي"""
     try:
@@ -981,7 +981,7 @@ def is_bot_behavior(request):
 # السطر الذي يسبق الكتلة مباشرة:
     return False
 
-تحديث دالة comprehensive_captcha_check
+# تحديث دالة comprehensive_captcha_check
 def comprehensive_captcha_check(request, form_data):
     """فحص شامل محسن مع طبقات حماية متقدمة"""
     client_ip = get_remote_address()

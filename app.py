@@ -11,6 +11,33 @@ import re
 from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+import atexit
+
+# إعداد المهام الدورية
+scheduler = BackgroundScheduler()
+
+def scheduled_cleanup():
+    """مهمة دورية لتنظيف البيانات"""
+    with app.app_context():
+        cleanup_old_verification_codes()
+        app.logger.info("Scheduled cleanup completed")
+
+# تشغيل التنظيف كل 6 ساعات
+scheduler.add_job(
+    func=scheduled_cleanup,
+    trigger=IntervalTrigger(hours=6),
+    id='cleanup_job',
+    name='Clean up expired verification codes',
+    replace_existing=True
+)
+
+# بدء المجدول
+scheduler.start()
+
+# إيقاف المجدول عند إغلاق التطبيق
+atexit.register(lambda: scheduler.shutdown())
 
 # Load environment variables (فقط في التطوير المحلي)
 if os.path.exists('.env'):

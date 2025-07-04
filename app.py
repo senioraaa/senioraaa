@@ -9,6 +9,8 @@ import string
 from datetime import datetime, timedelta
 import re
 from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Load environment variables (فقط في التطوير المحلي)
 if os.path.exists('.env'):
@@ -34,6 +36,12 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///freelancer.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_timeout': 20,
+    'max_overflow': 0
+}
 
 # Mail configuration - التحقق من وجود المتغيرات المطلوبة
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
@@ -54,6 +62,19 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'من فضلك سجل دخولك أولاً'
+
+# إعداد نظام السجلات
+if not app.debug:
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Application startup')
 
 # Models
 class User(UserMixin, db.Model):
@@ -129,6 +150,82 @@ def send_verification_email(email, code):
 @app.route('/')
 def home():
     return render_template('home.html')
+    
+@app.route('/ping', methods=['GET'])
+def ping():
+    """Endpoint للـ ping لمنع Cold Start"""
+    try:
+        # فحص بسيط لحالة التطبيق
+        db.session.execute('SELECT 1')
+        
+        return jsonify({
+            'status': 'alive',
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': 'Application is running'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'timestamp': datetime.utcnow().isoformat(),
+            'error': str(e)
+        }), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Endpoint للفحص الصحي المفصل"""
+    try:
+        # فحص قاعدة البيانات
+        db.session.execute('SELECT 1')
+        db_status = "healthy"
+        
+        # فحص عدد المستخدمين (كمثال على أن التطبيق يعمل)
+        user_count = User.query.count()
+        
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': db_status,
+            'user_count': user_count,
+            'uptime': 'running'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'error': str(e)
+        }), 500
+        
+@app.route('/stats')
+@login_required
+def stats():
+    """إحصائيات التطبيق للمراقبة"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        total_users = User.query.count()
+        verified_users = User.query.filter_by(is_verified=True).count()
+        total_orders = Order.query.count()
+        pending_orders = Order.query.filter_by(status='pending').count()
+        completed_orders = Order.query.filter_by(status='completed').count()
+        
+        # إحصائيات الأسبوع الماضي
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        new_users_week = User.query.filter(User.created_at >= week_ago).count()
+        new_orders_week = Order.query.filter(Order.created_at >= week_ago).count()
+        
+        return jsonify({
+            'total_users': total_users,
+            'verified_users': verified_users,
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'completed_orders': completed_orders,
+            'new_users_this_week': new_users_week,
+            'new_orders_this_week': new_orders_week,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -409,9 +506,13 @@ def init_database():
         db.create_all()
         print("Database tables created successfully")
         
+        # تحسين قاعدة البيانات
+        optimize_database()
+        
+        # تنظيف البيانات القديمة
+        cleanup_old_verification_codes()
+        
         # Create default admin user
-        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
-        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
         
         admin = User.query.filter_by(email=admin_email).first()
         if not admin:
@@ -429,6 +530,40 @@ def init_database():
             
     except Exception as e:
         print(f"Database initialization error: {e}")
+
+def optimize_database():
+    """تحسين قاعدة البيانات وإنشاء الفهارس"""
+    try:
+        with app.app_context():
+            # إنشاء فهارس لتحسين الأداء
+            db.session.execute('CREATE INDEX IF NOT EXISTS idx_user_email ON users(email)')
+            db.session.execute('CREATE INDEX IF NOT EXISTS idx_user_verified ON users(is_verified)')
+            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_user_id ON orders(user_id)')
+            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_status ON orders(status)')
+            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_created_at ON orders(created_at)')
+            db.session.commit()
+            print("Database indexes created successfully")
+    except Exception as e:
+        print(f"Database optimization error: {e}")
+
+def cleanup_old_verification_codes():
+    """تنظيف رموز التفعيل المنتهية الصلاحية"""
+    try:
+        with app.app_context():
+            expired_time = datetime.utcnow() - timedelta(hours=24)
+            expired_users = User.query.filter(
+                User.code_expiry < expired_time,
+                User.is_verified == False
+            ).all()
+            
+            for user in expired_users:
+                user.verification_code = None
+                user.code_expiry = None
+            
+            db.session.commit()
+            print(f"Cleaned up {len(expired_users)} expired verification codes")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
 
 # Error handlers
 @app.errorhandler(404)

@@ -185,8 +185,8 @@ def home():
 def ping():
     """Endpoint للـ ping لمنع Cold Start"""
     try:
-        # فحص بسيط لحالة التطبيق
-        db.session.execute('SELECT 1')
+        # فحص بسيط لحالة التطبيق باستخدام text()
+        db.session.execute(text('SELECT 1'))
         
         return jsonify({
             'status': 'alive',
@@ -204,8 +204,8 @@ def ping():
 def health_check():
     """Endpoint للفحص الصحي المفصل"""
     try:
-        # فحص قاعدة البيانات
-        db.session.execute('SELECT 1')
+        # فحص قاعدة البيانات باستخدام text()
+        db.session.execute(text('SELECT 1'))
         db_status = "healthy"
         
         # فحص عدد المستخدمين (كمثال على أن التطبيق يعمل)
@@ -665,12 +665,12 @@ def optimize_database():
     """تحسين قاعدة البيانات وإنشاء الفهارس"""
     try:
         with app.app_context():
-            # إنشاء فهارس لتحسين الأداء
-            db.session.execute('CREATE INDEX IF NOT EXISTS idx_user_email ON users(email)')
-            db.session.execute('CREATE INDEX IF NOT EXISTS idx_user_verified ON users(is_verified)')
-            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_user_id ON orders(user_id)')
-            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_status ON orders(status)')
-            db.session.execute('CREATE INDEX IF NOT EXISTS idx_order_created_at ON orders(created_at)')
+            # إنشاء فهارس لتحسين الأداء باستخدام text() لتحديد SQL صراحة
+            db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_user_email ON users(email)'))
+            db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_user_verified ON users(is_verified)'))
+            db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_order_user_id ON orders(user_id)'))
+            db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_order_status ON orders(status)'))
+            db.session.execute(text('CREATE INDEX IF NOT EXISTS idx_order_created_at ON orders(created_at)'))
             db.session.commit()
             print("Database indexes created successfully")
     except Exception as e:

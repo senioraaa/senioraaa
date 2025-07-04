@@ -695,6 +695,8 @@ def is_session_blocked(client_ip):
         return True, session_data['blocked_until'] - current_time
     
     return False, 0
+    
+    return False, 0
 
 # قائمة الـ endpoints المستثناة من Captcha
 EXEMPT_ENDPOINTS = ['/ping', '/health', '/static']

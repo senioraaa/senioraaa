@@ -122,6 +122,10 @@ class SmartRateLimiter:
         fingerprint_data = f"{ip}:{user_agent}:{accept_language}:{accept_encoding}"
         return hashlib.sha256(fingerprint_data.encode()).hexdigest()[:16]
     
+    def get_client_identifier(self, request):
+        """الحصول على معرف فريد للعميل (للتوافق مع الكود القديم)"""
+        return self.get_client_fingerprint(request)
+    
     def update_reputation(self, identifier, action, user_id=None):
         """تحديث سمعة العميل أو المستخدم"""
         current_time = int(time.time())
@@ -209,6 +213,74 @@ class SmartRateLimiter:
             'per_hour': max(5, int(base_per_hour * multiplier)),
             'multiplier': multiplier
         }
+    
+    def check_rate_limit(self, identifier, limit_per_minute, limit_per_hour):
+        """فحص Rate Limit الأساسي (للتوافق مع الكود القديم)"""
+        current_time = int(time.time())
+        
+        if self.redis_client:
+            return self._check_rate_limit_redis(identifier, limit_per_minute, limit_per_hour, current_time)
+        else:
+            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+    
+    def _check_rate_limit_redis(self, identifier, limit_per_minute, limit_per_hour, current_time):
+        """فحص Rate Limit باستخدام Redis"""
+        try:
+            pipe = self.redis_client.pipeline()
+            
+            # مفاتيح للدقيقة والساعة
+            minute_key = f"rate_limit:{identifier}:minute:{current_time // 60}"
+            hour_key = f"rate_limit:{identifier}:hour:{current_time // 3600}"
+            
+            # زيادة العدادات
+            pipe.incr(minute_key)
+            pipe.expire(minute_key, 120)  # انتهاء صلاحية بعد دقيقتين
+            pipe.incr(hour_key)
+            pipe.expire(hour_key, 7200)  # انتهاء صلاحية بعد ساعتين
+            
+            results = pipe.execute()
+            minute_count = results[0]
+            hour_count = results[2]
+            
+            # فحص الحدود
+            if minute_count > limit_per_minute:
+                return False, f"Rate limit exceeded: {minute_count}/{limit_per_minute} per minute"
+            
+            if hour_count > limit_per_hour:
+                return False, f"Rate limit exceeded: {hour_count}/{limit_per_hour} per hour"
+            
+            return True, None
+            
+        except Exception as e:
+            self.app.logger.error(f"Redis rate limit error: {e}")
+            # استخدام الذاكرة كبديل
+            return self._check_rate_limit_memory(identifier, limit_per_minute, limit_per_hour, current_time)
+    
+    def _check_rate_limit_memory(self, identifier, limit_per_minute, limit_per_hour, current_time):
+        """فحص Rate Limit باستخدام الذاكرة"""
+        with self.lock:
+            minute_window = current_time // 60
+            hour_window = current_time // 3600
+            
+            # تنظيف البيانات القديمة
+            self._cleanup_old_data(current_time)
+            
+            # إضافة الطلب الحالي
+            self.memory_store[identifier]['minute'].append(minute_window)
+            self.memory_store[identifier]['hour'].append(hour_window)
+            
+            # عد الطلبات في النافذة الزمنية الحالية
+            minute_count = sum(1 for t in self.memory_store[identifier]['minute'] if t == minute_window)
+            hour_count = sum(1 for t in self.memory_store[identifier]['hour'] if t == hour_window)
+            
+            # فحص الحدود
+            if minute_count > limit_per_minute:
+                return False, f"Rate limit exceeded: {minute_count}/{limit_per_minute} per minute"
+            
+            if hour_count > limit_per_hour:
+                return False, f"Rate limit exceeded: {hour_count}/{limit_per_hour} per hour"
+            
+            return True, None
     
     def check_advanced_rate_limit(self, identifier, base_per_minute, base_per_hour, 
                                   endpoint, user_id=None):
@@ -373,6 +445,7 @@ class SmartRateLimiter:
             block_key = f"temp_block:{identifier}"
             self.redis_client.setex(block_key, duration_minutes * 60, "blocked")
             self.app.logger.warning(f"Temporarily blocked IP {identifier} for {duration_minutes} minutes")
+
 
 # إنشاء instance من SmartRateLimiter
 smart_limiter = SmartRateLimiter()
@@ -1197,22 +1270,6 @@ def verify_email():
         except Exception as e:
             app.logger.error(f"Verification error: {e}")
             smart_limiter.update_reputation(client_fingerprint, 'invalid_form')
-            flash('حدث خطأ أثناء التفعيل، حاول مرة أخرى', 'error')
-    
-    return render_template('verify_email.html')
-            
-            # تفعيل المستخدم
-            user.is_verified = True
-            user.verification_code = None
-            user.code_expiry = None
-            db.session.commit()
-            
-            session.pop('user_email', None)
-            flash('تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول', 'success')
-            return redirect(url_for('login'))
-            
-        except Exception as e:
-            print(f"Verification error: {e}")
             flash('حدث خطأ أثناء التفعيل، حاول مرة أخرى', 'error')
     
     return render_template('verify_email.html')

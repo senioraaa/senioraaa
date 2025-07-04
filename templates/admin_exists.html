@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}المستخدم الإداري موجود - موقع الفريلانسر{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+                <h3 class="card-title">المستخدم الإداري موجود بالفعل</h3>
+                <p class="card-text">تم إعداد المستخدم الإداري مسبقاً في النظام</p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,6 +6,11 @@ import re
 from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
+import hashlib
+import time
+import requests
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -88,6 +93,22 @@ if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
 # Initialize extensions
 db = SQLAlchemy(app)
 mail = Mail(app)
+
+# إعداد Rate Limiter
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["1000 per day", "100 per hour"]
+)
+
+# إعدادات reCAPTCHA
+app.config['RECAPTCHA_SITE_KEY'] = os.environ.get('RECAPTCHA_SITE_KEY', '')
+app.config['RECAPTCHA_SECRET_KEY'] = os.environ.get('RECAPTCHA_SECRET_KEY', '')
+app.config['CAPTCHA_SECRET'] = os.environ.get('CAPTCHA_SECRET', 'default-secret-key-change-this')
+
+# قائمة الـ endpoints المستثناة من Captcha
+EXEMPT_ENDPOINTS = ['/ping', '/health', '/static']
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -175,6 +196,119 @@ def send_verification_email(email, code):
     except Exception as e:
         print(f"Error sending email: {e}")
         return True  # Don't block registration if email fails
+
+def verify_recaptcha(token):
+    """التحقق من رمز reCAPTCHA v3"""
+    if not app.config['RECAPTCHA_SECRET_KEY']:
+        return True  # إذا لم يتم تكوين reCAPTCHA، اسمح بالمرور
+    
+    try:
+        response = requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data={
+                'secret': app.config['RECAPTCHA_SECRET_KEY'],
+                'response': token
+            },
+            timeout=10
+        )
+        result = response.json()
+        
+        # التحقق من النتيجة والدرجة (0.0 = bot, 1.0 = human)
+        if result.get('success') and result.get('score', 0) >= 0.5:
+            return True
+        else:
+            app.logger.warning(f"reCAPTCHA failed: {result}")
+            return False
+    except Exception as e:
+        app.logger.error(f"reCAPTCHA verification error: {e}")
+        return True  # في حالة الخطأ، اسمح بالمرور لتجنب منع المستخدمين الشرعيين
+
+def check_honeypot(form_data):
+    """فحص Honeypot fields (فخاخ البوتات)"""
+    honeypot_fields = ['website', 'url', 'homepage', 'company']
+    
+    for field in honeypot_fields:
+        if form_data.get(field, '').strip():
+            app.logger.warning(f"Honeypot field '{field}' was filled")
+            return False
+    
+    return True
+
+def generate_time_token():
+    """إنشاء رمز مؤقت للتحقق من الوقت"""
+    timestamp = str(int(time.time()))
+    secret = app.config['CAPTCHA_SECRET']
+    return hashlib.md5((timestamp + secret).encode()).hexdigest(), timestamp
+
+def verify_time_token(token, timestamp):
+    """التحقق من الرمز المؤقت"""
+    try:
+        current_time = int(time.time())
+        form_time = int(timestamp)
+        
+        # التحقق من أن النموذج لم يتم إرساله بسرعة مشبوهة (أقل من 3 ثواني)
+        if current_time - form_time < 3:
+            return False
+        
+        # التحقق من أن النموذج لم يتم إرساله بعد وقت طويل جداً (أكثر من 30 دقيقة)
+        if current_time - form_time > 1800:
+            return False
+        
+        # التحقق من صحة الرمز
+        secret = app.config['CAPTCHA_SECRET']
+        expected_token = hashlib.md5((timestamp + secret).encode()).hexdigest()
+        
+        return token == expected_token
+    except:
+        return False
+
+def is_bot_behavior(request):
+    """فحص سلوك البوت"""
+    # فحص User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    bot_indicators = ['bot', 'crawler', 'spider', 'scraper', 'automated']
+    
+    if any(indicator in user_agent for indicator in bot_indicators):
+        return True
+    
+    # فحص الـ headers المشبوهة
+    if not request.headers.get('Accept'):
+        return True
+    
+    if not request.headers.get('Accept-Language'):
+        return True
+    
+    return False
+
+def comprehensive_captcha_check(request, form_data):
+    """فحص شامل للـ Captcha"""
+    # فحص الـ endpoints المستثناة
+    if any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS):
+        return True
+    
+    # فحص سلوك البوت
+    if is_bot_behavior(request):
+        app.logger.warning(f"Bot behavior detected from {get_remote_address()}")
+        return False
+    
+    # فحص Honeypot
+    if not check_honeypot(form_data):
+        return False
+    
+    # فحص Time Token
+    time_token = form_data.get('time_token', '')
+    timestamp = form_data.get('timestamp', '')
+    
+    if not verify_time_token(time_token, timestamp):
+        app.logger.warning("Time token verification failed")
+        return False
+    
+    # فحص reCAPTCHA v3
+    recaptcha_token = form_data.get('g-recaptcha-response', '')
+    if recaptcha_token and not verify_recaptcha(recaptcha_token):
+        return False
+    
+    return True
 
 # Routes
 @app.route('/')
@@ -361,32 +495,48 @@ def reset_admin_password():
     return render_template('reset_admin_password.html')
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")  # تحديد عدد محاولات التسجيل
 def register():
+    if request.method == 'GET':
+        # إنشاء time token للنموذج
+        time_token, timestamp = generate_time_token()
+        return render_template('register.html', time_token=time_token, timestamp=timestamp)
+    
     if request.method == 'POST':
         try:
+            # فحص Captcha الشامل
+            if not comprehensive_captcha_check(request, request.form):
+                flash('فشل في التحقق من الأمان. يرجى المحاولة مرة أخرى.', 'error')
+                time_token, timestamp = generate_time_token()
+                return render_template('register.html', time_token=time_token, timestamp=timestamp)
+            
             email = request.form['email'].lower().strip()
             password = request.form['password']
             
             # Validate email format
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
                 flash('البريد الإلكتروني غير صالح', 'error')
-                return render_template('register.html')
+                time_token, timestamp = generate_time_token()
+                return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Check if email is from trusted domain
             if not is_valid_email(email):
                 flash('يجب استخدام بريد إلكتروني من Gmail أو Hotmail أو iCloud أو Yahoo', 'error')
-                return render_template('register.html')
+                time_token, timestamp = generate_time_token()
+                return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Check password length
             if len(password) < 6:
                 flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
-                return render_template('register.html')
+                time_token, timestamp = generate_time_token()
+                return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Check if user already exists
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
                 flash('هذا البريد الإلكتروني مستخدم بالفعل', 'error')
-                return render_template('register.html')
+                time_token, timestamp = generate_time_token()
+                return render_template('register.html', time_token=time_token, timestamp=timestamp)
             
             # Generate verification code
             verification_code = generate_verification_code()
@@ -411,10 +561,12 @@ def register():
                 flash('خطأ في إرسال البريد الإلكتروني، حاول مرة أخرى', 'error')
                 
         except Exception as e:
-            print(f"Registration error: {e}")
+            app.logger.error(f"Registration error: {e}")
             flash('حدث خطأ أثناء التسجيل، حاول مرة أخرى', 'error')
-    
-    return render_template('register.html')
+        
+        # في حالة الخطأ، إنشاء tokens جديدة
+        time_token, timestamp = generate_time_token()
+        return render_template('register.html', time_token=time_token, timestamp=timestamp)
 
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():

@@ -3860,6 +3860,46 @@ def update_existing_tables_sqlite():
     """تحديث الجداول الموجودة لإضافة الحقول الجديدة - SQLite"""
     try:
         with app.app_context():
+            # إضافة الحقول الجديدة إذا لم تكن موجودة لـ SQLite
+            new_columns = [
+                ('users', 'whatsapp', 'TEXT'),
+                ('users', 'preferred_platform', 'TEXT'),
+                ('users', 'preferred_payment', 'TEXT'),
+                ('users', 'ea_email', 'TEXT'),
+                ('users', 'telegram_id', 'TEXT'),
+                ('users', 'telegram_username', 'TEXT'),
+                ('users', 'profile_completed', 'BOOLEAN DEFAULT 0'),
+                ('users', 'last_profile_update', 'TIMESTAMP'),
+                ('orders', 'ea_email', 'TEXT'),
+                ('orders', 'ea_password', 'TEXT'),
+                ('orders', 'backup_codes', 'TEXT'),
+                ('orders', 'transfer_type', 'TEXT DEFAULT "normal"'),
+                ('orders', 'notes', 'TEXT'),
+                ('orders', 'price', 'REAL'),
+                ('orders', 'phone_number', 'TEXT'),
+                ('orders', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+            ]
+            
+            for table, column, column_type in new_columns:
+                try:
+                    # محاولة إضافة العمود
+                    alter_query = text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
+                    db.session.execute(alter_query)
+                    db.session.commit()
+                    print(f"Added column {column} to {table}")
+                except Exception as e:
+                    db.session.rollback()
+                    error_msg = str(e).lower()
+                    if "already exists" in error_msg or "duplicate column" in error_msg:
+                        print(f"Column {column} already exists in {table}")
+                    else:
+                        print(f"Error adding column {column} to {table}: {e}")
+            
+            print("SQLite tables updated successfully")
+            
+    except Exception as e:
+        print(f"SQLite update error: {e}")
+        db.session.rollback()
 
 def optimize_database():
     """تحسين قاعدة البيانات وإنشاء الفهارس"""
@@ -3875,6 +3915,7 @@ def optimize_database():
             print("Database indexes created successfully")
     except Exception as e:
         print(f"Database optimization error: {e}")
+        db.session.rollback()
 
 def cleanup_old_verification_codes():
     """تنظيف رموز التفعيل المنتهية الصلاحية"""

@@ -1176,7 +1176,57 @@ def comprehensive_captcha_check(request, form_data):
             return False
         
         # فحص التحليل السلوكي مخفف
-        behavioral_score = advanced_behavioral_analysis(form_data, request)
+def advanced_behavioral_analysis(form_data, request):
+    """تحليل سلوكي متقدم للكشف عن البوتات"""
+    suspicious_score = 0
+    
+    try:
+        # 1. تحليل البريد الإلكتروني
+        email = form_data.get('email', '').lower()
+        if email:
+            # فحص النطاقات المؤقتة
+            suspicious_domains = ['tempmail', '10minutemail', 'guerrillamail']
+            if any(domain in email for domain in suspicious_domains):
+                suspicious_score += 3
+            
+            # فحص أنماط مشبوهة
+            if '+' in email.split('@')[0]:
+                suspicious_score += 1
+        
+        # 2. تحليل كلمة المرور
+        password = form_data.get('password', '')
+        if password:
+            common_passwords = ['123456', 'password', 'test123']
+            if password in common_passwords:
+                suspicious_score += 2
+        
+        # 3. تحليل التوقيت
+        timestamp = form_data.get('timestamp', '')
+        if timestamp:
+            try:
+                form_time = int(timestamp)
+                current_time = int(time.time())
+                filling_time = current_time - form_time
+                
+                if filling_time < 3:  # أقل من 3 ثوان
+                    suspicious_score += 3
+            except:
+                suspicious_score += 1
+        
+        # 4. فحص User-Agent
+        user_agent = request.headers.get('User-Agent', '').lower()
+        bot_indicators = ['bot', 'crawler', 'python', 'curl']
+        if any(indicator in user_agent for indicator in bot_indicators):
+            suspicious_score += 2
+        
+        return min(suspicious_score, 10)  # حد أقصى 10 نقاط
+        
+    except Exception as e:
+        app.logger.error(f"Behavioral analysis error: {e}")
+        return 0
+
+# الآن يمكن استخدام الدالة
+behavioral_score = advanced_behavioral_analysis(form_data, request)
         if behavioral_score > 7:  # عتبة أعلى
             track_suspicious_session(client_ip, 'suspicious_behavior', behavioral_score)
             app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
@@ -4096,6 +4146,35 @@ def force_database_repair():
         
         success_count = 0
         for table, column, column_type in repair_columns:
+def safe_add_column(table, column, column_type):
+    """إضافة آمنة للأعمدة مع معالجة الأخطاء"""
+    try:
+        # فحص وجود العمود أولاً
+        check_query = text(f"""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = '{table}' 
+            AND column_name = '{column}'
+        """)
+        
+        result = db.session.execute(check_query).fetchone()
+        
+        if not result:
+            # إضافة العمود
+            alter_query = text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
+            db.session.execute(alter_query)
+            db.session.commit()
+            print(f"✅ Added column {column} to {table}")
+            return True
+        else:
+            print(f"ℹ️ Column {column} already exists in {table}")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Error adding column {column} to {table}: {e}")
+        db.session.rollback()
+        return False
+
             if safe_add_column(table, column, column_type):
                 success_count += 1
         

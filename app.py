@@ -1227,7 +1227,7 @@ def advanced_behavioral_analysis(form_data, request):
 
 # الآن يمكن استخدام الدالة
 behavioral_score = advanced_behavioral_analysis(form_data, request)
-        if behavioral_score > 7:  # عتبة أعلى
+if behavioral_score > 7:  # عتبة أعلى
             track_suspicious_session(client_ip, 'suspicious_behavior', behavioral_score)
             app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
             return False

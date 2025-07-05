@@ -106,6 +106,12 @@ class ProgressTracker {
             if (data.success) {
                 this.userData = data.steps;
                 this.completionData = data;
+                
+                // تحديث حالة التليجرام في الواجهة
+                if (data.steps.telegram) {
+                    this.updateTelegramStatus(true);
+                }
+                
                 return data.steps;
             }
         } catch (error) {
@@ -115,6 +121,30 @@ class ProgressTracker {
         // fallback للبيانات المحلية
         const userData = localStorage.getItem('userData');
         return userData ? JSON.parse(userData) : {};
+    }
+    
+    updateTelegramStatus(isLinked) {
+        const telegramBtn = document.getElementById('telegram-btn-text');
+        const telegramStatus = document.getElementById('telegram-status');
+        
+        if (isLinked && telegramBtn) {
+            telegramBtn.textContent = 'مربوط ✅';
+            const connectBtn = document.querySelector('.telegram-connect-btn');
+            if (connectBtn) {
+                connectBtn.disabled = true;
+                connectBtn.style.opacity = '0.7';
+            }
+            
+            if (telegramStatus) {
+                telegramStatus.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        تم ربط التليجرام بنجاح! ستصلك الإشعارات فوراً
+                    </div>
+                `;
+                telegramStatus.style.display = 'block';
+            }
+        }
     }
     
     async refreshUserData() {

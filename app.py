@@ -3689,9 +3689,20 @@ def init_database():
         db.create_all()
         print("Database tables created successfully")
         
+        # إصلاح طارئ لقاعدة البيانات
+        try:
+            emergency_fix_success = emergency_fix_database()
+            if not emergency_fix_success:
+                print("⚠️ Emergency repair had issues, trying standard update...")
+        except Exception as e:
+            print(f"⚠️ Emergency repair failed: {e}")
+        
         # تحديث الجداول الموجودة بطريقة آمنة
         try:
-            update_existing_tables_sqlite()
+            if 'postgresql' in str(db.engine.url):
+                update_existing_tables()  # PostgreSQL version
+            else:
+                update_existing_tables_sqlite()  # SQLite version
         except Exception as e:
             print(f"Warning: Table update failed: {e}")
             db.session.rollback()
@@ -3727,10 +3738,10 @@ def init_database():
         print(f"Database initialization error: {e}")
 
 def update_existing_tables():
-    """تحديث الجداول الموجودة لإضافة الحقول الجديدة"""
+    """تحديث الجداول الموجودة لإضافة الحقول الجديدة - PostgreSQL Compatible"""
     try:
         with app.app_context():
-            # إضافة الحقول الجديدة إذا لم تكن موجودة
+            # إضافة الحقول الجديدة إذا لم تكن موجودة - PostgreSQL compatible
             new_columns = [
                 ('users', 'whatsapp', 'VARCHAR(20)'),
                 ('users', 'preferred_platform', 'VARCHAR(10)'),
@@ -3738,12 +3749,12 @@ def update_existing_tables():
                 ('users', 'ea_email', 'VARCHAR(100)'),
                 ('users', 'telegram_id', 'VARCHAR(50)'),
                 ('users', 'telegram_username', 'VARCHAR(50)'),
-                ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
+                ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),  # تصحيح PostgreSQL
                 ('users', 'last_profile_update', 'TIMESTAMP'),
                 ('orders', 'ea_email', 'VARCHAR(100)'),
                 ('orders', 'ea_password', 'VARCHAR(200)'),
                 ('orders', 'backup_codes', 'TEXT'),
-                ('orders', 'transfer_type', 'VARCHAR(20) DEFAULT \'normal\''),
+                ('orders', 'transfer_type', "VARCHAR(20) DEFAULT 'normal'"),  # تصحيح PostgreSQL
                 ('orders', 'notes', 'TEXT'),
                 ('orders', 'price', 'DECIMAL(10,2)'),
                 ('orders', 'phone_number', 'VARCHAR(20)'),
@@ -3752,29 +3763,28 @@ def update_existing_tables():
             
             for table, column, column_type in new_columns:
                 try:
-                    # إنشاء transaction منفصل لكل عمود
-                    with db.session.begin():
-                        # فحص وجود العمود أولاً
-                        check_query = text("""
-                            SELECT column_name 
-                            FROM information_schema.columns 
-                            WHERE table_name = :table_name 
-                            AND column_name = :column_name
-                        """)
+                    # فحص وجود العمود أولاً
+                    check_query = text("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = :table_name 
+                        AND column_name = :column_name
+                    """)
+                    
+                    result = db.session.execute(check_query, {
+                        'table_name': table,
+                        'column_name': column
+                    }).fetchone()
+                    
+                    if not result:
+                        # إضافة العمود إذا لم يكن موجوداً
+                        alter_query = text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
+                        db.session.execute(alter_query)
+                        db.session.commit()
+                        print(f"Added column {column} to {table}")
+                    else:
+                        print(f"Column {column} already exists in {table}")
                         
-                        result = db.session.execute(check_query, {
-                            'table_name': table,
-                            'column_name': column
-                        }).fetchone()
-                        
-                        if not result:
-                            # إضافة العمود إذا لم يكن موجوداً
-                            alter_query = text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
-                            db.session.execute(alter_query)
-                            print(f"Added column {column} to {table}")
-                        else:
-                            print(f"Column {column} already exists in {table}")
-                            
                 except Exception as e:
                     db.session.rollback()
                     error_msg = str(e).lower()
@@ -3782,8 +3792,33 @@ def update_existing_tables():
                         print(f"Column {column} already exists in {table}")
                     else:
                         print(f"Error adding column {column} to {table}: {e}")
-                        # إنشاء transaction جديد بعد الخطأ
-                        db.session.rollback()
+                        # محاولة إضافة العمود بطريقة مختلفة للمشاكل المعروفة
+                        if "profile_completed" in column and "boolean" in error_msg:
+                            try:
+                                # محاولة إضافة بدون default أولاً
+                                alter_query_simple = text(f'ALTER TABLE {table} ADD COLUMN {column} BOOLEAN')
+                                db.session.execute(alter_query_simple)
+                                # إضافة default بعدين
+                                default_query = text(f'ALTER TABLE {table} ALTER COLUMN {column} SET DEFAULT FALSE')
+                                db.session.execute(default_query)
+                                db.session.commit()
+                                print(f"Added column {column} to {table} (fixed boolean issue)")
+                            except Exception as fix_error:
+                                print(f"Failed to fix {column}: {fix_error}")
+                                db.session.rollback()
+                        elif "transfer_type" in column and "cannot use column reference" in error_msg:
+                            try:
+                                # محاولة إضافة بدون default أولاً
+                                alter_query_simple = text(f'ALTER TABLE {table} ADD COLUMN {column} VARCHAR(20)')
+                                db.session.execute(alter_query_simple)
+                                # إضافة default بعدين
+                                default_query = text(f"ALTER TABLE {table} ALTER COLUMN {column} SET DEFAULT 'normal'")
+                                db.session.execute(default_query)
+                                db.session.commit()
+                                print(f"Added column {column} to {table} (fixed default issue)")
+                            except Exception as fix_error:
+                                print(f"Failed to fix {column}: {fix_error}")
+                                db.session.rollback()
             
             print("Database tables updated successfully")
             
@@ -3810,6 +3845,82 @@ def safe_column_exists(table_name, column_name):
         
     except Exception as e:
         print(f"Error checking column existence: {e}")
+        return False
+
+def emergency_fix_database():
+    """إصلاح طارئ لقاعدة البيانات لحل المشاكل الحرجة"""
+    try:
+        print("🚨 Starting emergency database repair...")
+        
+        # إصلاح profile_completed column
+        try:
+            # فحص إذا العمود موجود
+            check_profile = text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                AND column_name = 'profile_completed'
+            """)
+            result = db.session.execute(check_profile).fetchone()
+            
+            if not result:
+                # إضافة العمود بالطريقة الصحيحة
+                add_profile = text('ALTER TABLE users ADD COLUMN profile_completed BOOLEAN')
+                db.session.execute(add_profile)
+                
+                set_default = text('ALTER TABLE users ALTER COLUMN profile_completed SET DEFAULT FALSE')
+                db.session.execute(set_default)
+                
+                # تحديث القيم الموجودة
+                update_existing = text('UPDATE users SET profile_completed = FALSE WHERE profile_completed IS NULL')
+                db.session.execute(update_existing)
+                
+                db.session.commit()
+                print("✅ Fixed profile_completed column")
+            else:
+                print("✅ profile_completed column already exists")
+                
+        except Exception as e:
+            print(f"❌ Error fixing profile_completed: {e}")
+            db.session.rollback()
+        
+        # إصلاح transfer_type column
+        try:
+            check_transfer = text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'orders' 
+                AND column_name = 'transfer_type'
+            """)
+            result = db.session.execute(check_transfer).fetchone()
+            
+            if not result:
+                # إضافة العمود بالطريقة الصحيحة
+                add_transfer = text('ALTER TABLE orders ADD COLUMN transfer_type VARCHAR(20)')
+                db.session.execute(add_transfer)
+                
+                set_default = text("ALTER TABLE orders ALTER COLUMN transfer_type SET DEFAULT 'normal'")
+                db.session.execute(set_default)
+                
+                # تحديث القيم الموجودة
+                update_existing = text("UPDATE orders SET transfer_type = 'normal' WHERE transfer_type IS NULL")
+                db.session.execute(update_existing)
+                
+                db.session.commit()
+                print("✅ Fixed transfer_type column")
+            else:
+                print("✅ transfer_type column already exists")
+                
+        except Exception as e:
+            print(f"❌ Error fixing transfer_type: {e}")
+            db.session.rollback()
+        
+        print("🎉 Emergency repair completed successfully!")
+        return True
+        
+    except Exception as e:
+        print(f"💥 Emergency repair failed: {e}")
+        db.session.rollback()
         return False
 
 def force_database_repair():

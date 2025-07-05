@@ -24,6 +24,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
+from datetime import datetime
 from sqlalchemy import text # <--- هذا هو السطر الذي تم إضافته لإصلاح مشكلة Textual SQL expression
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -819,6 +820,15 @@ class Order(db.Model):
     price = db.Column(db.Float, default=0.0)
     phone_number = db.Column(db.String(20), default='')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+@app.context_processor
+def inject_datetime():
+    """إضافة دوال التاريخ لجميع القوالب"""
+    return {
+        'moment': lambda: datetime,
+        'now': datetime.now(),
+        'datetime': datetime
+    }
 
 @login_manager.user_loader
 def load_user(user_id):

@@ -31,6 +31,11 @@
                         </a></li>
                         <li><a class="nav-link" href="{{ url_for('dashboard') }}">
 
+                                                    <li><a class="nav-link" href="{{ url_for('new_order') }}">
+                            <i class="fas fa-plus-circle"></i> طلب جديد
+                        </a></li>
+                        <li><a class="nav-link" href="{{ url_for('dashboard') }}">
+
                             <i class="fas fa-tachometer-alt"></i> لوحة التحكم
                         </a></li>
                         {% if current_user.is_admin %}

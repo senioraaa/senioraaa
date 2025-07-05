@@ -2890,20 +2890,322 @@ def api_calculate_price():
 
 @app.route('/admin')
 @login_required
+@advanced_rate_limit(per_minute=30, per_hour=200)
 def admin_dashboard():
     try:
         if not current_user.is_admin:
             flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
             return redirect(url_for('dashboard'))
         
-        orders = Order.query.order_by(Order.created_at.desc()).all()
-        users = User.query.all()
+        # الحصول على المعاملات
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        status_filter = request.args.get('status', 'all')
+        date_filter = request.args.get('date', 'all')
+        search_query = request.args.get('search', '')
         
-        return render_template('admin_dashboard.html', orders=orders, users=users)
+        # إحصائيات شاملة
+        stats = calculate_admin_statistics()
+        
+        # فلترة الطلبات
+        orders_query = Order.query
+        
+        if status_filter != 'all':
+            orders_query = orders_query.filter(Order.status == status_filter)
+            
+        if date_filter != 'all':
+            if date_filter == 'today':
+                today = datetime.utcnow().date()
+                orders_query = orders_query.filter(
+                    db.func.date(Order.created_at) == today
+                )
+            elif date_filter == 'week':
+                week_ago = datetime.utcnow() - timedelta(days=7)
+                orders_query = orders_query.filter(Order.created_at >= week_ago)
+            elif date_filter == 'month':
+                month_ago = datetime.utcnow() - timedelta(days=30)
+                orders_query = orders_query.filter(Order.created_at >= month_ago)
+        
+        if search_query:
+            orders_query = orders_query.join(User).filter(
+                db.or_(
+                    User.email.contains(search_query),
+                    Order.platform.contains(search_query),
+                    Order.payment_method.contains(search_query)
+                )
+            )
+        
+        # ترتيب وتقسيم الصفحات
+        orders = orders_query.order_by(Order.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # المستخدمين مع إحصائيات
+        users = User.query.all()
+        users_stats = calculate_users_statistics(users)
+        
+        # إحصائيات الأمان
+        security_stats = calculate_security_statistics()
+        
+        # بيانات الرسوم البيانية
+        charts_data = generate_charts_data()
+        
+        return render_template('admin_dashboard.html',
+                             orders=orders,
+                             users=users,
+                             stats=stats,
+                             users_stats=users_stats,
+                             security_stats=security_stats,
+                             charts_data=charts_data,
+                             status_filter=status_filter,
+                             date_filter=date_filter,
+                             search_query=search_query)
+                             
     except Exception as e:
-        print(f"Admin dashboard error: {e}")
+        app.logger.error(f"Admin dashboard error: {e}")
         flash('حدث خطأ في تحميل البيانات', 'error')
-        return render_template('admin_dashboard.html', orders=[], users=[])
+        return render_template('admin_dashboard.html', 
+                             orders=[], users=[], stats={}, 
+                             users_stats={}, security_stats={}, charts_data={})
+
+def calculate_admin_statistics():
+    """حساب الإحصائيات الشاملة للإدارة"""
+    try:
+        now = datetime.utcnow()
+        today = now.date()
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+        
+        # إحصائيات المستخدمين
+        total_users = User.query.count()
+        verified_users = User.query.filter_by(is_verified=True).count()
+        new_users_today = User.query.filter(
+            db.func.date(User.created_at) == today
+        ).count()
+        new_users_week = User.query.filter(User.created_at >= week_ago).count()
+        telegram_linked = User.query.filter(User.telegram_id.isnot(None)).count()
+        
+        # إحصائيات الطلبات
+        total_orders = Order.query.count()
+        pending_orders = Order.query.filter_by(status='pending').count()
+        completed_orders = Order.query.filter_by(status='completed').count()
+        cancelled_orders = Order.query.filter_by(status='cancelled').count()
+        orders_today = Order.query.filter(
+            db.func.date(Order.created_at) == today
+        ).count()
+        orders_week = Order.query.filter(Order.created_at >= week_ago).count()
+        
+        # إحصائيات مالية
+        total_revenue = db.session.query(db.func.sum(Order.price)).filter(
+            Order.status == 'completed'
+        ).scalar() or 0
+        revenue_week = db.session.query(db.func.sum(Order.price)).filter(
+            Order.status == 'completed',
+            Order.created_at >= week_ago
+        ).scalar() or 0
+        revenue_month = db.session.query(db.func.sum(Order.price)).filter(
+            Order.status == 'completed',
+            Order.created_at >= month_ago
+        ).scalar() or 0
+        
+        # متوسط قيمة الطلب
+        avg_order_value = db.session.query(db.func.avg(Order.price)).filter(
+            Order.status == 'completed'
+        ).scalar() or 0
+        
+        # إحصائيات المنصات
+        platform_stats = db.session.query(
+            Order.platform,
+            db.func.count(Order.id).label('count')
+        ).group_by(Order.platform).all()
+        
+        # معدل التحويل
+        completion_rate = (completed_orders / max(1, total_orders)) * 100
+        
+        return {
+            'users': {
+                'total': total_users,
+                'verified': verified_users,
+                'verification_rate': (verified_users / max(1, total_users)) * 100,
+                'new_today': new_users_today,
+                'new_week': new_users_week,
+                'telegram_linked': telegram_linked,
+                'telegram_rate': (telegram_linked / max(1, total_users)) * 100
+            },
+            'orders': {
+                'total': total_orders,
+                'pending': pending_orders,
+                'completed': completed_orders,
+                'cancelled': cancelled_orders,
+                'today': orders_today,
+                'week': orders_week,
+                'completion_rate': completion_rate
+            },
+            'revenue': {
+                'total': round(total_revenue, 2),
+                'week': round(revenue_week, 2),
+                'month': round(revenue_month, 2),
+                'avg_order': round(avg_order_value, 2)
+            },
+            'platforms': {p.platform: p.count for p in platform_stats}
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error calculating admin statistics: {e}")
+        return {}
+
+def calculate_users_statistics(users):
+    """حساب إحصائيات المستخدمين التفصيلية"""
+    try:
+        now = datetime.utcnow()
+        
+        # تصنيف المستخدمين حسب النشاط
+        active_users = []
+        inactive_users = []
+        
+        for user in users:
+            user_orders = Order.query.filter_by(user_id=user.id).count()
+            last_order = Order.query.filter_by(user_id=user.id).order_by(
+                Order.created_at.desc()
+            ).first()
+            
+            days_since_last_order = None
+            if last_order:
+                days_since_last_order = (now - last_order.created_at).days
+            
+            user_data = {
+                'user': user,
+                'orders_count': user_orders,
+                'last_order_date': last_order.created_at if last_order else None,
+                'days_since_last_order': days_since_last_order
+            }
+            
+            if user_orders > 0 and (not days_since_last_order or days_since_last_order <= 30):
+                active_users.append(user_data)
+            else:
+                inactive_users.append(user_data)
+        
+        return {
+            'active_users': active_users,
+            'inactive_users': inactive_users,
+            'activity_rate': (len(active_users) / max(1, len(users))) * 100
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error calculating users statistics: {e}")
+        return {'active_users': [], 'inactive_users': [], 'activity_rate': 0}
+
+def calculate_security_statistics():
+    """حساب إحصائيات الأمان"""
+    try:
+        current_time = int(time.time())
+        
+        # إحصائيات الحظر والسمعة
+        total_tracked_ips = len(smart_limiter.suspicious_ips)
+        blocked_ips = sum(1 for data in smart_limiter.suspicious_ips.values() 
+                         if data.get('score', 0) < -50)
+        trusted_ips = sum(1 for data in smart_limiter.suspicious_ips.values() 
+                         if data.get('score', 0) > 50)
+        
+        # إحصائيات الجلسات المشبوهة
+        active_blocks = sum(1 for data in suspicious_sessions.values() 
+                          if data.get('blocked_until', 0) > current_time)
+        high_risk_sessions = sum(1 for data in suspicious_sessions.values() 
+                               if data.get('suspicious_score', 0) >= 10)
+        
+        # حساب نقاط الأمان العامة
+        security_score = calculate_overall_security_score(
+            total_tracked_ips, blocked_ips, active_blocks, high_risk_sessions
+        )
+        
+        return {
+            'tracked_ips': total_tracked_ips,
+            'blocked_ips': blocked_ips,
+            'trusted_ips': trusted_ips,
+            'active_blocks': active_blocks,
+            'high_risk_sessions': high_risk_sessions,
+            'security_score': security_score,
+            'threat_level': get_threat_level(security_score)
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error calculating security statistics: {e}")
+        return {}
+
+def calculate_overall_security_score(tracked_ips, blocked_ips, active_blocks, high_risk):
+    """حساب نقاط الأمان العامة"""
+    base_score = 100
+    
+    if tracked_ips > 0:
+        blocked_ratio = (blocked_ips / tracked_ips) * 100
+        if blocked_ratio > 20:
+            base_score -= 30
+        elif blocked_ratio > 10:
+            base_score -= 15
+        elif blocked_ratio > 5:
+            base_score -= 5
+    
+    base_score -= min(30, active_blocks * 5)
+    base_score -= min(20, high_risk * 3)
+    
+    return max(0, min(100, base_score))
+
+def get_threat_level(security_score):
+    """تحديد مستوى التهديد"""
+    if security_score >= 90:
+        return {'level': 'low', 'text': 'منخفض', 'color': 'success'}
+    elif security_score >= 70:
+        return {'level': 'medium', 'text': 'متوسط', 'color': 'warning'}
+    elif security_score >= 50:
+        return {'level': 'high', 'text': 'عالي', 'color': 'danger'}
+    else:
+        return {'level': 'critical', 'text': 'حرج', 'color': 'danger'}
+
+def generate_charts_data():
+    """توليد بيانات الرسوم البيانية"""
+    try:
+        now = datetime.utcnow()
+        
+        # بيانات آخر 7 أيام
+        days_data = []
+        for i in range(7):
+            date = (now - timedelta(days=i)).date()
+            orders_count = Order.query.filter(
+                db.func.date(Order.created_at) == date
+            ).count()
+            users_count = User.query.filter(
+                db.func.date(User.created_at) == date
+            ).count()
+            
+            days_data.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'orders': orders_count,
+                'users': users_count
+            })
+        
+        days_data.reverse()  # ترتيب من الأقدم للأحدث
+        
+        # توزيع حالات الطلبات
+        status_distribution = db.session.query(
+            Order.status,
+            db.func.count(Order.id).label('count')
+        ).group_by(Order.status).all()
+        
+        # توزيع المنصات
+        platform_distribution = db.session.query(
+            Order.platform,
+            db.func.count(Order.id).label('count')
+        ).group_by(Order.platform).all()
+        
+        return {
+            'daily_activity': days_data,
+            'status_distribution': [{'status': s.status, 'count': s.count} for s in status_distribution],
+            'platform_distribution': [{'platform': p.platform, 'count': p.count} for p in platform_distribution]
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error generating charts data: {e}")
+        return {}
 
 @app.route('/admin/order/<int:order_id>/update', methods=['POST'])
 @login_required

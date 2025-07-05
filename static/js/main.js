@@ -98,10 +98,28 @@ class ProgressTracker {
         }
     }
     
-    loadUserData() {
+    async loadUserData() {
+        try {
+            const response = await fetch('/profile/completion-status');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.userData = data.steps;
+                this.completionData = data;
+                return data.steps;
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل بيانات المستخدم:', error);
+        }
+        
+        // fallback للبيانات المحلية
         const userData = localStorage.getItem('userData');
         return userData ? JSON.parse(userData) : {};
     }
+    
+    async refreshUserData() {
+        this.userData = await this.loadUserData();
+        this.updateProgress();
     
     saveUserData(data) {
         this.userData = { ...this.userData, ...data };

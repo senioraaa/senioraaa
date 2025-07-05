@@ -1520,6 +1520,99 @@ def security_stats():
         app.logger.error(f"Security stats error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/advanced-security-stats')
+@login_required
+@advanced_rate_limit(per_minute=5, per_hour=20)
+def advanced_security_stats():
+    """ إحصائيات أمان متقدمة للمدير"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        current_time = int(time.time())
+        
+        # إحصائيات محاولات تغيير كلمة المرور
+        recent_time = datetime.utcnow() - timedelta(hours=24)
+        
+        # تحليل الأنشطة المشبوهة
+        high_risk_activities = {
+            'honeypot_hits': sum(1 for data in suspicious_sessions.values() 
+                               if 'honeypot' in str(data)),
+            'automation_detected': sum(1 for data in suspicious_sessions.values() 
+                                     if data.get('suspicious_score', 0) > 10),
+            'failed_password_attempts': sum(1 for data in suspicious_sessions.values() 
+                                          if 'password' in str(data)),
+            'vpn_proxy_detected': sum(1 for data in suspicious_sessions.values() 
+                                    if 'vpn' in str(data))
+        }
+        
+        # إحصائيات المستخدمين
+        user_stats = {
+            'total_users': User.query.count(),
+            'verified_users': User.query.filter_by(is_verified=True).count(),
+            'admin_users': User.query.filter_by(is_admin=True).count(),
+            'recent_registrations': User.query.filter(User.created_at >= recent_time).count()
+        }
+        
+        # إحصائيات الطلبات  
+        order_stats = {
+            'total_orders': Order.query.count(),
+            'pending_orders': Order.query.filter_by(status='pending').count(),
+            'completed_orders': Order.query.filter_by(status='completed').count(),
+            'recent_orders': Order.query.filter(Order.created_at >= recent_time).count()
+        }
+        
+        # تحليل الأمان العام
+        security_score = calculate_security_score(high_risk_activities, user_stats)
+        
+        return jsonify({
+            'security_activities': high_risk_activities,
+            'user_statistics': user_stats,
+            'order_statistics': order_stats,
+            'security_score': security_score,
+            'recommendations': generate_security_recommendations(high_risk_activities),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Advanced security stats error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def calculate_security_score(activities, user_stats):
+    """حساب نقاط الأمان العامة"""
+    base_score = 100
+    
+    # خصم النقاط حسب الأنشطة المشبوهة
+    base_score -= activities.get('honeypot_hits', 0) * 5
+    base_score -= activities.get('automation_detected', 0) * 10
+    base_score -= activities.get('failed_password_attempts', 0) * 3
+    base_score -= activities.get('vpn_proxy_detected', 0) * 2
+    
+    # مكافآت للمؤشرات الإيجابية
+    verification_rate = user_stats.get('verified_users', 0) / max(1, user_stats.get('total_users', 1))
+    if verification_rate > 0.8:
+        base_score += 10
+    
+    return max(0, min(100, base_score))
+
+def generate_security_recommendations(activities):
+    """توليد توصيات أمنية"""
+    recommendations = []
+    
+    if activities.get('honeypot_hits', 0) > 5:
+        recommendations.append(" تم اكتشاف عدد عالي من محاولات البوتات - فكر في تشديد الحماية")
+    
+    if activities.get('automation_detected', 0) > 3:
+        recommendations.append(" تم اكتشاف أدوات أتمتة - راجع إعدادات reCAPTCHA")
+    
+    if activities.get('failed_password_attempts', 0) > 10:
+        recommendations.append(" محاولات كلمة مرور مشبوهة - فعل التنبيهات")
+    
+    if not recommendations:
+        recommendations.append(" النظام آمن حالياً - استمر في المراقبة")
+    
+    return recommendations
+
 @app.route('/admin/quick-stats')
 @login_required
 def quick_security_stats():
@@ -1670,9 +1763,85 @@ def setup_admin():
     
     return render_template('setup_admin.html')
 
+def log_password_change_attempt(user_email, ip_address, success=True, reason=""):
+    """📌 تسجيل محاولات تغيير كلمة المرور للمراجعة الأمنية"""
+    status = "نجح" if success else "فشل"
+    log_message = f"محاولة تغيير كلمة المرور - المستخدم: {user_email}, IP: {ip_address}, الحالة: {status}"
+    
+    if reason:
+        log_message += f", السبب: {reason}"
+    
+    if success:
+        app.logger.info(log_message)
+    else:
+        app.logger.warning(log_message)
+        
+        # إضافة تتبع للمحاولات المشبوهة
+        track_suspicious_session(ip_address, 'failed_password_change', 2)
+
 @app.route('/reset-admin-password', methods=['GET', 'POST'])
 @login_required
+def validate_password_strength(password):
+    """ التحقق من قوة كلمة المرور مع معايير متقدمة"""
+    errors = []
+    score = 0
+    
+    # الطول الأساسي
+    if len(password) < 8:
+        errors.append("كلمة المرور يجب أن تكون 8 أحرف على الأقل")
+        return False, errors, 0
+    elif len(password) >= 12:
+        score += 2
+    else:
+        score += 1
+    
+    # فحص الأحرف الكبيرة
+    if any(c.isupper() for c in password):
+        score += 1
+    else:
+        errors.append("يجب أن تحتوي على حرف كبير واحد على الأقل")
+    
+    # فحص الأحرف الصغيرة  
+    if any(c.islower() for c in password):
+        score += 1
+    else:
+        errors.append("يجب أن تحتوي على حرف صغير واحد على الأقل")
+    
+    # فحص الأرقام
+    if any(c.isdigit() for c in password):
+        score += 1
+    else:
+        errors.append("يجب أن تحتوي على رقم واحد على الأقل")
+    
+    # فحص الرموز الخاصة
+    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    if any(c in special_chars for c in password):
+        score += 2
+    else:
+        errors.append("يُنصح بإضافة رمز خاص (!@#$%^&*)")
+    
+    # فحص التكرار
+    if len(set(password)) < len(password) * 0.7:
+        errors.append("تجنب تكرار الأحرف كثيراً")
+        score -= 1
+    
+    # كلمات مرور شائعة
+    common_passwords = [
+        "password", "123456", "admin123", "qwerty", 
+        "password123", "admin", "administrator"
+    ]
+    if password.lower() in common_passwords:
+        errors.append("كلمة المرور شائعة جداً، اختر كلمة أقوى")
+        return False, errors, 0
+    
+    # تقييم النتيجة النهائية
+    is_strong = score >= 5 and len(errors) <= 1
+    
+    return is_strong, errors, min(100, score * 15)
+
 def reset_admin_password():
+
+
     """صفحة إعادة تعيين كلمة مرور المستخدم الإداري"""
     
     if not current_user.is_admin:
@@ -1685,15 +1854,24 @@ def reset_admin_password():
             new_password = request.form.get('new_password', '')
             confirm_password = request.form.get('confirm_password', '')
             
-            # التحقق من كلمة المرور الحالية
+            # التحقق من كلمة المرور الحالية مع تسجيل المحاولات
+            client_ip = get_remote_address()
+            
             if not check_password_hash(current_user.password_hash, current_password):
+                log_password_change_attempt(current_user.email, client_ip, False, "كلمة المرور الحالية خاطئة")
                 flash('كلمة المرور الحالية غير صحيحة', 'error')
                 return render_template('reset_admin_password.html')
             
-            # التحقق من كلمة المرور الجديدة
-            if not new_password or len(new_password) < 8:
-                flash('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل', 'error')
+            # التحقق المتقدم من قوة كلمة المرور الجديدة
+            is_strong, password_errors, strength_score = validate_password_strength(new_password)
+            
+            if not is_strong:
+                flash(f'كلمة المرور ضعيفة (النقاط: {strength_score}/100). المشاكل: {", ".join(password_errors)}', 'error')
                 return render_template('reset_admin_password.html')
+            
+            # تحذير إذا كانت كلمة المرور متوسطة القوة
+            if strength_score < 80:
+                flash(f'تحذير: قوة كلمة المرور متوسطة ({strength_score}/100). يُنصح بتحسينها.', 'warning')
             
             if new_password != confirm_password:
                 flash('كلمات المرور غير متطابقة', 'error')
@@ -1703,7 +1881,15 @@ def reset_admin_password():
             current_user.password_hash = generate_password_hash(new_password)
             db.session.commit()
             
-            app.logger.info(f"Admin password reset for user: {current_user.email}")
+            # تسجيل تفصيلي أكثر للأمان
+            app.logger.info(f"Admin password reset for user: {current_user.email} from IP: {get_remote_address()}")
+            
+            # تحديث timestamp آخر تعديل للملف الشخصي  
+            current_user.last_profile_update = datetime.utcnow()
+            
+            # إضافة تحديث سمعة المستخدم إيجابياً
+            client_fingerprint = smart_limiter.get_client_fingerprint(request)
+            smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
             flash('تم تغيير كلمة المرور بنجاح!', 'success')
             return redirect(url_for('admin_dashboard'))
             

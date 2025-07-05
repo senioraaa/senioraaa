@@ -2358,8 +2358,9 @@ def validate_password_strength(password):
     
     return is_strong, errors, min(100, score * 15)
 
+@app.route('/reset-admin-password', methods=['GET', 'POST'])
+@login_required
 def reset_admin_password():
-
 
     """صفحة إعادة تعيين كلمة مرور المستخدم الإداري"""
     
@@ -3690,7 +3691,7 @@ def init_database():
         
         # تحديث الجداول الموجودة بطريقة آمنة
         try:
-            update_existing_tables()
+            update_existing_tables_sqlite()
         except Exception as e:
             print(f"Warning: Table update failed: {e}")
             db.session.rollback()
@@ -3855,57 +3856,10 @@ def force_database_repair():
         print(f"Database repair failed: {e}")
         return False
 
-def safe_add_column(table_name, column_name, column_type):
-    """إضافة عمود بطريقة آمنة"""
+def update_existing_tables_sqlite():
+    """تحديث الجداول الموجودة لإضافة الحقول الجديدة - SQLite"""
     try:
-        if not safe_column_exists(table_name, column_name):
-            with db.session.begin():
-                alter_query = text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}')
-                db.session.execute(alter_query)
-                print(f"Successfully added column {column_name} to {table_name}")
-                return True
-        else:
-            print(f"Column {column_name} already exists in {table_name}")
-            return True
-            
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error adding column {column_name} to {table_name}: {e}")
-        return False
-                ('users', 'whatsapp', 'VARCHAR(20)'),
-                ('users', 'preferred_platform', 'VARCHAR(10)'),
-                ('users', 'preferred_payment', 'VARCHAR(50)'),
-                ('users', 'ea_email', 'VARCHAR(100)'),
-                ('users', 'telegram_id', 'VARCHAR(50)'),
-                ('users', 'telegram_username', 'VARCHAR(50)'),
-                ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
-                ('users', 'last_profile_update', 'DATETIME'),
-                ('orders', 'ea_email', 'VARCHAR(100)'),
-                ('orders', 'ea_password', 'VARCHAR(200)'),
-                ('orders', 'backup_codes', 'TEXT'),
-                ('orders', 'transfer_type', 'VARCHAR(20) DEFAULT "normal"'),
-                ('orders', 'notes', 'TEXT'),
-                ('orders', 'price', 'FLOAT'),
-                ('orders', 'phone_number', 'VARCHAR(20)'),
-                ('orders', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
-            ]
-            
-            for table, column, column_type in new_columns:
-                try:
-                    db.session.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}'))
-                    print(f"Added column {column} to {table}")
-                except Exception as e:
-                    if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
-                        pass  # العمود موجود بالفعل
-                    else:
-                        print(f"Error adding column {column}: {e}")
-            
-            db.session.commit()
-            print("Database tables updated successfully")
-            
-    except Exception as e:
-        print(f"Database update error: {e}")
-        db.session.rollback()
+        with app.app_context():
 
 def optimize_database():
     """تحسين قاعدة البيانات وإنشاء الفهارس"""

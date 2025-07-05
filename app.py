@@ -753,6 +753,16 @@ class User(UserMixin, db.Model):
     
     # Define relationship
     orders = db.relationship('Order', backref='user', lazy=True)
+    
+    # حقول الملف الشخصي الجديدة
+    whatsapp = db.Column(db.String(20))
+    preferred_platform = db.Column(db.String(10))
+    preferred_payment = db.Column(db.String(50))
+    ea_email = db.Column(db.String(100))
+    telegram_id = db.Column(db.String(50))
+    telegram_username = db.Column(db.String(50))
+    profile_completed = db.Column(db.Boolean, default=False)
+    last_profile_update = db.Column(db.DateTime)
 
 class Order(db.Model):
     __tablename__ = 'orders'  # Explicit table name
@@ -2129,6 +2139,112 @@ def new_order():
     payment_methods = ['جميع المنصات', 'جميع المحافظات']
     
     return render_template('new_order.html', platforms=platforms, payment_methods=payment_methods)
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+@advanced_rate_limit(per_minute=20, per_hour=100)
+def profile():
+    if request.method == 'GET':
+        return render_template('profile.html', user=current_user)
+    
+    if request.method == 'POST':
+        client_fingerprint = smart_limiter.get_client_fingerprint(request)
+        
+        try:
+            # فحص AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                field = request.form.get('field')
+                value = request.form.get(field, '').strip()
+                
+                # تحديث الحقل المحدد
+                if hasattr(current_user, field):
+                    setattr(current_user, field, value)
+                    current_user.last_profile_update = datetime.utcnow()
+                    
+                    # فحص اكتمال الملف الشخصي
+                    current_user.profile_completed = check_profile_completion(current_user)
+                    
+                    db.session.commit()
+                    
+                    smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'تم حفظ البيانات بنجاح',
+                        'profile_completed': current_user.profile_completed
+                    })
+                else:
+                    return jsonify({'success': False, 'message': 'حقل غير صالح'}), 400
+            
+            # معالجة النموذج العادي
+            else:
+                current_user.whatsapp = request.form.get('whatsapp', '').strip()
+                current_user.preferred_platform = request.form.get('preferred_platform', '').strip()
+                current_user.preferred_payment = request.form.get('preferred_payment', '').strip()
+                current_user.ea_email = request.form.get('ea_email', '').strip()
+                current_user.last_profile_update = datetime.utcnow()
+                
+                # فحص اكتمال الملف الشخصي
+                current_user.profile_completed = check_profile_completion(current_user)
+                
+                db.session.commit()
+                
+                smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
+                
+                flash('تم تحديث الملف الشخصي بنجاح!', 'success')
+                return redirect(url_for('profile'))
+                
+        except Exception as e:
+            app.logger.error(f"Profile update error: {e}")
+            smart_limiter.update_reputation(client_fingerprint, 'invalid_form', current_user.id)
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'حدث خطأ أثناء الحفظ'}), 500
+            else:
+                flash('حدث خطأ أثناء التحديث، حاول مرة أخرى', 'error')
+                return render_template('profile.html', user=current_user)
+
+def check_profile_completion(user):
+    """فحص اكتمال الملف الشخصي"""
+    required_fields = ['whatsapp', 'preferred_platform', 'preferred_payment']
+    
+    for field in required_fields:
+        value = getattr(user, field, None)
+        if not value or not value.strip():
+            return False
+    
+    return True
+
+@app.route('/profile/completion-status')
+@login_required
+def profile_completion_status():
+    """إرجاع حالة اكتمال الملف الشخصي"""
+    try:
+        steps = {
+            'whatsapp': bool(current_user.whatsapp and current_user.whatsapp.strip()),
+            'platform': bool(current_user.preferred_platform and current_user.preferred_platform.strip()),
+            'payment': bool(current_user.preferred_payment and current_user.preferred_payment.strip()),
+            'ea_email': bool(current_user.ea_email and current_user.ea_email.strip()),
+            'telegram': bool(current_user.telegram_id and current_user.telegram_id.strip()),
+            'profile': current_user.profile_completed or False
+        }
+        
+        completed_count = sum(1 for completed in steps.values() if completed)
+        total_count = len(steps)
+        percentage = round((completed_count / total_count) * 100)
+        
+        return jsonify({
+            'success': True,
+            'steps': steps,
+            'completed_count': completed_count,
+            'total_count': total_count,
+            'percentage': percentage,
+            'profile_completed': current_user.profile_completed
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Profile completion status error: {e}")
+        return jsonify({'success': False, 'message': 'خطأ في تحميل البيانات'}), 500
 
 @app.route('/resend-verification', methods=['POST'])
 @advanced_rate_limit(per_minute=2, per_hour=5, block_on_abuse=True)

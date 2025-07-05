@@ -2109,46 +2109,154 @@ def dashboard():
 @login_required
 @advanced_rate_limit(per_minute=5, per_hour=30)
 def new_order():
+    # فحص اكتمال الملف الشخصي الأساسي
+    if not current_user.whatsapp or not current_user.preferred_platform or not current_user.preferred_payment:
+        flash('يجب إكمال الملف الشخصي أولاً قبل تقديم طلب', 'warning')
+        return redirect(url_for('profile'))
+    
+    if request.method == 'GET':
+        platforms_data = [
+            {
+                'id': 'PS',
+                'name': 'PlayStation',
+                'icon': 'fab fa-playstation',
+                'color': '#003087',
+                'description': 'PlayStation 4 & 5'
+            },
+            {
+                'id': 'Xbox',
+                'name': 'Xbox',
+                'icon': 'fab fa-xbox',
+                'color': '#107C10',
+                'description': 'Xbox One & Series X/S'
+            },
+            {
+                'id': 'PC',
+                'name': 'PC',
+                'icon': 'fas fa-desktop',
+                'color': '#FF6B00',
+                'description': 'Origin & Steam'
+            }
+        ]
+        
+        payment_methods_data = [
+            {
+                'id': 'vodafone',
+                'name': 'فودافون كاش',
+                'icon': 'fas fa-mobile-alt',
+                'color': '#E60000',
+                'description': 'تحويل فوري'
+            },
+            {
+                'id': 'etisalat',
+                'name': 'اتصالات كاش',
+                'icon': 'fas fa-mobile-alt',
+                'color': '#8CC63F',
+                'description': 'تحويل فوري'
+            },
+            {
+                'id': 'orange',
+                'name': 'أورنج كاش',
+                'icon': 'fas fa-mobile-alt',
+                'color': '#FF7900',
+                'description': 'تحويل فوري'
+            },
+            {
+                'id': 'instapay',
+                'name': 'إنستا باي',
+                'icon': 'fas fa-university',
+                'color': '#1E88E5',
+                'description': 'بنك إلى بنك'
+            },
+            {
+                'id': 'wallet',
+                'name': 'محفظة بنكية',
+                'icon': 'fas fa-wallet',
+                'color': '#6B73FF',
+                'description': 'جميع البنوك'
+            }
+        ]
+        
+        return render_template('new_order.html', 
+                             platforms=platforms_data,
+                             payment_methods=payment_methods_data,
+                             user=current_user)
+    
     if request.method == 'POST':
         client_fingerprint = smart_limiter.get_client_fingerprint(request)
         
         try:
-            platform = request.form['platform']
-            payment_method = request.form['payment_method']
-            coins_amount = int(request.form['coins_amount'])
+            # جمع بيانات النموذج
+            platform = request.form.get('platform', '').strip()
+            coins_amount = int(request.form.get('coins_amount', 0))
+            payment_method = request.form.get('payment_method', '').strip()
+            transfer_type = request.form.get('transfer_type', 'normal').strip()
+            
+            # بيانات EA (اختيارية)
+            ea_email = request.form.get('ea_email', '').strip()
+            ea_password = request.form.get('ea_password', '').strip()
+            backup_codes = request.form.get('backup_codes', '').strip()
+            
+            # معلومات إضافية
+            phone_number = request.form.get('phone_number', current_user.whatsapp or '').strip()
+            notes = request.form.get('notes', '').strip()
+            
+            # التحقق من البيانات الأساسية
+            if not all([platform, coins_amount, payment_method]):
+                flash('جميع الحقول الأساسية مطلوبة', 'error')
+                return redirect(url_for('new_order'))
             
             if coins_amount < 300000:
-                smart_limiter.update_reputation(client_fingerprint, 'invalid_form', current_user.id)
                 flash('الحد الأدنى للكوينز هو 300,000', 'error')
-                return render_template('new_order.html', 
-                                     platforms=['PS', 'Xbox', 'PC'],
-                                     payment_methods=['جميع المنصات', 'جميع المحافظات'])
+                return redirect(url_for('new_order'))
             
+            # حساب السعر
+            price_info, price_error = calculate_price(platform, coins_amount, transfer_type)
+            if price_error:
+                flash(price_error, 'error')
+                return redirect(url_for('new_order'))
+            
+            # إنشاء الطلب
             order = Order(
                 user_id=current_user.id,
                 platform=platform,
+                coins_amount=coins_amount,
                 payment_method=payment_method,
-                coins_amount=coins_amount
+                transfer_type=transfer_type,
+                price=price_info['total_price'],
+                phone_number=phone_number,
+                notes=notes
             )
+            
+            # إضافة بيانات EA إذا توفرت (مع التشفير)
+            if ea_email:
+                order.ea_email = ea_email
+                
+            if ea_password:
+                # تشفير كلمة مرور EA
+                order.ea_password = generate_password_hash(ea_password)
+                
+            if backup_codes:
+                # تشفير أكواد الاحتياط
+                order.backup_codes = generate_password_hash(backup_codes)
             
             db.session.add(order)
             db.session.commit()
             
-            # تحديث السمعة إيجابياً لإنشاء طلب ناجح
             smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
             
-            flash('تم إرسال طلبك بنجاح! سيتم التواصل معك قريباً', 'success')
+            flash(f'تم إرسال طلبك بنجاح! السعر المتوقع: {price_info["total_price"]} جنيه', 'success')
             return redirect(url_for('dashboard'))
             
+        except ValueError:
+            flash('كمية الكوينز يجب أن تكون رقماً صالحاً', 'error')
+            return redirect(url_for('new_order'))
         except Exception as e:
             app.logger.error(f"New order error: {e}")
             smart_limiter.update_reputation(client_fingerprint, 'invalid_form', current_user.id)
             flash('حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى', 'error')
-    
-    platforms = ['PS', 'Xbox', 'PC']
-    payment_methods = ['جميع المنصات', 'جميع المحافظات']
-    
-    return render_template('new_order.html', platforms=platforms, payment_methods=payment_methods)
+            return redirect(url_for('new_order'))
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required

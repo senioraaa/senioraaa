@@ -650,6 +650,56 @@ function backupDatabase() {
     }
 }
 
+// دالة إصلاح قاعدة البيانات
+async function repairDatabase() {
+    if (!confirm('تحذير: هذا الإجراء للطوارئ فقط. هل أنت متأكد من المتابعة؟')) {
+        return;
+    }
+    
+    const resultDiv = document.getElementById('telegram-test-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-spinner fa-spin"></i> جاري إصلاح قاعدة البيانات...</div>';
+    
+    try {
+        const response = await fetch('/admin/repair-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> ${data.message}
+                    <br><small>يُنصح بإعادة تحميل الصفحة</small>
+                </div>
+            `;
+            
+            // إعادة تحميل الصفحة بعد 3 ثوان
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.message}
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('خطأ في إصلاح قاعدة البيانات:', error);
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> خطأ في الاتصال: ${error.message}
+            </div>
+        `;
+    }
+}
+
 // دوال اختبار التليجرام
 async function testTelegram(testType) {
     try {

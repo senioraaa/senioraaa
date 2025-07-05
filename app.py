@@ -1687,6 +1687,73 @@ def security_actions():
         app.logger.error(f"Security action error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/telegram-test', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=2, per_hour=10)
+def test_telegram_system():
+    """اختبار نظام التليجرام (للمطورين)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        test_type = request.json.get('test_type', 'config')
+        
+        if test_type == 'config':
+            # فحص إعدادات التليجرام
+            return jsonify({
+                'success': True,
+                'telegram_configured': telegram_system.is_configured(),
+                'bot_token_exists': bool(telegram_system.bot_token),
+                'bot_username': telegram_system.bot_username,
+                'webhook_url': telegram_system.webhook_url
+            })
+            
+        elif test_type == 'webhook':
+            # إعداد webhook
+            if telegram_system.is_configured():
+                result = telegram_system.setup_webhook()
+                return jsonify({
+                    'success': result,
+                    'message': 'Webhook setup successfully' if result else 'Failed to setup webhook'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Telegram not configured'
+                })
+                
+        elif test_type == 'notification':
+            # اختبار إرسال إشعار
+            if current_user.telegram_id:
+                test_message = f"""
+🧪 <b>رسالة اختبار</b>
+
+✅ نظام التليجرام يعمل بشكل صحيح!
+
+🕒 الوقت: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+👤 المرسل: {current_user.email}
+
+🎮 شهد السنيورة - نظام الإشعارات
+                """
+                
+                result = telegram_system.send_message(current_user.telegram_id, test_message.strip())
+                return jsonify({
+                    'success': result,
+                    'message': 'Test notification sent' if result else 'Failed to send notification'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Admin Telegram not linked'
+                })
+                
+        else:
+            return jsonify({'error': 'Invalid test type'}), 400
+            
+    except Exception as e:
+        app.logger.error(f"Telegram test error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/reset-blocks', methods=['POST'])
 @login_required
 def reset_all_blocks():
@@ -3056,6 +3123,17 @@ def internal_error(error):
 # Initialize database when app starts
 with app.app_context():
     init_database()
+    
+    # إعداد webhook للتليجرام في production
+    if not app.debug and telegram_system.is_configured():
+        try:
+            webhook_setup = telegram_system.setup_webhook()
+            if webhook_setup:
+                app.logger.info("Telegram webhook configured successfully")
+            else:
+                app.logger.warning("Failed to configure Telegram webhook")
+        except Exception as e:
+            app.logger.error(f"Error setting up Telegram webhook: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)

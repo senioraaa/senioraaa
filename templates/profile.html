@@ -183,9 +183,9 @@
                                 احصل على تحديثات فورية عن حالة طلباتك
                             </p>
                             
-                            <button type="button" class="telegram-connect-btn">
+                            <button type="button" class="telegram-connect-btn" onclick="connectTelegram()">
                                 <i class="fab fa-telegram"></i>
-                                ربط التليجرام
+                                <span id="telegram-btn-text">ربط التليجرام</span>
                             </button>
                             
                             <div class="mt-3" id="telegram-status" style="display: none;">
@@ -290,5 +290,140 @@ function updateStatusIndicators() {
 // مراقبة التغييرات وتحديث المؤشرات
 document.addEventListener('input', updateStatusIndicators);
 document.addEventListener('change', updateStatusIndicators);
-</script>
+
+// دوال التليجرام
+async function connectTelegram() {
+    try {
+        const response = await fetch('/profile/telegram-link');
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.is_linked) {
+                showTelegramLinked();
+            } else {
+                showTelegramInstructions(data);
+            }
+        } else {
+            alert('خطأ: ' + data.message);
+        }
+    } catch (error) {
+        console.error('خطأ في ربط التليجرام:', error);
+        alert('حدث خطأ في الاتصال');
+    }
+}
+
+function showTelegramInstructions(data) {
+    // إنشاء modal للتعليمات
+    const modal = document.createElement('div');
+    modal.className = 'telegram-modal';
+    modal.style.opacity = '1';
+    modal.style.visibility = 'visible';
+    
+    modal.innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fab fa-telegram"></i> ربط حساب التليجرام</h3>
+                    <button class="modal-close" onclick="closeTelegramModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="instruction-steps">
+                        ${data.instructions.map((instruction, index) => `
+                            <div class="step">
+                                <div class="step-number">${index + 1}</div>
+                                <div class="step-text">${instruction}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="${data.telegram_link}" target="_blank" class="btn btn-primary">
+                            <i class="fab fa-telegram"></i>
+                            فتح البوت في التليجرام
+                        </a>
+                    </div>
+                    
+                    <div class="instruction-note">
+                        <i class="fas fa-info-circle"></i>
+                        سيتم ربط حسابك تلقائياً بعد إرسال أي رسالة للبوت
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" onclick="checkTelegramStatus()">
+                            <i class="fas fa-sync"></i>
+                            فحص حالة الربط
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function showTelegramLinked() {
+    const telegramStatus = document.getElementById('telegram-status');
+    const telegramBtn = document.getElementById('telegram-btn-text');
+    
+    telegramStatus.innerHTML = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            تم ربط التليجرام بنجاح! ستصلك الإشعارات فوراً
+        </div>
+    `;
+    telegramStatus.style.display = 'block';
+    
+    telegramBtn.textContent = 'مربوط ✅';
+    document.querySelector('.telegram-connect-btn').disabled = true;
+    document.querySelector('.telegram-connect-btn').style.opacity = '0.7';
+}
+
+function closeTelegramModal() {
+    const modal = document.querySelector('.telegram-modal');
+    if (modal) {
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    }
+}
+
+async function checkTelegramStatus() {
+    try {
+        const response = await fetch('/profile/completion-status');
+        const data = await response.json();
+        
+        if (data.success && data.steps.telegram) {
+            showTelegramLinked();
+            closeTelegramModal();
+            
+            // تحديث Progress Tracker
+            if (window.progressTracker) {
+                window.progressTracker.refreshUserData();
+            }
+        } else {
+            // إظهار رسالة انتظار
+            const checkBtn = event.target;
+            const originalText = checkBtn.innerHTML;
+            checkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الفحص...';
+            checkBtn.disabled = true;
+            
+            setTimeout(() => {
+                checkBtn.innerHTML = originalText;
+                checkBtn.disabled = false;
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('خطأ في فحص حالة التليجرام:', error);
+    }
+}
+
+// فحص حالة التليجرام عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // فحص إذا كان التليجرام مربوط بالفعل
+    const telegramIdValue = '{{ user.telegram_id or "" }}';
+    if (telegramIdValue) {
+        showTelegramLinked();
+    }
+});
 {% endblock %}

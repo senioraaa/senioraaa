@@ -4146,7 +4146,7 @@ def force_database_repair():
         
         success_count = 0
         for table, column, column_type in repair_columns:
-    safe_add_column(table, column, column_type):
+def safe_add_column(table, column, column_type):
     """إضافة آمنة للأعمدة مع معالجة الأخطاء"""
     try:
         # فحص وجود العمود أولاً

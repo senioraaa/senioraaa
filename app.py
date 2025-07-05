@@ -2585,7 +2585,15 @@ def update_existing_tables():
                 ('users', 'telegram_id', 'VARCHAR(50)'),
                 ('users', 'telegram_username', 'VARCHAR(50)'),
                 ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
-                ('users', 'last_profile_update', 'DATETIME')
+                ('users', 'last_profile_update', 'DATETIME'),
+                ('orders', 'ea_email', 'VARCHAR(100)'),
+                ('orders', 'ea_password', 'VARCHAR(200)'),
+                ('orders', 'backup_codes', 'TEXT'),
+                ('orders', 'transfer_type', 'VARCHAR(20) DEFAULT "normal"'),
+                ('orders', 'notes', 'TEXT'),
+                ('orders', 'price', 'FLOAT'),
+                ('orders', 'phone_number', 'VARCHAR(20)'),
+                ('orders', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP')
             ]
             
             for table, column, column_type in new_columns:

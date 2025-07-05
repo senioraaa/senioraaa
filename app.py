@@ -1687,6 +1687,423 @@ def security_actions():
         app.logger.error(f"Security action error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/order/<int:order_id>/details')
+@login_required
+@advanced_rate_limit(per_minute=30, per_hour=200)
+def get_order_details(order_id):
+    """الحصول على تفاصيل طلب محدد"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        order = Order.query.get_or_404(order_id)
+        
+        order_details = {
+            'id': order.id,
+            'platform': order.platform,
+            'coins_amount': order.coins_amount,
+            'price': order.price,
+            'transfer_type': order.transfer_type or 'normal',
+            'payment_method': order.payment_method,
+            'phone_number': order.phone_number,
+            'ea_email': order.ea_email,
+            'notes': order.notes,
+            'status': order.status,
+            'created_at': order.created_at.isoformat(),
+            'updated_at': order.updated_at.isoformat() if order.updated_at else None,
+            'user_email': order.user.email,
+            'user_telegram_linked': bool(order.user.telegram_id)
+        }
+        
+        return jsonify({
+            'success': True,
+            'order': order_details
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching order details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/export/orders')
+@login_required
+@advanced_rate_limit(per_minute=2, per_hour=10)
+def export_orders():
+    """تصدير الطلبات إلى CSV"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        import csv
+        import io
+        from flask import make_response
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # رؤوس الأعمدة
+        writer.writerow([
+            'رقم الطلب', 'البريد الإلكتروني', 'المنصة', 'كمية الكوينز', 
+            'السعر', 'طريقة الدفع', 'نوع التحويل', 'الحالة', 
+            'رقم الواتساب', 'تاريخ الإنشاء'
+        ])
+        
+        # بيانات الطلبات
+        orders = Order.query.join(User).all()
+        for order in orders:
+            writer.writerow([
+                order.id,
+                order.user.email,
+                order.platform,
+                order.coins_amount,
+                order.price or 0,
+                order.payment_method,
+                order.transfer_type or 'normal',
+                order.status,
+                order.phone_number or '',
+                order.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            ])
+        
+        # إعداد الاستجابة
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=orders_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        app.logger.info(f"Orders exported by admin: {current_user.email}")
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting orders: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/export/all')
+@login_required
+@advanced_rate_limit(per_minute=1, per_hour=5)
+def export_all_data():
+    """تصدير جميع البيانات إلى ZIP"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        import zipfile
+        import io
+        import csv
+        from flask import make_response
+        
+        # إنشاء ملف ZIP في الذاكرة
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # تصدير الطلبات
+            orders_csv = io.StringIO()
+            orders_writer = csv.writer(orders_csv)
+            orders_writer.writerow([
+                'رقم الطلب', 'البريد الإلكتروني', 'المنصة', 'كمية الكوينز', 
+                'السعر', 'طريقة الدفع', 'نوع التحويل', 'الحالة', 
+                'رقم الواتساب', 'تاريخ الإنشاء'
+            ])
+            
+            orders = Order.query.join(User).all()
+            for order in orders:
+                orders_writer.writerow([
+                    order.id, order.user.email, order.platform,
+                    order.coins_amount, order.price or 0, order.payment_method,
+                    order.transfer_type or 'normal', order.status,
+                    order.phone_number or '', order.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                ])
+            
+            zip_file.writestr('orders.csv', orders_csv.getvalue().encode('utf-8-sig'))
+            
+            # تصدير المستخدمين
+            users_csv = io.StringIO()
+            users_writer = csv.writer(users_csv)
+            users_writer.writerow([
+                'البريد الإلكتروني', 'مفعل', 'مدير', 'رقم الواتساب',
+                'المنصة المفضلة', 'طريقة الدفع المفضلة', 'بريد EA',
+                'معرف التليجرام', 'تاريخ التسجيل'
+            ])
+            
+            users = User.query.all()
+            for user in users:
+                users_writer.writerow([
+                    user.email, user.is_verified, user.is_admin,
+                    user.whatsapp or '', user.preferred_platform or '',
+                    user.preferred_payment or '', user.ea_email or '',
+                    user.telegram_id or '', user.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                ])
+            
+            zip_file.writestr('users.csv', users_csv.getvalue().encode('utf-8-sig'))
+            
+            # إضافة ملف إحصائيات
+            stats = calculate_admin_statistics()
+            stats_content = f"""تقرير إحصائيات النظام
+تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+إحصائيات المستخدمين:
+- إجمالي المستخدمين: {stats.get('users', {}).get('total', 0)}
+- المستخدمين المفعلين: {stats.get('users', {}).get('verified', 0)}
+- معدل التفعيل: {stats.get('users', {}).get('verification_rate', 0):.1f}%
+- مربوطين بالتليجرام: {stats.get('users', {}).get('telegram_linked', 0)}
+
+إحصائيات الطلبات:
+- إجمالي الطلبات: {stats.get('orders', {}).get('total', 0)}
+- الطلبات المكتملة: {stats.get('orders', {}).get('completed', 0)}
+- معدل الإنجاز: {stats.get('orders', {}).get('completion_rate', 0):.1f}%
+
+الإيرادات:
+- إجمالي الإيرادات: {stats.get('revenue', {}).get('total', 0):,.2f} جنيه
+- متوسط قيمة الطلب: {stats.get('revenue', {}).get('avg_order', 0):,.2f} جنيه
+"""
+            zip_file.writestr('statistics.txt', stats_content.encode('utf-8'))
+        
+        zip_buffer.seek(0)
+        
+        response = make_response(zip_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = f'attachment; filename=complete_data_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+        
+        app.logger.info(f"Complete data export by admin: {current_user.email}")
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting all data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/bulk-notification', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=1, per_hour=3)
+def send_bulk_notification():
+    """إرسال إشعار جماعي لجميع المستخدمين المربوطين بالتليجرام"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        if not telegram_system.is_configured():
+            return jsonify({'error': 'Telegram system not configured'}), 503
+        
+        # الحصول على جميع المستخدمين المربوطين بالتليجرام
+        users_with_telegram = User.query.filter(User.telegram_id.isnot(None)).all()
+        
+        if not users_with_telegram:
+            return jsonify({'error': 'No users with Telegram linked'}), 400
+        
+        # تنسيق الرسالة
+        formatted_message = f"""
+📢 <b>إشعار من إدارة شهد السنيورة</b>
+
+{message}
+
+🕒 {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+شكراً لاختيارك شهد السنيورة! 🎮
+        """
+        
+        # إرسال الرسائل
+        sent_count = 0
+        failed_count = 0
+        
+        for user in users_with_telegram:
+            success = telegram_system.send_message(user.telegram_id, formatted_message.strip())
+            if success:
+                sent_count += 1
+            else:
+                failed_count += 1
+        
+        app.logger.info(f"Bulk notification sent by {current_user.email}: {sent_count} sent, {failed_count} failed")
+        
+        return jsonify({
+            'success': True,
+            'message': f'تم إرسال الإشعار بنجاح',
+            'sent_count': sent_count,
+            'failed_count': failed_count,
+            'total_users': len(users_with_telegram)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error sending bulk notification: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/logs')
+@login_required
+@advanced_rate_limit(per_minute=10, per_hour=50)
+def view_system_logs():
+    """عرض سجلات النظام"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        import os
+        
+        logs_content = ""
+        log_file_path = "logs/app.log"
+        
+        if os.path.exists(log_file_path):
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                # قراءة آخر 1000 سطر
+                lines = f.readlines()
+                logs_content = ''.join(lines[-1000:])
+        else:
+            logs_content = "ملف السجلات غير موجود"
+        
+        # إنشاء صفحة HTML لعرض السجلات
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجلات النظام</title>
+    <style>
+        body {{
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #f0f0f0;
+            padding: 20px;
+            margin: 0;
+        }}
+        .log-container {{
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 80vh;
+            overflow-y: auto;
+        }}
+        .log-header {{
+            background: #4a5568;
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            margin: -20px -20px 20px -20px;
+        }}
+        .error {{ color: #ff6b6b; }}
+        .warning {{ color: #ffa500; }}
+        .info {{ color: #4dabf7; }}
+        .success {{ color: #51cf66; }}
+    </style>
+</head>
+<body>
+    <div class="log-header">
+        <h2>سجلات النظام - شهد السنيورة</h2>
+        <p>آخر 1000 سطر - تحديث: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+    <div class="log-container">{logs_content}</div>
+    <script>
+        // تمرير تلقائي لأسفل
+        document.querySelector('.log-container').scrollTop = 
+            document.querySelector('.log-container').scrollHeight;
+        
+        // تحديث تلقائي كل 30 ثانية
+        setTimeout(() => location.reload(), 30000);
+    </script>
+</body>
+</html>
+        """
+        
+        from flask import make_response
+        response = make_response(html_content)
+        response.headers['Content-Type'] = 'text/html; charset=utf-8'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Error viewing system logs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/backup', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=1, per_hour=2)
+def create_database_backup():
+    """إنشاء نسخة احتياطية من قاعدة البيانات"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        import json
+        import os
+        
+        backup_data = {
+            'backup_info': {
+                'created_at': datetime.now().isoformat(),
+                'created_by': current_user.email,
+                'version': '1.0'
+            },
+            'users': [],
+            'orders': []
+        }
+        
+        # نسخ احتياطية للمستخدمين (بدون كلمات المرور)
+        users = User.query.all()
+        for user in users:
+            backup_data['users'].append({
+                'id': user.id,
+                'email': user.email,
+                'is_verified': user.is_verified,
+                'is_admin': user.is_admin,
+                'whatsapp': user.whatsapp,
+                'preferred_platform': user.preferred_platform,
+                'preferred_payment': user.preferred_payment,
+                'ea_email': user.ea_email,
+                'telegram_id': user.telegram_id,
+                'telegram_username': user.telegram_username,
+                'profile_completed': user.profile_completed,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_profile_update': user.last_profile_update.isoformat() if user.last_profile_update else None
+            })
+        
+        # نسخ احتياطية للطلبات
+        orders = Order.query.all()
+        for order in orders:
+            backup_data['orders'].append({
+                'id': order.id,
+                'user_id': order.user_id,
+                'platform': order.platform,
+                'payment_method': order.payment_method,
+                'coins_amount': order.coins_amount,
+                'status': order.status,
+                'ea_email': order.ea_email,
+                'transfer_type': order.transfer_type,
+                'notes': order.notes,
+                'price': order.price,
+                'phone_number': order.phone_number,
+                'created_at': order.created_at.isoformat() if order.created_at else None,
+                'updated_at': order.updated_at.isoformat() if order.updated_at else None
+            })
+        
+        # حفظ النسخة الاحتياطية
+        backup_filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        backup_dir = "backups"
+        
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, ensure_ascii=False, indent=2)
+        
+        app.logger.info(f"Database backup created by {current_user.email}: {backup_filename}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'تم إنشاء النسخة الاحتياطية بنجاح',
+            'filename': backup_filename,
+            'users_count': len(backup_data['users']),
+            'orders_count': len(backup_data['orders'])
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error creating database backup: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/telegram-test', methods=['POST'])
 @login_required
 @advanced_rate_limit(per_minute=2, per_hour=10)

@@ -1,52 +1,427 @@
 {% extends "base.html" %}
 
-{% block title %}طلب جديد - موقع الفريلانسر{% endblock %}
+{% block title %}طلب جديد - شهد السنيورة{% endblock %}
+
+{% block head %}
+<style>
+.platform-card, .payment-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.platform-card::before, .payment-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(79, 70, 229, 0.1));
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.platform-card:hover::before, .payment-card:hover::before {
+    opacity: 1;
+}
+
+.platform-card.selected, .payment-card.selected {
+    border-color: var(--success-color) !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2) !important;
+}
+
+.platform-icon, .payment-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1rem;
+    transition: all 0.3s ease;
+}
+
+.coins-input {
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.price-display {
+    background: linear-gradient(135deg, var(--success-color), var(--primary-color));
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    text-align: center;
+    color: white;
+    margin: 2rem 0;
+}
+
+.price-breakdown {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.transfer-type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.transfer-option {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.transfer-option:hover {
+    border-color: var(--primary-color);
+}
+
+.transfer-option.selected {
+    border-color: var(--success-color);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    padding: 0 1rem;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    opacity: 1;
+}
+
+.progress-step.completed {
+    opacity: 1;
+    color: var(--success-color);
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.progress-step.active .step-circle {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.progress-step.completed .step-circle {
+    border-color: var(--success-color);
+    background: var(--success-color);
+    color: white;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header text-center">
-                <h3><i class="fas fa-plus text-primary"></i> طلب جديد</h3>
+<div class="row">
+    <div class="col">
+        <div class="card fade-in">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-plus-circle"></i>
+                    طلب جديد - كوينز FC 25
+                </h3>
             </div>
+            
             <div class="card-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="platform" class="form-label">المنصة</label>
-                        <select class="form-control" id="platform" name="platform" required>
-                            <option value="">اختر المنصة</option>
+                <!-- مؤشر التقدم -->
+                <div class="progress-steps">
+                    <div class="progress-step active" id="step-platform">
+                        <div class="step-circle">1</div>
+                        <span>اختيار المنصة</span>
+                    </div>
+                    <div class="progress-step" id="step-amount">
+                        <div class="step-circle">2</div>
+                        <span>كمية الكوينز</span>
+                    </div>
+                    <div class="progress-step" id="step-payment">
+                        <div class="step-circle">3</div>
+                        <span>طريقة الدفع</span>
+                    </div>
+                    <div class="progress-step" id="step-details">
+                        <div class="step-circle">4</div>
+                        <span>التفاصيل</span>
+                    </div>
+                </div>
+
+                <form method="POST" id="orderForm">
+                    <!-- اختيار المنصة -->
+                    <div class="form-section" id="section-platform">
+                        <h4 class="mb-4">
+                            <i class="fas fa-gamepad"></i>
+                            اختر منصة اللعب
+                        </h4>
+                        
+                        <div class="visual-selector">
                             {% for platform in platforms %}
-                            <option value="{{ platform }}">{{ platform }}</option>
+                            <div class="selector-option">
+                                <input type="radio" 
+                                       name="platform" 
+                                       value="{{ platform.id }}" 
+                                       id="platform-{{ platform.id }}"
+                                       {% if user.preferred_platform == platform.id %}checked{% endif %}>
+                                <label for="platform-{{ platform.id }}" class="platform-card selector-card">
+                                    <div class="platform-icon" style="background: {{ platform.color }}20; color: {{ platform.color }};">
+                                        <i class="{{ platform.icon }}"></i>
+                                    </div>
+                                    <h5>{{ platform.name }}</h5>
+                                    <p style="color: var(--text-secondary); margin: 0;">{{ platform.description }}</p>
+                                </label>
+                            </div>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="coins_amount" class="form-label">عدد الكوينز</label>
-                        <input type="number" class="form-control" id="coins_amount" name="coins_amount" min="300000" required>
-                        <div class="form-text">الحد الأدنى 300,000 كوين</div>
+
+                    <!-- كمية الكوينز -->
+                    <div class="form-section" id="section-amount" style="display: none;">
+                        <h4 class="mb-4">
+                            <i class="fas fa-coins"></i>
+                            كمية الكوينز المطلوبة
+                        </h4>
+                        
+                        <div class="form-group">
+                            <input type="number" 
+                                   class="form-input coins-input" 
+                                   name="coins_amount" 
+                                   id="coins_amount"
+                                   placeholder="0"
+                                   min="300000"
+                                   step="50000">
+                            <small class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                الحد الأدنى: 300,000 كوين
+                            </small>
+                        </div>
+
+                        <!-- نوع التحويل -->
+                        <div class="transfer-type-selector">
+                            <div class="transfer-option" data-type="normal">
+                                <input type="radio" name="transfer_type" value="normal" id="transfer-normal" checked style="display: none;">
+                                <i class="fas fa-clock" style="font-size: 2rem; color: var(--info-color); margin-bottom: 1rem;"></i>
+                                <h5>تحويل عادي</h5>
+                                <p style="color: var(--text-secondary); margin: 0;">
+                                    خلال 2-6 ساعات<br>
+                                    <strong>السعر الأساسي</strong>
+                                </p>
+                            </div>
+                            
+                            <div class="transfer-option" data-type="instant">
+                                <input type="radio" name="transfer_type" value="instant" id="transfer-instant" style="display: none;">
+                                <i class="fas fa-bolt" style="font-size: 2rem; color: var(--warning-color); margin-bottom: 1rem;"></i>
+                                <h5>تحويل فوري</h5>
+                                <p style="color: var(--text-secondary); margin: 0;">
+                                    خلال 30 دقيقة<br>
+                                    <strong>+ 15% زيادة</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- عرض السعر -->
+                        <div class="price-display" id="priceDisplay" style="display: none;">
+                            <h3 id="totalPrice">0 جنيه</h3>
+                            <p id="priceDetails" style="margin: 0; opacity: 0.9;"></p>
+                            
+                            <div class="price-breakdown">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>السعر الأساسي:</span>
+                                    <span id="basePrice">0 جنيه</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none !important;">
+                                    <span>خصم الكمية:</span>
+                                    <span id="discountAmount" style="color: var(--success-color);">0 جنيه</span>
+                                </div>
+                                <div class="d-flex justify-content-between" id="feeRow" style="display: none !important;">
+                                    <span>رسوم التحويل الفوري:</span>
+                                    <span id="transferFee" style="color: var(--warning-color);">0 جنيه</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="payment_method" class="form-label">طريقة الدفع</label>
-                        <select class="form-control" id="payment_method" name="payment_method" required>
-                            <option value="">اختر طريقة الدفع</option>
+
+                    <!-- طريقة الدفع -->
+                    <div class="form-section" id="section-payment" style="display: none;">
+                        <h4 class="mb-4">
+                            <i class="fas fa-credit-card"></i>
+                            طريقة الدفع
+                        </h4>
+                        
+                        <div class="visual-selector">
                             {% for method in payment_methods %}
-                            <option value="{{ method }}">{{ method }}</option>
+                            <div class="selector-option">
+                                <input type="radio" 
+                                       name="payment_method" 
+                                       value="{{ method.id }}" 
+                                       id="payment-{{ method.id }}"
+                                       {% if user.preferred_payment == method.id %}checked{% endif %}>
+                                <label for="payment-{{ method.id }}" class="payment-card selector-card">
+                                    <div class="payment-icon" style="background: {{ method.color }}20; color: {{ method.color }};">
+                                        <i class="{{ method.icon }}"></i>
+                                    </div>
+                                    <h6>{{ method.name }}</h6>
+                                    <small style="color: var(--text-secondary);">{{ method.description }}</small>
+                                </label>
+                            </div>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-paper-plane"></i> إرسال الطلب
+
+                    <!-- التفاصيل الإضافية -->
+                    <div class="form-section" id="section-details" style="display: none;">
+                        <h4 class="mb-4">
+                            <i class="fas fa-info-circle"></i>
+                            التفاصيل الإضافية
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone_number" class="form-label">
+                                        <i class="fab fa-whatsapp"></i>
+                                        رقم الواتساب
+                                    </label>
+                                    <input type="tel" 
+                                           class="form-input" 
+                                           name="phone_number" 
+                                           id="phone_number"
+                                           value="{{ user.whatsapp or '' }}"
+                                           placeholder="+201234567890">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ea_email" class="form-label">
+                                        <i class="fas fa-envelope"></i>
+                                        بريد EA (اختياري)
+                                    </label>
+                                    <input type="email" 
+                                           class="form-input" 
+                                           name="ea_email" 
+                                           id="ea_email"
+                                           value="{{ user.ea_email or '' }}"
+                                           placeholder="example@email.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+                            <div class="card-body">
+                                <h6>
+                                    <i class="fas fa-shield-alt"></i>
+                                    معلومات EA الإضافية (اختياري - لتسريع العملية)
+                                </h6>
+                                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                    هذه المعلومات اختيارية ومشفرة، وتساعد في تسريع عملية الشراء
+                                </p>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="ea_password" class="form-label">كلمة مرور EA</label>
+                                            <input type="password" 
+                                                   class="form-input" 
+                                                   name="ea_password" 
+                                                   id="ea_password"
+                                                   placeholder="••••••••">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="backup_codes" class="form-label">أكواد الاحتياط (6 أكواد)</label>
+                                            <textarea class="form-input" 
+                                                      name="backup_codes" 
+                                                      id="backup_codes"
+                                                      rows="3"
+                                                      placeholder="كود1, كود2, كود3, كود4, كود5, كود6"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-comment"></i>
+                                ملاحظات إضافية
+                            </label>
+                            <textarea class="form-input" 
+                                      name="notes" 
+                                      id="notes"
+                                      rows="3"
+                                      placeholder="أي ملاحظات أو طلبات خاصة..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- أزرار التنقل -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-primary" id="prevBtn" style="display: none;">
+                            <i class="fas fa-arrow-right"></i>
+                            السابق
+                        </button>
+                        
+                        <button type="button" class="btn btn-primary" id="nextBtn">
+                            التالي
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        
+                        <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                            <i class="fas fa-paper-plane"></i>
+                            إرسال الطلب
                         </button>
                     </div>
                 </form>
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-link">
-                        <i class="fas fa-arrow-left"></i> العودة لوحة التحكم
-                    </a>
-                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+class OrderForm {
+    constructor() {
+        this.currentStep = 0;
+        this.totalSteps = 4;
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.updateStepDisplay();
+    }
+    
+    setupEventListeners() {
+        // Navigation buttons
+        document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
+        document.getElementById('prevBtn').

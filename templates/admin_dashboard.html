@@ -217,5 +217,67 @@ function updateStatus(orderId, newStatus) {
 function viewOrder(orderId) {
     alert(`تفاصيل الطلب رقم ${orderId}`);
 }
+
+// دوال اختبار التليجرام
+async function testTelegram(testType) {
+    const resultDiv = document.getElementById('telegram-test-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> جاري الاختبار...</div>';
+    
+    try {
+        const response = await fetch('/admin/telegram-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                test_type: testType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (testType === 'config') {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> إعدادات التليجرام</h6>
+                        <ul class="mb-0">
+                            <li>حالة التكوين: ${data.telegram_configured ? '✅ مُعد' : '❌ غير مُعد'}</li>
+                            <li>Bot Token: ${data.bot_token_exists ? '✅ موجود' : '❌ مفقود'}</li>
+                            <li>اسم البوت: ${data.bot_username || 'غير محدد'}</li>
+                            <li>Webhook URL: ${data.webhook_url || 'غير محدد'}</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> ${data.message}
+                    </div>
+                `;
+            }
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.message}
+                </div>
+            `;
+        }
+        
+        // إخفاء النتيجة بعد 10 ثوان
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 10000);
+        
+    } catch (error) {
+        console.error('خطأ في اختبار التليجرام:', error);
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> خطأ في الاتصال: ${error.message}
+            </div>
+        `;
+    }
+}
 </script>
 {% endblock %}

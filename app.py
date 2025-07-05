@@ -665,10 +665,9 @@ suspicious_sessions = defaultdict(lambda: {
 })
 
 def track_suspicious_session(client_ip, action_type, severity=1):
-    """تتبع الجلسات المشبوهة مع حماية للمصادر الموثوقة"""
     current_time = int(time.time())
     
-    # تجاهل المصادر الموثوقة
+    # تجاهل المصادر الموثوقة من التتبع القاسي
     try:
         ip_obj = ipaddress.ip_address(client_ip)
         if ip_obj.is_private or ip_obj.is_loopback:
@@ -682,19 +681,23 @@ def track_suspicious_session(client_ip, action_type, severity=1):
     # زيادة عدد المحاولات
     session_data['attempts'] += 1
     session_data['last_attempt'] = current_time
-    session_data['suspicious_score'] += severity
+    session_data['suspicious_score'] += (severity * 0.7)  # تخفيف شدة العقوبة
     
     # تطبيق حظر تدريجي أكثر تساهلاً
-    if session_data['suspicious_score'] >= 15:  # زيادة العتبة
-        # حظر لمدة 30 دقيقة بدلاً من ساعة
-        session_data['blocked_until'] = current_time + 1800
+    if session_data['suspicious_score'] >= 25:  # زيادة العتبة من 15 إلى 25
+        session_data['blocked_until'] = current_time + 1800  # 30 دقيقة
         app.logger.warning(f"IP {client_ip} blocked for 30 minutes due to suspicious activity")
-    elif session_data['suspicious_score'] >= 8:  # زيادة العتبة
-        # حظر لمدة 5 دقائق بدلاً من 15
-        session_data['blocked_until'] = current_time + 300
+    elif session_data['suspicious_score'] >= 15:  # زيادة العتبة من 8 إلى 15
+        session_data['blocked_until'] = current_time + 300  # 5 دقائق
         app.logger.warning(f"IP {client_ip} blocked for 5 minutes due to suspicious activity")
     
-    app.logger.info(f"Suspicious activity tracked for {client_ip}: {action_type} (Score: {session_data['suspicious_score']})")
+    # تقليل النقاط تدريجياً
+    time_since_last = current_time - session_data.get('last_decay', current_time)
+    if time_since_last > 300:  # كل 5 دقائق
+        session_data['suspicious_score'] = max(0, session_data['suspicious_score'] - 2)
+        session_data['last_decay'] = current_time
+    
+    app.logger.info(f"Suspicious activity tracked for {client_ip}: {action_type} (Score: {session_data['suspicious_score']:.1f})")
 
 def is_session_blocked(client_ip):
     """فحص ما إذا كانت الجلسة محظورة مع استثناءات للمصادر الموثوقة"""
@@ -806,9 +809,8 @@ def send_verification_email(email, code):
 # السطر الذي يسبق الكتلة مباشرة:
         return True  # Don't block registration if email fails
 
-#  تحديث دالة verify_recaptcha_advanced في ملف app.py
+#  تحديث دالة verify_recaptcha_advanced 
 def verify_recaptcha_advanced(token, request):
-    """التحقق المحسن من رمز reCAPTCHA v3 مع تحليل متعدد العوامل"""
     if not app.config['RECAPTCHA_SECRET_KEY']:
         app.logger.warning("reCAPTCHA not configured - allowing request to pass")
         return {'success': True, 'penalty': 0}
@@ -844,31 +846,31 @@ def verify_recaptcha_advanced(token, request):
             app.logger.warning(f"reCAPTCHA failed - Errors: {result.get('error-codes', [])}")
             return {'success': False, 'penalty': penalty_score}
         
-        # تحليل النقاط مع معايير أكثر صرامة
-        if score < 0.2:
-            penalty_score = 6  # مشبوه جداً
-        elif score < 0.4:
-            penalty_score = 4  # مشبوه
-        elif score < 0.6:
-            penalty_score = 3  # مشبوه قليلاً
-        elif score < 0.8:
+        # تحليل النقاط مع معايير متوازنة
+        if score < 0.1:
+            penalty_score = 5  # مشبوه جداً
+        elif score < 0.3:
+            penalty_score = 3  # مشبوه
+        elif score < 0.5:
             penalty_score = 2  # حذر
+        elif score < 0.7:
+            penalty_score = 1  # حذر قليل
         else:
             penalty_score = 0  # آمن
         
-        # فحص Action consistency
+        # فحص Action consistency مخفف
         expected_actions = ['login', 'register', 'submit']
-        if action not in expected_actions:
-            penalty_score += 2
+        if action not in expected_actions and action != 'unknown':
+            penalty_score += 1
             app.logger.warning(f"Unexpected reCAPTCHA action: {action}")
         
-        # فحص الـ hostname
-        expected_hostnames = ['senioraa.onrender.com', 'localhost']
+        # فحص الـ hostname مخفف
+        expected_hostnames = ['senioraa.onrender.com', 'localhost', '127.0.0.1']
         if hostname and not any(host in hostname for host in expected_hostnames):
-            penalty_score += 3
+            penalty_score += 1
             app.logger.warning(f"Unexpected hostname in reCAPTCHA: {hostname}")
         
-        # فحص التوقيت
+        # فحص التوقيت مخفف
         if challenge_ts:
             try:
                 from datetime import datetime
@@ -877,14 +879,14 @@ def verify_recaptcha_advanced(token, request):
                 current_time = datetime.utcnow()
                 time_diff = (current_time - challenge_time).total_seconds()
                 
-                if time_diff > 300:  # أكثر من 5 دقائق
-                    penalty_score += 3
+                if time_diff > 600:  # أكثر من 10 دقائق
+                    penalty_score += 1
                     app.logger.warning(f"Old reCAPTCHA token used: {time_diff}s old")
             except:
-                penalty_score += 2
+                penalty_score += 0  # تجاهل الأخطاء
         
-        # العتبة الجديدة الأكثر صرامة
-        final_success = penalty_score < 2
+        # العتبة الجديدة المتوازنة
+        final_success = penalty_score < 4
         
         app.logger.info(f"reCAPTCHA advanced verification - Final: {final_success}, Penalty: {penalty_score}")
         
@@ -983,97 +985,139 @@ def is_bot_behavior(request):
 
 # تحديث دالة comprehensive_captcha_check
 def comprehensive_captcha_check(request, form_data):
-    """فحص شامل محسن مع طبقات حماية متقدمة"""
     client_ip = get_remote_address()
     
     # فحص الـ endpoints المستثناة
     if any(request.path.startswith(endpoint) for endpoint in EXEMPT_ENDPOINTS):
         return True
     
-    # استثناء المصادر الموثوقة من الفحوصات الصارمة
-    is_trusted_ip = False
-    try:
-        ip_obj = ipaddress.ip_address(client_ip)
-        if ip_obj.is_private or ip_obj.is_loopback:
-            is_trusted_ip = True
-    except:
-        pass
+    # تحديد مستوى الثقة
+    trust_level = get_trust_level(request)
     
-    # فحص الحظر المؤقت أولاً
-    if not is_trusted_ip:
+    # المصادر عالية الثقة تمر بفحوصات مخففة
+    if trust_level == 'high':
+        app.logger.info(f"High trust request from {client_ip} - applying relaxed checks")
+        
+        # فحص Honeypot فقط للمصادر عالية الثقة
+        if not check_honeypot(form_data):
+            track_suspicious_session(client_ip, 'honeypot_hit', 3)  # عقوبة مخففة
+            app.logger.warning(f"Honeypot check failed for trusted IP: {client_ip}")
+            return False
+        
+        # فحص reCAPTCHA مخفف للمصادر الموثوقة
+        recaptcha_token = form_data.get('g-recaptcha-response', '')
+        if recaptcha_token:
+            recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
+            if not recaptcha_result['success'] and recaptcha_result['penalty'] > 4:
+                app.logger.warning(f"reCAPTCHA failed for trusted IP {client_ip} with high penalty: {recaptcha_result['penalty']}")
+                return False
+        
+        return True
+    
+    # المصادر متوسطة الثقة
+    elif trust_level == 'medium':
+        app.logger.info(f"Medium trust request from {client_ip} - applying moderate checks")
+        
+        # فحص الحظر المؤقت
         is_blocked, remaining_time = is_session_blocked(client_ip)
         if is_blocked:
             app.logger.warning(f"Request from blocked session {client_ip}")
             return False
-    
-    # 1. فحص VPN/Proxy Detection الجديد
-    if not is_trusted_ip and not detect_vpn_proxy(request):
-        track_suspicious_session(client_ip, 'vpn_proxy_detected', 6)
-        app.logger.warning(f"VPN/Proxy detected from {client_ip}")
-        return False
-    
-    # 2. فحص Browser Fingerprint المتقدم
-    fingerprint_hash, fingerprint_data = generate_device_fingerprint_advanced(request)
-    if not is_trusted_ip and fingerprint_data['inconsistency_score'] > 4:
-        track_suspicious_session(client_ip, 'fingerprint_inconsistency', 5)
-        app.logger.warning(f"Browser fingerprint inconsistency from {client_ip}: score {fingerprint_data['inconsistency_score']}")
-        return False
-    
-    # 3. فحص Browser Automation
-    if not is_trusted_ip and not detect_automation(request):
-        track_suspicious_session(client_ip, 'automation_detected', 8)
-        app.logger.warning(f"Browser automation detected from {client_ip}")
-        return False
-    
-    # 4. فحص سلوك البوت الأساسي
-    if not is_trusted_ip and is_bot_behavior(request):
-        track_suspicious_session(client_ip, 'bot_behavior', 2)
-        app.logger.warning(f"Bot behavior detected from {client_ip}")
-        return False
-    
-    # 5. فحص Honeypot
-    if not check_honeypot(form_data):
-        track_suspicious_session(client_ip, 'honeypot_hit', 8)
-        app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
-        return False
-    
-    # 6. فحص Time Token متقدم
-    time_token = form_data.get('time_token', '')
-    timestamp = form_data.get('timestamp', '')
-    
-    if not verify_time_token_advanced(time_token, timestamp, form_data):
-        if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'invalid_time_token', 3)
-        app.logger.warning(f"Advanced time token verification failed for IP: {client_ip}")
-        return False
-    
-    # 7. فحص reCAPTCHA v3 المحسن
-    recaptcha_token = form_data.get('g-recaptcha-response', '')
-    if recaptcha_token:
-        recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
-        if not recaptcha_result['success']:
-            if not is_trusted_ip:
-                track_suspicious_session(client_ip, 'recaptcha_failed', recaptcha_result['penalty'])
-            app.logger.warning(f"Advanced reCAPTCHA verification failed for IP: {client_ip}")
-            return False
-    else:
-        if not is_trusted_ip:
-            track_suspicious_session(client_ip, 'missing_recaptcha', 4)
-        app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
         
-        if not is_trusted_ip:
+        # فحص Honeypot
+        if not check_honeypot(form_data):
+            track_suspicious_session(client_ip, 'honeypot_hit', 5)
+            app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
             return False
+        
+        # فحص Time Token مخفف
+        time_token = form_data.get('time_token', '')
+        timestamp = form_data.get('timestamp', '')
+        
+        if not verify_time_token(time_token, timestamp):
+            track_suspicious_session(client_ip, 'invalid_time_token', 2)
+            app.logger.warning(f"Time token verification failed for IP: {client_ip}")
+            return False
+        
+        # فحص reCAPTCHA
+        recaptcha_token = form_data.get('g-recaptcha-response', '')
+        if recaptcha_token:
+            recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
+            if not recaptcha_result['success']:
+                track_suspicious_session(client_ip, 'recaptcha_failed', recaptcha_result['penalty'])
+                app.logger.warning(f"reCAPTCHA verification failed for IP: {client_ip}")
+                return False
+        else:
+            track_suspicious_session(client_ip, 'missing_recaptcha', 2)
+            app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
+            return False
+        
+        return True
     
-    # 8. فحص التحليل السلوكي المتقدم
-    if not is_trusted_ip:
+    # المصادر منخفضة الثقة - فحص كامل
+    else:
+        app.logger.info(f"Low trust request from {client_ip} - applying full checks")
+        
+        # فحص الحظر المؤقت
+        is_blocked, remaining_time = is_session_blocked(client_ip)
+        if is_blocked:
+            app.logger.warning(f"Request from blocked session {client_ip}")
+            return False
+        
+        # فحص VPN/Proxy مخفف
+        if not detect_vpn_proxy(request):
+            track_suspicious_session(client_ip, 'vpn_proxy_detected', 4)  # عقوبة مخففة
+            app.logger.warning(f"VPN/Proxy detected from {client_ip}")
+            return False
+        
+        # فحص Browser Automation مخفف
+        if not detect_automation(request):
+            track_suspicious_session(client_ip, 'automation_detected', 5)  # عقوبة مخففة
+            app.logger.warning(f"Browser automation detected from {client_ip}")
+            return False
+        
+        # فحص سلوك البوت الأساسي
+        if is_bot_behavior(request):
+            track_suspicious_session(client_ip, 'bot_behavior', 2)
+            app.logger.warning(f"Bot behavior detected from {client_ip}")
+            return False
+        
+        # فحص Honeypot
+        if not check_honeypot(form_data):
+            track_suspicious_session(client_ip, 'honeypot_hit', 8)
+            app.logger.warning(f"Honeypot check failed for IP: {client_ip}")
+            return False
+        
+        # فحص Time Token
+        time_token = form_data.get('time_token', '')
+        timestamp = form_data.get('timestamp', '')
+        
+        if not verify_time_token_advanced(time_token, timestamp, form_data):
+            track_suspicious_session(client_ip, 'invalid_time_token', 3)
+            app.logger.warning(f"Advanced time token verification failed for IP: {client_ip}")
+            return False
+        
+        # فحص reCAPTCHA
+        recaptcha_token = form_data.get('g-recaptcha-response', '')
+        if recaptcha_token:
+            recaptcha_result = verify_recaptcha_advanced(recaptcha_token, request)
+            if not recaptcha_result['success']:
+                track_suspicious_session(client_ip, 'recaptcha_failed', recaptcha_result['penalty'])
+                app.logger.warning(f"Advanced reCAPTCHA verification failed for IP: {client_ip}")
+                return False
+        else:
+            track_suspicious_session(client_ip, 'missing_recaptcha', 3)
+            app.logger.warning(f"No reCAPTCHA token provided from {client_ip}")
+            return False
+        
+        # فحص التحليل السلوكي مخفف
         behavioral_score = advanced_behavioral_analysis(form_data, request)
-        if behavioral_score > 5:
+        if behavioral_score > 7:  # عتبة أعلى
             track_suspicious_session(client_ip, 'suspicious_behavior', behavioral_score)
             app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
             return False
-    
-    app.logger.info(f"All enhanced captcha checks passed for IP: {client_ip} (Trusted: {is_trusted_ip})")
-    return True
+        
+        return True
 
 # السطر الذي يلي الكتلة مباشرة:
 def generate_device_fingerprint_advanced(request):
@@ -1198,7 +1242,46 @@ def detect_automation(request):
 # السطر السابق:
     return automation_score < 8  # السماح إذا كان أقل من 8 نقاط
 
-# ✅ إضافة دالة detect_vpn_proxy جديدة في ملف app.py
+def is_trusted_request(request):
+    client_ip = get_remote_address()
+    user_agent = request.headers.get('User-Agent', '').lower()
+    
+    # IPs موثوقة
+    trusted_ips = ['127.0.0.1', 'localhost']
+    if any(ip in client_ip for ip in trusted_ips):
+        return True
+    
+    # User-Agents موثوقة (متصفحات حقيقية)
+    trusted_browsers = [
+        'chrome/', 'firefox/', 'safari/', 'edge/', 'opera/',
+        'miuibrowser/', 'samsungbrowser/', 'yabrowser/'
+    ]
+    
+    if any(browser in user_agent for browser in trusted_browsers):
+        # فحص إضافي للمتصفحات الحقيقية
+        required_headers = ['accept', 'accept-language', 'accept-encoding']
+        missing_headers = sum(1 for h in required_headers if not request.headers.get(h.replace('-', '_').title()))
+        
+        if missing_headers == 0:
+            return True
+    
+    return False
+
+def get_trust_level(request):
+    if is_trusted_request(request):
+        return 'high'
+    
+    client_ip = get_remote_address()
+    try:
+        ip_obj = ipaddress.ip_address(client_ip)
+        if ip_obj.is_private or ip_obj.is_loopback:
+            return 'medium'
+    except:
+        pass
+    
+    return 'low'
+
+#  إضافة دالة detect_vpn_proxy جديدة في ملف app.py
 def detect_vpn_proxy(request):
     """كشف VPN والـ Proxy المتقدم"""
     client_ip = get_remote_address()
@@ -1612,7 +1695,7 @@ def reset_admin_password():
     return render_template('reset_admin_password.html')
 
 @app.route('/register', methods=['GET', 'POST'])
-@advanced_rate_limit(per_minute=3, per_hour=10, block_on_abuse=True)
+@advanced_rate_limit(per_minute=5, per_hour=15, block_on_abuse=True)
 def register():
     if request.method == 'GET':
         # إنشاء time token للنموذج
@@ -1920,7 +2003,7 @@ def verify_email():
     return render_template('verify_email.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@advanced_rate_limit(per_minute=5, per_hour=20, block_on_abuse=True)
+@advanced_rate_limit(per_minute=8, per_hour=30, block_on_abuse=True)
 def login():
     if request.method == 'GET':
         # إنشاء time token للنموذج

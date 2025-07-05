@@ -424,4 +424,320 @@ class OrderForm {
     setupEventListeners() {
         // Navigation buttons
         document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
-        document.getElementById('prevBtn').
+        document.getElementById('prevBtn').addEventListener('click', () => this.prevStep());
+        
+        // Platform selection
+        document.querySelectorAll('input[name="platform"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.updatePlatformSelection();
+                this.calculatePrice();
+            });
+        });
+        
+        // Coins amount input
+        document.getElementById('coins_amount').addEventListener('input', (e) => {
+            this.formatCoinsInput(e.target);
+            this.calculatePrice();
+        });
+        
+        // Transfer type selection
+        document.querySelectorAll('.transfer-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const type = option.dataset.type;
+                this.selectTransferType(type);
+                this.calculatePrice();
+            });
+        });
+        
+        // Payment method selection
+        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.updatePaymentSelection();
+            });
+        });
+        
+        // Form submission
+        document.getElementById('orderForm').addEventListener('submit', (e) => {
+            this.handleSubmit(e);
+        });
+    }
+    
+    nextStep() {
+        if (this.validateCurrentStep()) {
+            this.currentStep++;
+            this.updateStepDisplay();
+        }
+    }
+    
+    prevStep() {
+        this.currentStep--;
+        this.updateStepDisplay();
+    }
+    
+    updateStepDisplay() {
+        // Hide all sections
+        document.querySelectorAll('.form-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Show current section
+        const sections = ['section-platform', 'section-amount', 'section-payment', 'section-details'];
+        const currentSection = document.getElementById(sections[this.currentStep]);
+        if (currentSection) {
+            currentSection.style.display = 'block';
+        }
+        
+        // Update progress steps
+        document.querySelectorAll('.progress-step').forEach((step, index) => {
+            step.className = 'progress-step';
+            if (index < this.currentStep) {
+                step.classList.add('completed');
+                step.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+            } else if (index === this.currentStep) {
+                step.classList.add('active');
+                step.querySelector('.step-circle').innerHTML = index + 1;
+            } else {
+                step.querySelector('.step-circle').innerHTML = index + 1;
+            }
+        });
+        
+        // Update navigation buttons
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        prevBtn.style.display = this.currentStep > 0 ? 'inline-flex' : 'none';
+        nextBtn.style.display = this.currentStep < this.totalSteps - 1 ? 'inline-flex' : 'none';
+        submitBtn.style.display = this.currentStep === this.totalSteps - 1 ? 'inline-flex' : 'none';
+    }
+    
+    validateCurrentStep() {
+        switch(this.currentStep) {
+            case 0: // Platform selection
+                const selectedPlatform = document.querySelector('input[name="platform"]:checked');
+                if (!selectedPlatform) {
+                    this.showAlert('يرجى اختيار منصة اللعب', 'warning');
+                    return false;
+                }
+                return true;
+                
+            case 1: // Coins amount
+                const coinsAmount = parseInt(document.getElementById('coins_amount').value);
+                if (!coinsAmount || coinsAmount < 300000) {
+                    this.showAlert('يرجى إدخال كمية كوينز صالحة (الحد الأدنى 300,000)', 'warning');
+                    return false;
+                }
+                return true;
+                
+            case 2: // Payment method
+                const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+                if (!selectedPayment) {
+                    this.showAlert('يرجى اختيار طريقة الدفع', 'warning');
+                    return false;
+                }
+                return true;
+                
+            case 3: // Details
+                const phoneNumber = document.getElementById('phone_number').value.trim();
+                if (!phoneNumber) {
+                    this.showAlert('رقم الواتساب مطلوب', 'warning');
+                    return false;
+                }
+                return true;
+                
+            default:
+                return true;
+        }
+    }
+    
+    updatePlatformSelection() {
+        document.querySelectorAll('.platform-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        const selectedInput = document.querySelector('input[name="platform"]:checked');
+        if (selectedInput) {
+            const selectedCard = selectedInput.nextElementSibling;
+            selectedCard.classList.add('selected');
+        }
+    }
+    
+    selectTransferType(type) {
+        document.querySelectorAll('.transfer-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        const selectedOption = document.querySelector(`[data-type="${type}"]`);
+        selectedOption.classList.add('selected');
+        
+        const radioInput = document.getElementById(`transfer-${type}`);
+        radioInput.checked = true;
+    }
+    
+    updatePaymentSelection() {
+        document.querySelectorAll('.payment-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        const selectedInput = document.querySelector('input[name="payment_method"]:checked');
+        if (selectedInput) {
+            const selectedCard = selectedInput.nextElementSibling;
+            selectedCard.classList.add('selected');
+        }
+    }
+    
+    formatCoinsInput(input) {
+        let value = input.value.replace(/[^\d]/g, '');
+        if (value) {
+            value = parseInt(value).toLocaleString('en-US');
+        }
+        input.value = value;
+    }
+    
+    async calculatePrice() {
+        const platform = document.querySelector('input[name="platform"]:checked')?.value;
+        const coinsAmountInput = document.getElementById('coins_amount');
+        const transferType = document.querySelector('input[name="transfer_type"]:checked')?.value || 'normal';
+        
+        if (!platform || !coinsAmountInput.value) {
+            document.getElementById('priceDisplay').style.display = 'none';
+            return;
+        }
+        
+        const coinsAmount = parseInt(coinsAmountInput.value.replace(/,/g, ''));
+        
+        if (coinsAmount < 300000) {
+            document.getElementById('priceDisplay').style.display = 'none';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/calculate-price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    platform: platform,
+                    coins_amount: coinsAmount,
+                    transfer_type: transferType
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayPrice(data.price_info);
+            } else {
+                this.showAlert(data.message, 'error');
+            }
+        } catch (error) {
+            console.error('خطأ في حساب السعر:', error);
+            this.showAlert('خطأ في حساب السعر', 'error');
+        }
+    }
+    
+    displayPrice(priceInfo) {
+        const priceDisplay = document.getElementById('priceDisplay');
+        const totalPrice = document.getElementById('totalPrice');
+        const priceDetails = document.getElementById('priceDetails');
+        const basePrice = document.getElementById('basePrice');
+        const discountRow = document.getElementById('discountRow');
+        const discountAmount = document.getElementById('discountAmount');
+        const feeRow = document.getElementById('feeRow');
+        const transferFee = document.getElementById('transferFee');
+        
+        totalPrice.textContent = `${priceInfo.total_price.toLocaleString('en-US')} جنيه`;
+        priceDetails.textContent = `${priceInfo.millions} مليون كوين • ${priceInfo.base_price_per_million} جنيه/مليون`;
+        basePrice.textContent = `${(priceInfo.base_price_per_million * priceInfo.millions).toLocaleString('en-US')} جنيه`;
+        
+        // عرض خصم الكمية
+        if (priceInfo.discount_percent > 0) {
+            const discountValue = (priceInfo.base_price_per_million * priceInfo.millions) * (1 - priceInfo.discount_rate);
+            discountAmount.textContent = `-${discountValue.toLocaleString('en-US')} جنيه (${priceInfo.discount_percent}%)`;
+            discountRow.style.display = 'flex !important';
+        } else {
+            discountRow.style.display = 'none !important';
+        }
+        
+        // عرض رسوم التحويل الفوري
+        if (priceInfo.transfer_fee > 0) {
+            transferFee.textContent = `+${priceInfo.transfer_fee.toLocaleString('en-US')} جنيه`;
+            feeRow.style.display = 'flex !important';
+        } else {
+            feeRow.style.display = 'none !important';
+        }
+        
+        priceDisplay.style.display = 'block';
+    }
+    
+    showAlert(message, type = 'info') {
+        // إنشاء تنبيه مؤقت
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} fade-in`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'}"></i>
+            ${message}
+        `;
+        
+        // إدراج التنبيه في أعلى النموذج
+        const form = document.getElementById('orderForm');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // إزالة التنبيه بعد 5 ثوانٍ
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+        
+        // التمرير لأعلى لرؤية التنبيه
+        alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    handleSubmit(e) {
+        if (!this.validateCurrentStep()) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // إضافة مؤشر التحميل
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+        submitBtn.disabled = true;
+        
+        // استعادة الزر في حالة الخطأ
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+        
+        return true;
+    }
+}
+
+// تهيئة النموذج عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    window.orderForm = new OrderForm();
+    
+    // تحديد القيم المسبقة
+    const platformInputs = document.querySelectorAll('input[name="platform"]');
+    platformInputs.forEach(input => {
+        if (input.checked) {
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    const paymentInputs = document.querySelectorAll('input[name="payment_method"]');
+    paymentInputs.forEach(input => {
+        if (input.checked) {
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    // تحديد نوع التحويل الافتراضي
+    document.querySelector('[data-type="normal"]').click();
+});
+</script>
+{% endblock %}

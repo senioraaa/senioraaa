@@ -17,3 +17,4 @@ redis==5.0.1
 python-telegram-bot==20.6
 telebot==0.0.5
 pyTelegramBotAPI==4.14.0
+Flask-Moment==1.0.5

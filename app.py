@@ -761,15 +761,43 @@ class User(UserMixin, db.Model):
     # Define relationship
     orders = db.relationship('Order', backref='user', lazy=True)
     
-    # حقول الملف الشخصي الجديدة
-    whatsapp = db.Column(db.String(20))
-    preferred_platform = db.Column(db.String(10))
-    preferred_payment = db.Column(db.String(50))
-    ea_email = db.Column(db.String(100))
-    telegram_id = db.Column(db.String(50))
-    telegram_username = db.Column(db.String(50))
-    profile_completed = db.Column(db.Boolean, default=False)
+    # حقول الملف الشخصي الجديدة مع default values آمنة
+    whatsapp = db.Column(db.String(20), default='')
+    preferred_platform = db.Column(db.String(10), default='')
+    preferred_payment = db.Column(db.String(50), default='')
+    ea_email = db.Column(db.String(100), default='')
+    telegram_id = db.Column(db.String(50), default='')
+    telegram_username = db.Column(db.String(50), default='')
     last_profile_update = db.Column(db.DateTime)
+    
+    # خاصية محسوبة بدلاً من column لتجنب مشاكل قاعدة البيانات
+    @property
+    def profile_completed(self):
+        """حساب حالة اكتمال الملف الشخصي ديناميكياً"""
+        required_fields = [self.whatsapp, self.preferred_platform, self.preferred_payment]
+        return all(field and field.strip() for field in required_fields)
+    
+    def get_profile_completion_data(self):
+        """إرجاع بيانات تفصيلية عن اكتمال الملف الشخصي"""
+        steps = {
+            'whatsapp': bool(self.whatsapp and self.whatsapp.strip()),
+            'platform': bool(self.preferred_platform and self.preferred_platform.strip()),
+            'payment': bool(self.preferred_payment and self.preferred_payment.strip()),
+            'ea_email': bool(self.ea_email and self.ea_email.strip()),
+            'telegram': bool(self.telegram_id and self.telegram_id.strip()),
+        }
+        
+        completed_count = sum(1 for completed in steps.values() if completed)
+        total_count = len(steps)
+        percentage = round((completed_count / total_count) * 100)
+        
+        return {
+            'steps': steps,
+            'completed_count': completed_count,
+            'total_count': total_count,
+            'percentage': percentage,
+            'is_completed': self.profile_completed
+        }
 
 class Order(db.Model):
     __tablename__ = 'orders'  # Explicit table name
@@ -782,14 +810,14 @@ class Order(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # حقول إضافية للطلبات
-    ea_email = db.Column(db.String(100))
-    ea_password = db.Column(db.String(200))  # مشفرة
-    backup_codes = db.Column(db.Text)  # مشفرة أيضاً
+    # حقول إضافية للطلبات مع default values آمنة
+    ea_email = db.Column(db.String(100), default='')
+    ea_password = db.Column(db.String(200), default='')  # مشفرة
+    backup_codes = db.Column(db.Text, default='')  # مشفرة أيضاً
     transfer_type = db.Column(db.String(20), default='normal')  # normal, instant
-    notes = db.Column(db.Text)
-    price = db.Column(db.Float)
-    phone_number = db.Column(db.String(20))
+    notes = db.Column(db.Text, default='')
+    price = db.Column(db.Float, default=0.0)
+    phone_number = db.Column(db.String(20), default='')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 @login_manager.user_loader
@@ -3000,8 +3028,8 @@ def profile():
                     setattr(current_user, field, value)
                     current_user.last_profile_update = datetime.utcnow()
                     
-                    # فحص اكتمال الملف الشخصي
-                    current_user.profile_completed = check_profile_completion(current_user)
+                # لا حاجة لحفظ profile_completed لأنه property محسوب تلقائياً
+                # current_user.profile_completed محسوب ديناميكياً الآن
                     
                     db.session.commit()
                     
@@ -3042,17 +3070,6 @@ def profile():
             else:
                 flash('حدث خطأ أثناء التحديث، حاول مرة أخرى', 'error')
                 return render_template('profile.html', user=current_user)
-
-def check_profile_completion(user):
-    """فحص اكتمال الملف الشخصي"""
-    required_fields = ['whatsapp', 'preferred_platform', 'preferred_payment']
-    
-    for field in required_fields:
-        value = getattr(user, field, None)
-        if not value or not value.strip():
-            return False
-    
-    return True
 
 @app.route('/profile/telegram-link')
 @login_required  
@@ -4157,7 +4174,16 @@ def internal_error(error):
 
 # Initialize database when app starts
 with app.app_context():
-    init_database()
+    try:
+        # تنفيذ migration آمن أولاً
+        safe_migration()
+        
+        # ثم تنفيذ باقي الإعدادات
+        init_database()
+        
+    except Exception as e:
+        app.logger.error(f"Database initialization error: {e}")
+        print(f"Database initialization error: {e}")
     
     # إعداد webhook للتليجرام في production
     if not app.debug and telegram_system.is_configured():

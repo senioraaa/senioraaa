@@ -774,6 +774,16 @@ class Order(db.Model):
     coins_amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # حقول إضافية للطلبات
+    ea_email = db.Column(db.String(100))
+    ea_password = db.Column(db.String(200))  # مشفرة
+    backup_codes = db.Column(db.Text)  # مشفرة أيضاً
+    transfer_type = db.Column(db.String(20), default='normal')  # normal, instant
+    notes = db.Column(db.Text)
+    price = db.Column(db.Float)
+    phone_number = db.Column(db.String(20))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -2289,6 +2299,103 @@ def resend_verification():
         flash('حدث خطأ، حاول مرة أخرى', 'error')
     
     return redirect(url_for('verify_email'))
+
+def calculate_price(platform, coins_amount, transfer_type='normal'):
+    """حساب سعر الطلب بناءً على المنصة والكمية ونوع التحويل"""
+    
+    # أسعار الكوينز لكل منصة (لكل مليون كوين)
+    base_prices = {
+        'PS': 850,      # PlayStation
+        'Xbox': 850,    # Xbox (نفس PlayStation)
+        'PC': 950       # PC أغلى قليلاً
+    }
+    
+    # معاملات نوع التحويل
+    transfer_multipliers = {
+        'normal': 1.0,    # عادي
+        'instant': 1.15   # فوري (زيادة 15%)
+    }
+    
+    # تخفيضات الكمية
+    quantity_discounts = [
+        (10000000, 0.95),   # 10+ مليون: خصم 5%
+        (25000000, 0.90),   # 25+ مليون: خصم 10%
+        (50000000, 0.85),   # 50+ مليون: خصم 15%
+        (100000000, 0.80)   # 100+ مليون: خصم 20%
+    ]
+    
+    # الحد الأدنى
+    if coins_amount < 300000:
+        return None, "الحد الأدنى 300,000 كوين"
+    
+    # السعر الأساسي
+    base_price = base_prices.get(platform, base_prices['PS'])
+    millions = coins_amount / 1000000
+    total_price = base_price * millions
+    
+    # تطبيق تخفيض الكمية
+    discount_rate = 1.0
+    for threshold, rate in quantity_discounts:
+        if coins_amount >= threshold:
+            discount_rate = rate
+            break
+    
+    total_price *= discount_rate
+    
+    # تطبيق معامل نوع التحويل
+    transfer_rate = transfer_multipliers.get(transfer_type, 1.0)
+    total_price *= transfer_rate
+    
+    # حساب المعلومات الإضافية
+    price_info = {
+        'total_price': round(total_price, 2),
+        'base_price_per_million': base_price,
+        'millions': round(millions, 2),
+        'discount_rate': discount_rate,
+        'discount_percent': round((1 - discount_rate) * 100, 1) if discount_rate < 1 else 0,
+        'transfer_type': transfer_type,
+        'transfer_fee': round(total_price * (transfer_rate - 1), 2) if transfer_rate > 1 else 0
+    }
+    
+    return price_info, None
+
+@app.route('/api/calculate-price', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=30, per_hour=200)
+def api_calculate_price():
+    """API لحساب السعر ديناميكياً"""
+    try:
+        data = request.get_json()
+        
+        platform = data.get('platform')
+        coins_amount = int(data.get('coins_amount', 0))
+        transfer_type = data.get('transfer_type', 'normal')
+        
+        if not platform or coins_amount <= 0:
+            return jsonify({
+                'success': False,
+                'message': 'بيانات غير صالحة'
+            }), 400
+        
+        price_info, error = calculate_price(platform, coins_amount, transfer_type)
+        
+        if error:
+            return jsonify({
+                'success': False,
+                'message': error
+            }), 400
+        
+        return jsonify({
+            'success': True,
+            'price_info': price_info
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Price calculation error: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'خطأ في حساب السعر'
+        }), 500
 
 @app.route('/admin')
 @login_required

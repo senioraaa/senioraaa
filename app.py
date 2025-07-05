@@ -2018,6 +2018,34 @@ def view_system_logs():
         app.logger.error(f"Error viewing system logs: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/admin/repair-database', methods=['POST'])
+@login_required
+@advanced_rate_limit(per_minute=1, per_hour=3)
+def repair_database_endpoint():
+    """إصلاح قاعدة البيانات (للطوارئ فقط)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # إصلاح قاعدة البيانات
+        repair_success = force_database_repair()
+        
+        if repair_success:
+            app.logger.info(f"Database repair initiated by admin: {current_user.email}")
+            return jsonify({
+                'success': True,
+                'message': 'تم إصلاح قاعدة البيانات بنجاح'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'فشل في إصلاح قاعدة البيانات'
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"Database repair error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/backup', methods=['POST'])
 @login_required
 @advanced_rate_limit(per_minute=1, per_hour=2)
@@ -3656,18 +3684,30 @@ def update_order_status(order_id):
 def init_database():
     """Initialize database and create default admin user"""
     try:
-        # Create all tables
+        # إنشاء الجداول الأساسية
         db.create_all()
         print("Database tables created successfully")
         
-        # تحديث الجداول الموجودة لإضافة الحقول الجديدة
-        update_existing_tables()
+        # تحديث الجداول الموجودة بطريقة آمنة
+        try:
+            update_existing_tables()
+        except Exception as e:
+            print(f"Warning: Table update failed: {e}")
+            db.session.rollback()
         
         # تحسين قاعدة البيانات
-        optimize_database()
+        try:
+            optimize_database()
+        except Exception as e:
+            print(f"Warning: Database optimization failed: {e}")
+            db.session.rollback()
         
         # تنظيف البيانات القديمة
-        cleanup_old_verification_codes()
+        try:
+            cleanup_old_verification_codes()
+        except Exception as e:
+            print(f"Warning: Cleanup failed: {e}")
+            db.session.rollback()
         
         # التحقق من وجود مستخدم إداري
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
@@ -3691,6 +3731,147 @@ def update_existing_tables():
         with app.app_context():
             # إضافة الحقول الجديدة إذا لم تكن موجودة
             new_columns = [
+                ('users', 'whatsapp', 'VARCHAR(20)'),
+                ('users', 'preferred_platform', 'VARCHAR(10)'),
+                ('users', 'preferred_payment', 'VARCHAR(50)'),
+                ('users', 'ea_email', 'VARCHAR(100)'),
+                ('users', 'telegram_id', 'VARCHAR(50)'),
+                ('users', 'telegram_username', 'VARCHAR(50)'),
+                ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
+                ('users', 'last_profile_update', 'TIMESTAMP'),
+                ('orders', 'ea_email', 'VARCHAR(100)'),
+                ('orders', 'ea_password', 'VARCHAR(200)'),
+                ('orders', 'backup_codes', 'TEXT'),
+                ('orders', 'transfer_type', 'VARCHAR(20) DEFAULT \'normal\''),
+                ('orders', 'notes', 'TEXT'),
+                ('orders', 'price', 'DECIMAL(10,2)'),
+                ('orders', 'phone_number', 'VARCHAR(20)'),
+                ('orders', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+            ]
+            
+            for table, column, column_type in new_columns:
+                try:
+                    # إنشاء transaction منفصل لكل عمود
+                    with db.session.begin():
+                        # فحص وجود العمود أولاً
+                        check_query = text("""
+                            SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name = :table_name 
+                            AND column_name = :column_name
+                        """)
+                        
+                        result = db.session.execute(check_query, {
+                            'table_name': table,
+                            'column_name': column
+                        }).fetchone()
+                        
+                        if not result:
+                            # إضافة العمود إذا لم يكن موجوداً
+                            alter_query = text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
+                            db.session.execute(alter_query)
+                            print(f"Added column {column} to {table}")
+                        else:
+                            print(f"Column {column} already exists in {table}")
+                            
+                except Exception as e:
+                    db.session.rollback()
+                    error_msg = str(e).lower()
+                    if "already exists" in error_msg or "duplicate column" in error_msg:
+                        print(f"Column {column} already exists in {table}")
+                    else:
+                        print(f"Error adding column {column} to {table}: {e}")
+                        # إنشاء transaction جديد بعد الخطأ
+                        db.session.rollback()
+            
+            print("Database tables updated successfully")
+            
+    except Exception as e:
+        print(f"Database update error: {e}")
+        db.session.rollback()
+
+def safe_column_exists(table_name, column_name):
+    """فحص آمن لوجود عمود في الجدول"""
+    try:
+        check_query = text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = :table_name 
+            AND column_name = :column_name
+        """)
+        
+        result = db.session.execute(check_query, {
+            'table_name': table_name,
+            'column_name': column_name
+        }).fetchone()
+        
+        return result is not None
+        
+    except Exception as e:
+        print(f"Error checking column existence: {e}")
+        return False
+
+def force_database_repair():
+    """إصلاح إجباري لقاعدة البيانات في حالة الأخطاء الحرجة"""
+    try:
+        print("Starting database repair...")
+        
+        # إنهاء جميع الـ transactions المعلقة
+        db.session.rollback()
+        db.session.close()
+        
+        # إعادة إنشاء الاتصال
+        db.session.remove()
+        
+        # فحص وإضافة الأعمدة المفقودة واحداً تلو الآخر
+        repair_columns = [
+            ('users', 'whatsapp', 'VARCHAR(20)'),
+            ('users', 'preferred_platform', 'VARCHAR(10)'),
+            ('users', 'preferred_payment', 'VARCHAR(50)'),
+            ('users', 'ea_email', 'VARCHAR(100)'),
+            ('users', 'telegram_id', 'VARCHAR(50)'),
+            ('users', 'telegram_username', 'VARCHAR(50)'),
+            ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
+            ('users', 'last_profile_update', 'TIMESTAMP'),
+            ('orders', 'ea_email', 'VARCHAR(100)'),
+            ('orders', 'ea_password', 'VARCHAR(200)'),
+            ('orders', 'backup_codes', 'TEXT'),
+            ('orders', 'transfer_type', 'VARCHAR(20) DEFAULT \'normal\''),
+            ('orders', 'notes', 'TEXT'),
+            ('orders', 'price', 'DECIMAL(10,2)'),
+            ('orders', 'phone_number', 'VARCHAR(20)'),
+            ('orders', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+        ]
+        
+        success_count = 0
+        for table, column, column_type in repair_columns:
+            if safe_add_column(table, column, column_type):
+                success_count += 1
+        
+        print(f"Database repair completed: {success_count}/{len(repair_columns)} columns processed")
+        return True
+        
+    except Exception as e:
+        print(f"Database repair failed: {e}")
+        return False
+
+def safe_add_column(table_name, column_name, column_type):
+    """إضافة عمود بطريقة آمنة"""
+    try:
+        if not safe_column_exists(table_name, column_name):
+            with db.session.begin():
+                alter_query = text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}')
+                db.session.execute(alter_query)
+                print(f"Successfully added column {column_name} to {table_name}")
+                return True
+        else:
+            print(f"Column {column_name} already exists in {table_name}")
+            return True
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding column {column_name} to {table_name}: {e}")
+        return False
                 ('users', 'whatsapp', 'VARCHAR(20)'),
                 ('users', 'preferred_platform', 'VARCHAR(10)'),
                 ('users', 'preferred_payment', 'VARCHAR(50)'),
@@ -3745,20 +3926,49 @@ def cleanup_old_verification_codes():
     """تنظيف رموز التفعيل المنتهية الصلاحية"""
     try:
         with app.app_context():
+            # فحص وجود الأعمدة المطلوبة أولاً
+            if not safe_column_exists('users', 'code_expiry'):
+                print("Column code_expiry does not exist, skipping cleanup")
+                return
+                
             expired_time = datetime.utcnow() - timedelta(hours=24)
-            expired_users = User.query.filter(
-                User.code_expiry < expired_time,
-                User.is_verified == False
-            ).all()
             
-            for user in expired_users:
-                user.verification_code = None
-                user.code_expiry = None
-            
-            db.session.commit()
-            print(f"Cleaned up {len(expired_users)} expired verification codes")
+            # استعلام آمن يتعامل مع الأعمدة الموجودة فقط
+            try:
+                expired_users = User.query.filter(
+                    User.code_expiry < expired_time,
+                    User.is_verified == False
+                ).all()
+                
+                for user in expired_users:
+                    user.verification_code = None
+                    user.code_expiry = None
+                
+                db.session.commit()
+                print(f"Cleaned up {len(expired_users)} expired verification codes")
+                
+            except Exception as e:
+                db.session.rollback()
+                # إذا فشل الاستعلام، استخدم SQL مباشر
+                try:
+                    cleanup_query = text("""
+                        UPDATE users 
+                        SET verification_code = NULL, code_expiry = NULL 
+                        WHERE code_expiry < :expired_time 
+                        AND is_verified = false
+                    """)
+                    
+                    result = db.session.execute(cleanup_query, {'expired_time': expired_time})
+                    db.session.commit()
+                    print(f"Cleaned up verification codes using direct SQL")
+                    
+                except Exception as sql_error:
+                    print(f"SQL cleanup also failed: {sql_error}")
+                    db.session.rollback()
+                
     except Exception as e:
         print(f"Cleanup error: {e}")
+        db.session.rollback()
 
 @app.before_request
 def before_request():

@@ -30,6 +30,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import atexit
 
+# استيراد نظام التليجرام
+from telegram_bot import telegram_system
+import atexit
+
 # إعداد المهام الدورية لـ APScheduler
 scheduler = BackgroundScheduler()
 
@@ -650,6 +654,9 @@ limiter = Limiter(
 
 # تهيئة Smart Rate Limiter
 smart_limiter.init_app(app)
+
+# تهيئة نظام التليجرام
+telegram_system.init_app(app)
 
 # إعدادات reCAPTCHA
 app.config['RECAPTCHA_SITE_KEY'] = os.environ.get('RECAPTCHA_SITE_KEY', '')
@@ -2431,6 +2438,21 @@ def new_order():
             
             smart_limiter.update_reputation(client_fingerprint, 'successful_action', current_user.id)
             
+            # إرسال إشعار تليجرام للمستخدم
+            if current_user.telegram_id:
+                order_data = {
+                    'id': order.id,
+                    'platform': platform,
+                    'coins_amount': coins_amount,
+                    'transfer_type': transfer_type,
+                    'price': price_info['total_price'],
+                    'payment_method': payment_method,
+                    'phone_number': phone_number
+                }
+                
+                telegram_system.send_order_notification(current_user.telegram_id, order_data)
+                app.logger.info(f"Telegram notification sent for order {order.id}")
+            
             flash(f'تم إرسال طلبك بنجاح! السعر المتوقع: {price_info["total_price"]} جنيه', 'success')
             return redirect(url_for('dashboard'))
             
@@ -2518,6 +2540,44 @@ def check_profile_completion(user):
             return False
     
     return True
+
+@app.route('/profile/telegram-link')
+@login_required  
+@advanced_rate_limit(per_minute=5, per_hour=20)
+def generate_telegram_link():
+    """توليد رابط ربط التليجرام"""
+    try:
+        if not telegram_system.is_configured():
+            return jsonify({
+                'success': False,
+                'message': 'خدمة التليجرام غير متاحة حالياً'
+            }), 503
+        
+        # توليد رابط مع معرف المستخدم المشفر
+        import base64
+        encoded_user_id = base64.b64encode(str(current_user.id).encode()).decode()
+        
+        telegram_link = f"https://t.me/{telegram_system.bot_username}?start={encoded_user_id}"
+        
+        return jsonify({
+            'success': True,
+            'telegram_link': telegram_link,
+            'bot_username': telegram_system.bot_username,
+            'is_linked': bool(current_user.telegram_id),
+            'instructions': [
+                'اضغط على الرابط أدناه',
+                'اضغط "Start" في التليجرام', 
+                'أرسل أي رسالة للبوت',
+                'سيتم الربط تلقائياً'
+            ]
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error generating Telegram link: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'خطأ في توليد رابط التليجرام'
+        }), 500
 
 @app.route('/profile/completion-status')
 @login_required
@@ -2653,6 +2713,76 @@ def calculate_price(platform, coins_amount, transfer_type='normal'):
     
     return price_info, None
 
+@app.route('/telegram-webhook', methods=['POST'])
+@advanced_rate_limit(per_minute=100, per_hour=1000, skip_trusted=True)
+def telegram_webhook():
+    """معالج webhook للتليجرام"""
+    try:
+        update_data = request.get_json()
+        
+        if not update_data:
+            return jsonify({'status': 'error', 'message': 'No data received'}), 400
+        
+        # معالجة التحديث
+        result = telegram_system.process_telegram_update(update_data)
+        
+        if result:
+            app.logger.info(f"Telegram update processed: {result.get('action', 'unknown')}")
+            
+            # إذا كان المستخدم يريد ربط حسابه
+            if result.get('action') == 'start' and result.get('website_user_id'):
+                # ربط حساب التليجرام مع حساب الموقع
+                link_telegram_account(result.get('website_user_id'), result.get('user_id'), result.get('username'))
+            
+            return jsonify({'status': 'ok'}), 200
+        else:
+            return jsonify({'status': 'ignored'}), 200
+            
+    except Exception as e:
+        app.logger.error(f"Telegram webhook error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+def link_telegram_account(website_user_id: str, telegram_user_id: str, telegram_username: str = None):
+    """ربط حساب التليجرام مع حساب الموقع"""
+    try:
+        user = User.query.get(int(website_user_id))
+        
+        if user:
+            user.telegram_id = telegram_user_id
+            user.telegram_username = telegram_username
+            user.last_profile_update = datetime.utcnow()
+            
+            # تحديث حالة اكتمال الملف الشخصي
+            user.profile_completed = check_profile_completion(user)
+            
+            db.session.commit()
+            
+            # إرسال رسالة تأكيد
+            success_message = f"""
+✅ <b>تم ربط حسابك بنجاح!</b>
+
+🎉 مرحباً {user.email}!
+
+سيتم إرسال إشعارات فورية عن:
+• طلباتك الجديدة 📋
+• تحديثات الحالة 🔄  
+• العروض الخاصة 🎁
+
+شكراً لاختيارك شهد السنيورة! 🚀
+            """
+            
+            telegram_system.send_message(telegram_user_id, success_message.strip())
+            
+            app.logger.info(f"Telegram account linked: User {website_user_id} -> Telegram {telegram_user_id}")
+            return True
+        else:
+            app.logger.warning(f"User not found for linking: {website_user_id}")
+            return False
+            
+    except Exception as e:
+        app.logger.error(f"Error linking Telegram account: {e}")
+        return False
+
 @app.route('/api/calculate-price', methods=['POST'])
 @login_required
 @advanced_rate_limit(per_minute=30, per_hour=200)
@@ -2718,8 +2848,19 @@ def update_order_status(order_id):
         new_status = request.json.get('status')
         
         order = Order.query.get_or_404(order_id)
+        old_status = order.status
         order.status = new_status
         db.session.commit()
+        
+        # إرسال إشعار تليجرام للمستخدم عن تغيير الحالة
+        if order.user.telegram_id and old_status != new_status:
+            telegram_system.send_status_update(
+                order.user.telegram_id, 
+                order_id, 
+                old_status, 
+                new_status
+            )
+            app.logger.info(f"Status update notification sent for order {order_id}")
         
         return jsonify({'success': True})
     except Exception as e:

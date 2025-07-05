@@ -3940,6 +3940,118 @@ def emergency_fix_database():
         db.session.rollback()
         return False
 
+def safe_migration():
+    """Migration آمن يتجنب مشاكل SQLAlchemy مع الـ columns المفقودة"""
+    try:
+        print("🔄 Starting safe database migration...")
+        
+        # فحص حالة قاعدة البيانات أولاً
+        try:
+            # استخدام raw SQL للفحص
+            result = db.session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")).fetchall()
+            existing_tables = [row[0] for row in result]
+            
+            if 'users' not in existing_tables or 'orders' not in existing_tables:
+                print("❌ Core tables missing, creating basic structure...")
+                db.create_all()
+                print("✅ Basic tables created")
+        except Exception as e:
+            print(f"⚠️ Table check failed: {e}")
+            # إنشاء الجداول الأساسية كـ fallback
+            try:
+                db.create_all()
+                print("✅ Fallback table creation completed")
+            except Exception as create_error:
+                print(f"❌ Failed to create tables: {create_error}")
+                return False
+        
+        # إضافة columns مفقودة واحد واحد مع معالجة أخطاء PostgreSQL
+        missing_columns = []
+        
+        # فحص columns في users table
+        try:
+            users_check = db.session.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users'
+            """)).fetchall()
+            users_columns = [row[0] for row in users_check]
+        except Exception as e:
+            print(f"❌ Cannot check users columns: {e}")
+            users_columns = []
+        
+        required_user_columns = {
+            'whatsapp': 'VARCHAR(20)',
+            'preferred_platform': 'VARCHAR(10)', 
+            'preferred_payment': 'VARCHAR(50)',
+            'ea_email': 'VARCHAR(100)',
+            'telegram_id': 'VARCHAR(50)',
+            'telegram_username': 'VARCHAR(50)',
+            'last_profile_update': 'TIMESTAMP'
+        }
+        
+        for col_name, col_type in required_user_columns.items():
+            if col_name not in users_columns:
+                missing_columns.append(('users', col_name, col_type, ''))
+        
+        # فحص columns في orders table
+        try:
+            orders_check = db.session.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'orders'
+            """)).fetchall()
+            orders_columns = [row[0] for row in orders_check]
+        except Exception as e:
+            print(f"❌ Cannot check orders columns: {e}")
+            orders_columns = []
+        
+        required_order_columns = {
+            'ea_email': 'VARCHAR(100)',
+            'ea_password': 'VARCHAR(200)',
+            'backup_codes': 'TEXT',
+            'transfer_type': 'VARCHAR(20)',
+            'notes': 'TEXT',
+            'price': 'DECIMAL(10,2)',
+            'phone_number': 'VARCHAR(20)',
+            'updated_at': 'TIMESTAMP'
+        }
+        
+        for col_name, col_type in required_order_columns.items():
+            if col_name not in orders_columns:
+                default_val = "'normal'" if col_name == 'transfer_type' else "''" if 'VARCHAR' in col_type or col_type == 'TEXT' else '0.0' if 'DECIMAL' in col_type else 'NULL'
+                missing_columns.append(('orders', col_name, col_type, default_val))
+        
+        # إضافة الـ columns المفقودة
+        for table, column, column_type, default_value in missing_columns:
+            try:
+                # إضافة العمود بدون DEFAULT أولاً
+                add_query = text(f'ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {column_type}')
+                db.session.execute(add_query)
+                
+                # إضافة DEFAULT value منفصل إذا لزم الأمر
+                if default_value and default_value != 'NULL':
+                    if column == 'transfer_type':
+                        update_query = text(f"UPDATE {table} SET {column} = 'normal' WHERE {column} IS NULL")
+                    else:
+                        update_query = text(f"UPDATE {table} SET {column} = {default_value} WHERE {column} IS NULL")
+                    db.session.execute(update_query)
+                
+                db.session.commit()
+                print(f"✅ Added column {column} to {table}")
+                
+            except Exception as e:
+                print(f"⚠️ Error adding {column} to {table}: {e}")
+                db.session.rollback()
+        
+        print("🎉 Safe migration completed!")
+        return True
+        
+    except Exception as e:
+        print(f"💥 Migration failed: {e}")
+        db.session.rollback()
+        return False
+
 def force_database_repair():
     """إصلاح إجباري لقاعدة البيانات في حالة الأخطاء الحرجة"""
     try:

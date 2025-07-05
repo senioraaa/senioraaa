@@ -56,6 +56,89 @@
     </div>
 </div>
 
+<!-- قسم إدارة التليجرام -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fab fa-telegram"></i> إدارة نظام التليجرام</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <i class="fab fa-telegram fa-2x mb-2"></i>
+                                <h5 id="telegram-linked-users">{{ users|selectattr('telegram_id')|list|length }}</h5>
+                                <p>مستخدمين مربوطين</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-bell fa-2x mb-2"></i>
+                                <h5 id="telegram-notifications">-</h5>
+                                <p>إشعارات مرسلة اليوم</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="telegram-controls">
+                            <h6>اختبار النظام</h6>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-info btn-sm" onclick="testTelegram('config')">
+                                    <i class="fas fa-cog"></i> فحص الإعدادات
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="testTelegram('webhook')">
+                                    <i class="fas fa-link"></i> إعداد Webhook
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="testTelegram('notification')">
+                                    <i class="fas fa-paper-plane"></i> اختبار إشعار
+                                </button>
+                            </div>
+                            
+                            <div id="telegram-test-result" class="mt-3" style="display: none;">
+                                <!-- نتائج الاختبار -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h6>المستخدمين المربوطين بالتليجرام</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>المستخدم</th>
+                                        <th>معرف التليجرام</th>
+                                        <th>اسم المستخدم</th>
+                                        <th>تاريخ الربط</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    {% if user.telegram_id %}
+                                    <tr>
+                                        <td>{{ user.email }}</td>
+                                        <td><code>{{ user.telegram_id }}</code></td>
+                                        <td>{{ user.telegram_username or '-' }}</td>
+                                        <td>{{ user.last_profile_update.strftime('%Y-%m-%d') if user.last_profile_update else '-' }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">

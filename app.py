@@ -2332,6 +2332,9 @@ def init_database():
         db.create_all()
         print("Database tables created successfully")
         
+        # تحديث الجداول الموجودة لإضافة الحقول الجديدة
+        update_existing_tables()
+        
         # تحسين قاعدة البيانات
         optimize_database()
         
@@ -2353,6 +2356,39 @@ def init_database():
             
     except Exception as e:
         print(f"Database initialization error: {e}")
+
+def update_existing_tables():
+    """تحديث الجداول الموجودة لإضافة الحقول الجديدة"""
+    try:
+        with app.app_context():
+            # إضافة الحقول الجديدة إذا لم تكن موجودة
+            new_columns = [
+                ('users', 'whatsapp', 'VARCHAR(20)'),
+                ('users', 'preferred_platform', 'VARCHAR(10)'),
+                ('users', 'preferred_payment', 'VARCHAR(50)'),
+                ('users', 'ea_email', 'VARCHAR(100)'),
+                ('users', 'telegram_id', 'VARCHAR(50)'),
+                ('users', 'telegram_username', 'VARCHAR(50)'),
+                ('users', 'profile_completed', 'BOOLEAN DEFAULT FALSE'),
+                ('users', 'last_profile_update', 'DATETIME')
+            ]
+            
+            for table, column, column_type in new_columns:
+                try:
+                    db.session.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}'))
+                    print(f"Added column {column} to {table}")
+                except Exception as e:
+                    if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
+                        pass  # العمود موجود بالفعل
+                    else:
+                        print(f"Error adding column {column}: {e}")
+            
+            db.session.commit()
+            print("Database tables updated successfully")
+            
+    except Exception as e:
+        print(f"Database update error: {e}")
+        db.session.rollback()
 
 def optimize_database():
     """تحسين قاعدة البيانات وإنشاء الفهارس"""

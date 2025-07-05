@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}الملف الشخصي - شهد السنيورة{% endblock %}
+
+{% block head %}
+<meta name="user-id" content="{{ current_user.id }}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <div class="card fade-in">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>
+                        <i class="fas fa-user-circle"></i>
+                        الملف الشخصي
+                    </h3>
+                    <div class="completion-badge">
+                        <i class="fas fa-chart-pie"></i>
+                        <span id="completion-percentage">0%</span>
+                        مكتمل
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="progress-summary">
+                    <h4 class="mb-3">
+                        <i class="fas fa-tasks"></i>
+                        تقدم إكمال الملف الشخصي
+                    </h4>
+                    
+                    <div class="progress-tracker" id="progress-tracker">
+                        <!-- سيتم إنشاؤها بواسطة JavaScript -->
+                    </div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    
+                    <p class="text-center mt-3" style="color: var(--text-secondary);">
+                        أكمل جميع الخطوات للحصول على أفضل تجربة في الطلبات
+                    </p>
+                </div>
+
+                <form id="profile-form" class="slide-up">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="whatsapp" class="form-label">
+                                    <i class="fab fa-whatsapp"></i>
+                                    رقم الواتساب
+                                    <span class="status-indicator status-pending"></span>
+                                </label>
+                                <input type="tel" 
+                                       class="form-input auto-save" 
+                                       id="whatsapp" 
+                                       name="whatsapp"
+                                       placeholder="مثال: +201234567890"
+                                       value="{{ user.whatsapp or '' }}">
+                                <small class="form-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    مطلوب للتواصل معك عند إتمام الطلبات
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="ea_email" class="form-label">
+                                    <i class="fas fa-envelope"></i>
+                                    بريد EA (اختياري)
+                                    <span class="status-indicator status-optional"></span>
+                                </label>
+                                <input type="email" 
+                                       class="form-input auto-save" 
+                                       id="ea_email" 
+                                       name="ea_email"
+                                       placeholder="example@email.com"
+                                       value="{{ user.ea_email or '' }}">
+                                <small class="form-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    لتسهيل عملية شراء الكوينز
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-gamepad"></i>
+                                    المنصة المفضلة
+                                    <span class="status-indicator status-pending"></span>
+                                </label>
+                                
+                                <div class="visual-selector">
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_platform" value="PS" id="platform-ps">
+                                        <label for="platform-ps" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fab fa-playstation"></i>
+                                            </div>
+                                            <div>PlayStation</div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_platform" value="Xbox" id="platform-xbox">
+                                        <label for="platform-xbox" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fab fa-xbox"></i>
+                                            </div>
+                                            <div>Xbox</div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_platform" value="PC" id="platform-pc">
+                                        <label for="platform-pc" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fas fa-desktop"></i>
+                                            </div>
+                                            <div>PC</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-credit-card"></i>
+                                    طريقة الدفع المفضلة
+                                    <span class="status-indicator status-pending"></span>
+                                </label>
+                                
+                                <div class="visual-selector">
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_payment" value="vodafone" id="payment-vodafone">
+                                        <label for="payment-vodafone" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fas fa-mobile-alt"></i>
+                                            </div>
+                                            <div>فودافون كاش</div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_payment" value="instapay" id="payment-instapay">
+                                        <label for="payment-instapay" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fas fa-university"></i>
+                                            </div>
+                                            <div>إنستا باي</div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="selector-option">
+                                        <input type="radio" name="preferred_payment" value="wallet" id="payment-wallet">
+                                        <label for="payment-wallet" class="selector-card">
+                                            <div class="platform-logo">
+                                                <i class="fas fa-wallet"></i>
+                                            </div>
+                                            <div>محفظة بنكية</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
+                        <div class="card-body text-center">
+                            <h5>
+                                <i class="fab fa-telegram"></i>
+                                ربط حساب التليجرام
+                            </h5>
+                            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                                احصل على تحديثات فورية عن حالة طلباتك
+                            </p>
+                            
+                            <button type="button" class="telegram-connect-btn">
+                                <i class="fab fa-telegram"></i>
+                                ربط التليجرام
+                            </button>
+                            
+                            <div class="mt-3" id="telegram-status" style="display: none;">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    تم ربط التليجرام بنجاح!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="quick-actions mt-5">
+                    <div class="quick-action-card" onclick="location.href='{{ url_for('new_order') }}'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="quick-action-title">طلب جديد</div>
+                        <div class="quick-action-desc">اطلب كوينز لمنصتك المفضلة</div>
+                    </div>
+                    
+                    <div class="quick-action-card" onclick="location.href='{{ url_for('dashboard') }}'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="quick-action-title">طلباتي السابقة</div>
+                        <div class="quick-action-desc">تابع حالة طلباتك</div>
+                    </div>
+                    
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="quick-action-title">الدعم الفني</div>
+                        <div class="quick-action-desc">تواصل معنا للمساعدة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="floating-help" title="المساعدة">
+    <i class="fas fa-question"></i>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// تحديد القيم المحفوظة مسبقاً
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديد المنصة المفضلة
+    const preferredPlatform = '{{ user.preferred_platform or "" }}';
+    if (preferredPlatform) {
+        const platformRadio = document.querySelector(`input[name="preferred_platform"][value="${preferredPlatform}"]`);
+        if (platformRadio) {
+            platformRadio.checked = true;
+        }
+    }
+    
+    // تحديد طريقة الدفع المفضلة
+    const preferredPayment = '{{ user.preferred_payment or "" }}';
+    if (preferredPayment) {
+        const paymentRadio = document.querySelector(`input[name="preferred_payment"][value="${preferredPayment}"]`);
+        if (paymentRadio) {
+            paymentRadio.checked = true;
+        }
+    }
+    
+    // إضافة class auto-save للـ radio buttons
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.classList.add('auto-save');
+    });
+    
+    // تحديث مؤشرات الحالة
+    updateStatusIndicators();
+});
+
+function updateStatusIndicators() {
+    // تحديث مؤشر الواتساب
+    const whatsappInput = document.getElementById('whatsapp');
+    const whatsappIndicator = whatsappInput.parentElement.querySelector('.status-indicator');
+    if (whatsappInput.value.trim()) {
+        whatsappIndicator.className = 'status-indicator status-completed';
+    }
+    
+    // تحديث مؤشر المنصة
+    const platformChecked = document.querySelector('input[name="preferred_platform"]:checked');
+    const platformIndicator = document.querySelector('label[for="preferred_platform"] .status-indicator');
+    if (platformChecked && platformIndicator) {
+        platformIndicator.className = 'status-indicator status-completed';
+    }
+    
+    // تحديث مؤشر طريقة الدفع
+    const paymentChecked = document.querySelector('input[name="preferred_payment"]:checked');
+    const paymentIndicator = document.querySelector('label[for="preferred_payment"] .status-indicator');
+    if (paymentChecked && paymentIndicator) {
+        paymentIndicator.className = 'status-indicator status-completed';
+    }
+}
+
+// مراقبة التغييرات وتحديث المؤشرات
+document.addEventListener('input', updateStatusIndicators);
+document.addEventListener('change', updateStatusIndicators);
+</script>
+{% endblock %}

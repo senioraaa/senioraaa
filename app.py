@@ -1232,7 +1232,7 @@ if behavioral_score > 7:  # عتبة أعلى
             app.logger.warning(f"Suspicious behavioral analysis for IP: {client_ip}, score: {behavioral_score}")
             return False
         
-        return True
+            return True
 
 # السطر الذي يلي الكتلة مباشرة:
 def generate_device_fingerprint_advanced(request):

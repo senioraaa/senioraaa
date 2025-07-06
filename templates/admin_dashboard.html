@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الإدارة المتقدمة - شهد السنيورة{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-tachometer-alt"></i> لوحة الإدارة المتقدمة</h1>
+<p style="opacity: 0.9; margin: 0;">مرحباً {{ current_user.email }} - آخر تحديث: {{ moment().now().strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('reset_admin_password') }}" class="btn btn-outline-light">
+                        <i class="fas fa-key"></i> تغيير كلمة المرور
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- إحصائيات سريعة -->
+        <div class="admin-stats-grid">
+            <!-- إحصائيات المستخدمين -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number">{{ stats.users.total or 0 }}</div>
+                <div class="stat-label">إجمالي المستخدمين</div>
+                <div class="stat-change stat-increase">
+                    <i class="fas fa-arrow-up"></i>
+                    +{{ stats.users.new_week or 0 }} هذا الأسبوع
+                </div>
+            </div>
+
+            <!-- إحصائيات الطلبات -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-number">{{ stats.orders.total or 0 }}</div>
+                <div class="stat-label">إجمالي الطلبات</div>
+                <div class="stat-change stat-increase">
+                    <i class="fas fa-arrow-up"></i>
+                    +{{ stats.orders.week or 0 }} هذا الأسبوع
+                </div>
+            </div>
+
+            <!-- الطلبات قيد الانتظار -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-number">{{ stats.orders.pending or 0 }}</div>
+                <div class="stat-label">طلبات قيد الانتظار</div>
+                <div class="stat-change">
+                    معدل الإنجاز: {{ "%.1f"|format(stats.orders.completion_rate or 0) }}%
+                </div>
+            </div>
+
+            <!-- الإيرادات -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-number">{{ "{:,.0f}".format(stats.revenue.total or 0) }}</div>
+                <div class="stat-label">إجمالي الإيرادات (جنيه)</div>
+                <div class="stat-change stat-increase">
+                    <i class="fas fa-arrow-up"></i>
+                    +{{ "{:,.0f}".format(stats.revenue.week or 0) }} هذا الأسبوع
+                </div>
+            </div>
+
+            <!-- ربط التليجرام -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fab fa-telegram"></i>
+                </div>
+                <div class="stat-number">{{ stats.users.telegram_linked or 0 }}</div>
+                <div class="stat-label">مستخدمين مربوطين بالتليجرام</div>
+                <div class="stat-change">
+                    {{ "%.1f"|format(stats.users.telegram_rate or 0) }}% من المستخدمين
+                </div>
+            </div>
+
+            <!-- نقاط الأمان -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="stat-number">{{ security_stats.security_score or 0 }}</div>
+                <div class="stat-label">نقاط الأمان</div>
+                <div class="stat-change stat-{{ security_stats.threat_level.color or 'info' }}">
+                    مستوى التهديد: {{ security_stats.threat_level.text or 'غير محدد' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- أقسام الإدارة -->
+        <div class="row">
+            <!-- إدارة الطلبات -->
+            <div class="col-md-8">
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <div class="admin-section-title">
+                            <i class="fas fa-list"></i>
+                            إدارة الطلبات
+                        </div>
+                        <div>
+                            <button class="btn btn-primary btn-sm" onclick="exportOrders()">
+                                <i class="fas fa-download"></i> تصدير
+                            </button>
+                        </div>
+                    </div>
+                    <div class="admin-section-body">
+                        <!-- فلاتر -->
+                        <div class="admin-filters">
+                            <div class="filter-group">
+                                <label class="filter-label">الحالة</label>
+                                <select class="filter-select" id="status-filter" onchange="filterOrders()">
+                                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>جميع الحالات</option>
+                                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>قيد الانتظار</option>
+                                    <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>قيد المعالجة</option>
+                                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>مكتمل</option>
+                                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>ملغي</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">التاريخ</label>
+                                <select class="filter-select" id="date-filter" onchange="filterOrders()">
+                                    <option value="all" {% if date_filter == 'all' %}selected{% endif %}>جميع التواريخ</option>
+                                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>اليوم</option>
+                                    <option value="week" {% if date_filter == 'week' %}selected{% endif %}>هذا الأسبوع</option>
+                                    <option value="month" {% if date_filter == 'month' %}selected{% endif %}>هذا الشهر</option>
+                                </select>
+                            </div>
+                            <div class="admin-search">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" placeholder="البحث في الطلبات..." value="{{ search_query }}" id="search-input" onkeyup="debounceSearch()">
+                            </div>
+                        </div>
+
+                        <!-- جدول الطلبات -->
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>رقم الطلب</th>
+                                        <th>المستخدم</th>
+                                        <th>المنصة</th>
+                                        <th>الكمية</th>
+                                        <th>السعر</th>
+                                        <th>الحالة</th>
+                                        <th>التاريخ</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders.items %}
+                                    <tr>
+                                        <td><strong>#{{ order.id }}</strong></td>
+                                        <td>
+                                            <div>{{ order.user.email }}</div>
+                                            {% if order.user.telegram_id %}
+                                            <small><i class="fab fa-telegram text-info"></i> مربوط</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if order.platform == 'PS' %}
+                                                <i class="fab fa-playstation text-primary"></i> PlayStation
+                                            {% elif order.platform == 'Xbox' %}
+                                                <i class="fab fa-xbox text-success"></i> Xbox
+                                            {% elif order.platform == 'PC' %}
+                                                <i class="fas fa-desktop text-warning"></i> PC
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ "{:,}".format(order.coins_amount) }} كوين</td>
+                                        <td>
+                                            {% if order.price %}
+                                                {{ "{:,.0f}".format(order.price) }} جنيه
+                                            {% else %}
+                                                <span class="text-muted">غير محدد</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <select class="status-badge status-{{ order.status }}" 
+                                                    onchange="updateOrderStatus({{ order.id }}, this.value)"
+                                                    style="border: none; background: transparent; color: inherit; font-weight: inherit;">
+                                                <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>قيد الانتظار</option>
+                                                <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>قيد المعالجة</option>
+                                                <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>مكتمل</option>
+                                                <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div>{{ order.created_at.strftime('%Y-%m-%d') }}</div>
+                                            <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
+                                        </td>
+                                        <td>
+                                            <button class="admin-action-btn btn-view" onclick="viewOrderDetails({{ order.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="admin-action-btn btn-edit" onclick="editOrder({{ order.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- تقسيم الصفحات -->
+                        {% if orders.pages > 1 %}
+                        <div class="admin-pagination">
+                            {% if orders.has_prev %}
+                                <button class="pagination-btn" onclick="goToPage({{ orders.prev_num }})">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            {% endif %}
+                            
+                            {% for page_num in orders.iter_pages() %}
+                                {% if page_num %}
+                                    <button class="pagination-btn {% if page_num == orders.page %}active{% endif %}" 
+                                            onclick="goToPage({{ page_num }})">
+                                        {{ page_num }}
+                                    </button>
+                                {% else %}
+                                    <span class="pagination-dots">...</span>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if orders.has_next %}
+                                <button class="pagination-btn" onclick="goToPage({{ orders.next_num }})">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- الإحصائيات والرسوم البيانية -->
+            <div class="col-md-4">
+                <!-- إحصائيات الأمان -->
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <div class="admin-section-title">
+                            <i class="fas fa-shield-alt"></i>
+                            إحصائيات الأمان
+                        </div>
+                    </div>
+                    <div class="admin-section-body">
+                        <div class="security-score">
+                            <div class="security-score-circle score-{{ security_stats.threat_level.level or 'good' }}">
+                                {{ security_stats.security_score or 0 }}
+                            </div>
+                            <div>
+                                <h6>نقاط الأمان العامة</h6>
+                                <p class="text-muted mb-0">مستوى التهديد: {{ security_stats.threat_level.text or 'غير محدد' }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-number text-danger">{{ security_stats.blocked_ips or 0 }}</div>
+                                <div class="stat-label">IPs محظورة</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-number text-success">{{ security_stats.trusted_ips or 0 }}</div>
+                                <div class="stat-label">IPs موثوقة</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-outline-warning btn-sm w-100" onclick="testTelegram('config')">
+                                <i class="fas fa-cog"></i> فحص إعدادات التليجرام
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الرسم البياني لتوزيع الطلبات -->
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <div class="admin-section-title">
+                            <i class="fas fa-chart-pie"></i>
+                            توزيع حالات الطلبات
+                        </div>
+                    </div>
+                    <div class="admin-section-body">
+                        <div class="admin-chart-container">
+                            <canvas id="statusChart" width="300" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نشاط المستخدمين -->
+                <div class="admin-section">
+                    <div class="admin-section-header">
+                        <div class="admin-section-title">
+                            <i class="fas fa-users"></i>
+                            نشاط المستخدمين
+                        </div>
+                    </div>
+                    <div class="admin-section-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-number text-success">{{ users_stats.active_users|length or 0 }}</div>
+                                <div class="stat-label">مستخدمين نشطين</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-number text-muted">{{ users_stats.inactive_users|length or 0 }}</div>
+                                <div class="stat-label">مستخدمين غير نشطين</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">
+                                معدل النشاط: {{ "%.1f"|format(users_stats.activity_rate or 0) }}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الرسم البياني للنشاط اليومي -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <div class="admin-section-title">
+                    <i class="fas fa-chart-line"></i>
+                    النشاط اليومي (آخر 7 أيام)
+                </div>
+            </div>
+            <div class="admin-section-body">
+                <div class="admin-chart-container">
+                    <canvas id="activityChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإجراءات السريعة -->
+        <div class="quick-actions">
+            <div class="quick-action" onclick="exportAllData()">
+                <div class="quick-action-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="quick-action-title">تصدير البيانات</div>
+                <div class="quick-action-desc">تصدير جميع الطلبات والمستخدمين</div>
+            </div>
+            
+            <div class="quick-action" onclick="sendBulkNotification()">
+                <div class="quick-action-icon">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="quick-action-title">إشعار جماعي</div>
+                <div class="quick-action-desc">إرسال إشعار لجميع المستخدمين</div>
+            </div>
+            
+            <div class="quick-action" onclick="viewSystemLogs()">
+                <div class="quick-action-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="quick-action-title">سجلات النظام</div>
+                <div class="quick-action-desc">عرض سجلات الأخطاء والأنشطة</div>
+            </div>
+            
+            <div class="quick-action" onclick="backupDatabase()">
+                <div class="quick-action-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="quick-action-title">نسخ احتياطي</div>
+                <div class="quick-action-desc">إنشاء نسخة احتياطية من البيانات</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="orderModal" class="telegram-modal">
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="orderModalTitle">تفاصيل الطلب</h3>
+                <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="orderModalBody">
+                <!-- سيتم ملء المحتوى بواسطة JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// متغيرات عامة
+let searchTimeout;
+let currentPage = {{ orders.page if orders else 1 }};
+
+// تهيئة الرسوم البيانية
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // رسم بياني لتوزيع حالات الطلبات
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ charts_data.status_distribution | tojson | safe }};
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(item => {
+                const statusLabels = {
+                    'pending': 'قيد الانتظار',
+                    'processing': 'قيد المعالجة', 
+                    'completed': 'مكتمل',
+                    'cancelled': 'ملغي'
+                };
+                return statusLabels[item.status] || item.status;
+            }),
+            datasets: [{
+                data: statusData.map(item => item.count),
+                backgroundColor: [
+                    '#f59e0b', // pending - warning
+                    '#3b82f6', // processing - info
+                    '#10b981', // completed - success
+                    '#ef4444'  // cancelled - danger
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // رسم بياني للنشاط اليومي
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const activityData = {{ charts_data.daily_activity | tojson | safe }};
+    
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: activityData.map(item => {
+                const date = new Date(item.date);
+                return date.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+            }),
+            datasets: [{
+                label: 'الطلبات',
+                data: activityData.map(item => item.orders),
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true
+            }, {
+                label: 'المستخدمين الجدد',
+                data: activityData.map(item => item.users),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// دوال تفاعلية
+function filterOrders() {
+    const status = document.getElementById('status-filter').value;
+    const date = document.getElementById('date-filter').value;
+    const search = document.getElementById('search-input').value;
+    
+    let url = '/admin?';
+    if (status !== 'all') url += `status=${status}&`;
+    if (date !== 'all') url += `date=${date}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    
+    window.location.href = url;
+}
+
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        filterOrders();
+    }, 500);
+}
+
+function goToPage(page) {
+    const status = document.getElementById('status-filter').value;
+    const date = document.getElementById('date-filter').value;
+    const search = document.getElementById('search-input').value;
+    
+    let url = `/admin?page=${page}`;
+    if (status !== 'all') url += `&status=${status}`;
+    if (date !== 'all') url += `&date=${date}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    window.location.href = url;
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        const response = await fetch(`/admin/order/${orderId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: newStatus
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // إظهار رسالة نجاح
+            showNotification('تم تحديث حالة الطلب بنجاح', 'success');
+            
+            // إعادة تحميل الصفحة بعد ثانيتين
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('حدث خطأ في تحديث الحالة', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        showNotification('حدث خطأ في الاتصال', 'error');
+    }
+}
+
+async function viewOrderDetails(orderId) {
+    try {
+        const response = await fetch(`/admin/order/${orderId}/details`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const order = data.order;
+            document.getElementById('orderModalTitle').textContent = `تفاصيل الطلب #${order.id}`;
+            
+            document.getElementById('orderModalBody').innerHTML = `
+                <div class="order-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>معلومات الطلب</h6>
+                            <p><strong>المنصة:</strong> ${order.platform}</p>
+                            <p><strong>الكمية:</strong> ${order.coins_amount.toLocaleString()} كوين</p>
+                            <p><strong>السعر:</strong> ${order.price ? order.price.toLocaleString() + ' جنيه' : 'غير محدد'}</p>
+                            <p><strong>نوع التحويل:</strong> ${order.transfer_type === 'instant' ? 'فوري' : 'عادي'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>معلومات المستخدم</h6>
+                            <p><strong>البريد:</strong> ${order.user_email}</p>
+                            <p><strong>الواتساب:</strong> ${order.phone_number || 'غير محدد'}</p>
+                            <p><strong>طريقة الدفع:</strong> ${order.payment_method}</p>
+                        </div>
+                    </div>
+                    ${order.ea_email ? `<p><strong>بريد EA:</strong> ${order.ea_email}</p>` : ''}
+                    ${order.notes ? `<p><strong>ملاحظات:</strong> ${order.notes}</p>` : ''}
+                    <p><strong>تاريخ الإنشاء:</strong> ${new Date(order.created_at).toLocaleString('ar-EG')}</p>
+                </div>
+            `;
+            
+            document.getElementById('orderModal').style.opacity = '1';
+            document.getElementById('orderModal').style.visibility = 'visible';
+        }
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        showNotification('حدث خطأ في تحميل تفاصيل الطلب', 'error');
+    }
+}
+
+function closeOrderModal() {
+    const modal = document.getElementById('orderModal');
+    modal.style.opacity = '0';
+    modal.style.visibility = 'hidden';
+}
+
+// دوال الإجراءات السريعة
+function exportOrders() {
+    showNotification('جاري تصدير الطلبات...', 'info');
+    window.open('/admin/export/orders', '_blank');
+}
+
+function exportAllData() {
+    showNotification('جاري تصدير جميع البيانات...', 'info');
+    window.open('/admin/export/all', '_blank');
+}
+
+function sendBulkNotification() {
+    const message = prompt('أدخل الرسالة المراد إرسالها لجميع المستخدمين:');
+    if (message) {
+        // إرسال الإشعار الجماعي
+        fetch('/admin/bulk-notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('تم إرسال الإشعار بنجاح', 'success');
+            } else {
+                showNotification('حدث خطأ في الإرسال', 'error');
+            }
+        });
+    }
+}
+
+function viewSystemLogs() {
+    window.open('/admin/logs', '_blank');
+}
+
+function backupDatabase() {
+    if (confirm('هل أنت متأكد من إنشاء نسخة احتياطية؟')) {
+        fetch('/admin/backup', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('تم إنشاء النسخة الاحتياطية بنجاح', 'success');
+            } else {
+                showNotification('حدث خطأ في إنشاء النسخة الاحتياطية', 'error');
+            }
+        });
+    }
+}
+
+// دالة إصلاح قاعدة البيانات
+async function repairDatabase() {
+    if (!confirm('تحذير: هذا الإجراء للطوارئ فقط. هل أنت متأكد من المتابعة؟')) {
+        return;
+    }
+    
+    const resultDiv = document.getElementById('telegram-test-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-spinner fa-spin"></i> جاري إصلاح قاعدة البيانات...</div>';
+    
+    try {
+        const response = await fetch('/admin/repair-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> ${data.message}
+                    <br><small>يُنصح بإعادة تحميل الصفحة</small>
+                </div>
+            `;
+            
+            // إعادة تحميل الصفحة بعد 3 ثوان
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.message}
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('خطأ في إصلاح قاعدة البيانات:', error);
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> خطأ في الاتصال: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// دوال اختبار التليجرام
+async function testTelegram(testType) {
+    try {
+        const response = await fetch('/admin/telegram-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ test_type: testType })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (testType === 'config') {
+                let configInfo = `إعدادات التليجرام:\n`;
+                configInfo += `- حالة التكوين: ${data.telegram_configured ? 'مُعد' : 'غير مُعد'}\n`;
+                configInfo += `- Bot Token: ${data.bot_token_exists ? 'موجود' : 'مفقود'}\n`;
+                configInfo += `- اسم البوت: ${data.bot_username || 'غير محدد'}`;
+                
+                alert(configInfo);
+            } else {
+                showNotification(data.message, 'success');
+            }
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error testing Telegram:', error);
+        showNotification('حدث خطأ في اختبار التليجرام', 'error');
+    }
+}
+
+// دالة إظهار الإشعارات
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} fade-in`;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
+</script>
+{% endblock %}

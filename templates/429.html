@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}تجاوز الحد المسموح - موقع الفريلانسر{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-5x text-warning mb-4"></i>
+                <h1 class="card-title">429</h1>
+                <h3 class="card-title mb-3">تم تجاوز الحد المسموح</h3>
+                <p class="card-text">لقد تجاوزت الحد المسموح من الطلبات. يرجى الانتظار قليلاً قبل المحاولة مرة أخرى.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>نصيحة:</strong> يرجى الانتظار دقيقة واحدة على الأقل قبل المحاولة مرة أخرى.
+                </div>
+                <a href="{{ url_for('home') }}" class="btn btn-primary">
+                    <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// إعادة توجيه تلقائية بعد 60 ثانية
+setTimeout(function() {
+    window.location.href = "{{ url_for('home') }}";
+}, 60000);
+</script>
+{% endblock %}

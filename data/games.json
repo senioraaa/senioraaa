@@ -1,0 +1,114 @@
+{
+    "games": [
+        {
+            "id": "fc25",
+            "name": "EA Sports FC 25",
+            "nameArabic": "إي إيه سبورتس فيفا 25",
+            "description": "أحدث إصدار من لعبة كرة القدم الشهيرة من EA Sports",
+            "longDescription": "استمتع بتجربة كرة القدم الأكثر واقعية مع EA Sports FC 25. اللعبة تحتوي على أحدث التقنيات والجرافيك المتطور، مع جميع الأندية والبطولات العالمية.",
+            "images": {
+                "ps4": "images/fc25-ps4.jpg",
+                "ps5": "images/fc25-ps5.jpg",
+                "xbox": "images/fc25-xbox.jpg",
+                "pc": "images/fc25-pc.jpg"
+            },
+            "platforms": [
+                "ps4",
+                "ps5",
+                "xbox_one",
+                "xbox_series",
+                "pc"
+            ],
+            "accountTypes": [
+                "primary",
+                "secondary",
+                "full"
+            ],
+            "prices": {
+                "ps4": {
+                    "primary": 1200,
+                    "secondary": 800,
+                    "full": 2000
+                },
+                "ps5": {
+                    "primary": 1500,
+                    "secondary": 1000,
+                    "full": 2500
+                },
+                "xbox_one": {
+                    "primary": 1300,
+                    "secondary": 900,
+                    "full": 2200
+                },
+                "xbox_series": {
+                    "primary": 1400,
+                    "secondary": 950,
+                    "full": 2300
+                },
+                "pc": {
+                    "primary": 1100,
+                    "secondary": 750,
+                    "full": 1800
+                }
+            },
+            "features": [
+                "حسابات أصلية 100%",
+                "تسليم خلال 15 ساعة",
+                "ضمان 6 أشهر",
+                "دعم فني مجاني",
+                "شرح طريقة التفعيل"
+            ],
+            "warranty": "6 أشهر",
+            "deliveryTime": "15 ساعة",
+            "support": "24/7 عبر الواتساب",
+            "status": "متوفر"
+        }
+    ],
+    "accountTypes": {
+        "primary": {
+            "name": "Primary",
+            "nameArabic": "أساسي",
+            "description": "تفعيل الحساب كأساسي على جهازك والعب من حسابك الشخصي",
+            "advantages": [
+                "العب من حسابك الشخصي",
+                "الألعاب متاحة لجميع المستخدمين على الجهاز",
+                "لا حاجة للاتصال بالإنترنت المستمر",
+                "ضمان أطول"
+            ],
+            "disadvantages": [
+                "سعر أعلى من Secondary",
+                "مقيد بجهاز واحد فقط"
+            ]
+        },
+        "secondary": {
+            "name": "Secondary",
+            "nameArabic": "ثانوي",
+            "description": "تسجيل دخول مؤقت للحساب ثم العودة لحسابك الشخصي",
+            "advantages": [
+                "سعر أرخص",
+                "سهولة في التفعيل",
+                "مناسب للتجربة"
+            ],
+            "disadvantages": [
+                "قيود أكثر في الاستخدام",
+                "يحتاج اتصال إنترنت مستمر",
+                "ضمان أقل"
+            ]
+        },
+        "full": {
+            "name": "Full",
+            "nameArabic": "كامل",
+            "description": "حساب كامل قابل للتعديل مع جميع المميزات",
+            "advantages": [
+                "حساب كامل قابل للتعديل",
+                "مرونة أكبر في الاستخدام",
+                "إمكانية تغيير البيانات",
+                "أفضل تجربة ممكنة"
+            ],
+            "disadvantages": [
+                "الأغلى سعراً",
+                "يحتاج خبرة أكثر"
+            ]
+        }
+    }
+}

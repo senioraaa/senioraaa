@@ -463,44 +463,47 @@ def send_test_message(message):
     return send_telegram_message(test_message)
 
 def send_price_update(game, platform, account_type, old_price, new_price):
-    """إرسال إشعار تحديث السعر فقط عند التغيير"""
+    """إرسال إشعار تحديث السعر بتنسيق محسن"""
     try:
-        # التحقق من أن السعر تغير فعلاً
-        if int(old_price) == int(new_price):
-            logger.info(f"السعر لم يتغير: {game} {platform} {account_type} - {old_price}")
-            return {"status": "skipped", "message": "السعر لم يتغير"}
+        # تحويل التاريخ إلى التنسيق العربي
+        now = datetime.now()
         
-        # تنسيق الأرقام
-        formatted_old_price = format_number(old_price)
-        formatted_new_price = format_number(new_price)
-        
-        # الحصول على التوقيت المصري
-        cairo_time = get_cairo_time()
-        
-        # إضافة الأيقونات للمنصات
-        platform_icons = {
-            'PS4': '🎮',
-            'PS5': '🎮',
-            'Xbox': '🎮',
-            'PC': '💻'
+        # أسماء الأيام بالعربية
+        days_arabic = {
+            'Monday': 'الإثنين',
+            'Tuesday': 'الثلاثاء', 
+            'Wednesday': 'الأربعاء',
+            'Thursday': 'الخميس',
+            'Friday': 'الجمعة',
+            'Saturday': 'السبت',
+            'Sunday': 'الأحد'
         }
         
-        platform_icon = platform_icons.get(platform, '🎮')
+        # أسماء الأشهر بالعربية
+        months_arabic = {
+            1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+            5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+            9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر'
+        }
+        
+        # تنسيق التاريخ
+        day_name = days_arabic.get(now.strftime('%A'), now.strftime('%A'))
+        day_num = now.strftime('%d')
+        month_num = now.strftime('%m')
+        time_12h = now.strftime('%I:%M %p').replace('AM', 'AM').replace('PM', 'PM')
+        
+        formatted_date = f"{day_name} ( {month_num}/{day_num} ) {time_12h}"
         
         message = f"""
-💰 تحديث سعر!
+🔄 تم تحديث أسعار {game.upper()} بواسطة الأدمن
 
-{platform_icon} اللعبة: {game}
 📱 المنصة: {platform}
 💎 نوع الحساب: {account_type}
-📉 السعر القديم: {formatted_old_price} جنيه
-📈 السعر الجديد: {formatted_new_price} جنيه
-⏰ وقت التحديث: {cairo_time}
+📉 السعر القديم: {old_price} جنيه
+📈 السعر الجديد: {new_price} جنيه
+📅 {formatted_date}
 """
-        
-        result = send_telegram_message(message)
-        logger.info(f"تم إرسال إشعار تحديث السعر: {game} {platform} {account_type}")
-        return result
+        return send_telegram_message(message)
         
     except Exception as e:
         logger.error(f"خطأ في إرسال إشعار تحديث السعر: {str(e)}")

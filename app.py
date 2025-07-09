@@ -301,6 +301,65 @@ def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
 
+def format_number(number):
+    """تنسيق الأرقام بالجذر العشري"""
+    try:
+        # تحويل الرقم إلى عدد صحيح إذا لم يكن كذلك
+        if isinstance(number, str):
+            number = int(number.replace(',', ''))
+        elif isinstance(number, float):
+            number = int(number)
+        
+        # تنسيق الرقم بالجذر العشري
+        return f"{number:,}"
+    except (ValueError, TypeError):
+        return str(number)
+
+def get_cairo_time():
+    """الحصول على التوقيت المصري بالتنسيق المطلوب"""
+    try:
+        from datetime import datetime
+        import pytz
+        
+        # تحديد المنطقة الزمنية للقاهرة
+        cairo_tz = pytz.timezone('Africa/Cairo')
+        
+        # الحصول على الوقت الحالي في القاهرة
+        cairo_time = datetime.now(cairo_tz)
+        
+        # أسماء الأيام بالعربية
+        arabic_days = {
+            'Monday': 'الإثنين',
+            'Tuesday': 'الثلاثاء', 
+            'Wednesday': 'الأربعاء',
+            'Thursday': 'الخميس',
+            'Friday': 'الجمعة',
+            'Saturday': 'السبت',
+            'Sunday': 'الأحد'
+        }
+        
+        # تنسيق التاريخ: اليوم ( الشهر/اليوم ) الساعة
+        day_name = arabic_days.get(cairo_time.strftime('%A'), cairo_time.strftime('%A'))
+        date_part = cairo_time.strftime('%m/%d')
+        time_part = cairo_time.strftime('%I:%M %p')
+        
+        return f"{day_name} ( {date_part} ) {time_part}"
+    except Exception as e:
+        logger.error(f"خطأ في الحصول على التوقيت المصري: {str(e)}")
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+def get_cairo_datetime():
+    """الحصول على التوقيت المصري للاستخدام في قاعدة البيانات"""
+    try:
+        from datetime import datetime
+        import pytz
+        
+        cairo_tz = pytz.timezone('Africa/Cairo')
+        return datetime.now(cairo_tz).strftime('%Y-%m-%d %H:%M:%S')
+    except Exception as e:
+        logger.error(f"خطأ في الحصول على التوقيت المصري: {str(e)}")
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 # قوالب الرسائل
 MESSAGE_TEMPLATES = {
     'order_confirmation': """
@@ -358,21 +417,45 @@ def send_telegram_message(message):
         return {"status": "error", "message": str(e)}
 
 def send_order_notification(order_data):
-    """إرسال إشعار طلب جديد"""
-    message = f"""
+    """إرسال إشعار طلب جديد مع التنسيق المحدث"""
+    try:
+        # تنسيق السعر
+        formatted_price = format_number(order_data['price'])
+        
+        # الحصول على التوقيت المصري
+        cairo_time = get_cairo_time()
+        
+        # إضافة الأيقونات للمنصات
+        platform_icons = {
+            'PS4': '🎮',
+            'PS5': '🎮', 
+            'Xbox': '🎮',
+            'PC': '💻'
+        }
+        
+        platform_icon = platform_icons.get(order_data['platform'], '🎮')
+        
+        message = f"""
 🚨 طلب جديد!
 
 🆔 رقم الطلب: {order_data['order_id']}
-🎮 اللعبة: {order_data['game']}
+{platform_icon} اللعبة: {order_data['game']}
 📱 المنصة: {order_data['platform']}
 💎 نوع الحساب: {order_data['account_type']}
-💰 السعر: {order_data['price']} جنيه
+💰 السعر: {formatted_price} جنيه
 💳 طريقة الدفع: {order_data['payment_method']}
 📞 رقم العميل: {order_data['customer_phone']}
 💸 رقم الدفع: {order_data['payment_number']}
-⏰ الوقت: {order_data['timestamp']}
+⏰ الوقت: {cairo_time}
 """
-    return send_telegram_message(message)
+        
+        result = send_telegram_message(message)
+        logger.info(f"تم إرسال إشعار طلب جديد: {order_data['order_id']}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"خطأ في إرسال إشعار الطلب: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 def send_test_message(message):
     """إرسال رسالة تجريبية"""
@@ -380,18 +463,48 @@ def send_test_message(message):
     return send_telegram_message(test_message)
 
 def send_price_update(game, platform, account_type, old_price, new_price):
-    """إرسال إشعار تحديث السعر"""
-    message = f"""
+    """إرسال إشعار تحديث السعر فقط عند التغيير"""
+    try:
+        # التحقق من أن السعر تغير فعلاً
+        if int(old_price) == int(new_price):
+            logger.info(f"السعر لم يتغير: {game} {platform} {account_type} - {old_price}")
+            return {"status": "skipped", "message": "السعر لم يتغير"}
+        
+        # تنسيق الأرقام
+        formatted_old_price = format_number(old_price)
+        formatted_new_price = format_number(new_price)
+        
+        # الحصول على التوقيت المصري
+        cairo_time = get_cairo_time()
+        
+        # إضافة الأيقونات للمنصات
+        platform_icons = {
+            'PS4': '🎮',
+            'PS5': '🎮',
+            'Xbox': '🎮',
+            'PC': '💻'
+        }
+        
+        platform_icon = platform_icons.get(platform, '🎮')
+        
+        message = f"""
 💰 تحديث سعر!
 
-🎮 اللعبة: {game}
+{platform_icon} اللعبة: {game}
 📱 المنصة: {platform}
 💎 نوع الحساب: {account_type}
-📉 السعر القديم: {old_price} جنيه
-📈 السعر الجديد: {new_price} جنيه
-⏰ وقت التحديث: {datetime.now().strftime(DATETIME_FORMAT)}
+📉 السعر القديم: {formatted_old_price} جنيه
+📈 السعر الجديد: {formatted_new_price} جنيه
+⏰ وقت التحديث: {cairo_time}
 """
-    return send_telegram_message(message)
+        
+        result = send_telegram_message(message)
+        logger.info(f"تم إرسال إشعار تحديث السعر: {game} {platform} {account_type}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"خطأ في إرسال إشعار تحديث السعر: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 def send_customer_message(name, phone, subject, message):
     """إرسال رسالة عميل"""
@@ -708,7 +821,7 @@ def get_prices():
 
 @app.route('/update_prices', methods=['POST'])
 def update_prices():
-    """تحديث الأسعار"""
+    """تحديث الأسعار مع إرسال إشعار فقط عند التغيير"""
     try:
         prices = load_prices()
         game = request.json.get('game')
@@ -717,6 +830,7 @@ def update_prices():
         new_price = request.json.get('price')
         
         if game and platform and account_type and new_price:
+            # الحصول على السعر القديم
             old_price = prices.get(game, {}).get(platform, {}).get(account_type, 0)
             
             if game not in prices:
@@ -724,6 +838,7 @@ def update_prices():
             if platform not in prices[game]:
                 prices[game][platform] = {}
             
+            # تحديث السعر
             prices[game][platform][account_type] = int(new_price)
             
             # التحقق من صحة البيانات وحفظها
@@ -732,8 +847,11 @@ def update_prices():
             
             logger.info(f"تم تحديث سعر {game} {platform} {account_type} من {old_price} إلى {new_price}")
             
+            # إرسال إشعار فقط إذا تغير السعر
             if NOTIFICATION_SETTINGS['price_update']:
-                send_price_update(game, platform, account_type, old_price, int(new_price))
+                notification_result = send_price_update(game, platform, account_type, old_price, int(new_price))
+                if notification_result.get('status') == 'skipped':
+                    logger.info("تم تخطي إرسال الإشعار لعدم تغيير السعر")
             
             return jsonify({"status": "success", "message": "تم تحديث السعر بنجاح"})
         else:
@@ -744,7 +862,7 @@ def update_prices():
 
 @app.route('/send_order', methods=['POST'])
 def send_order():
-    """إرسال الطلب للتليجرام والواتساب"""
+    """إرسال الطلب للتليجرام والواتساب مع التنسيق المحدث"""
     try:
         data = request.json
         
@@ -756,6 +874,10 @@ def send_order():
         
         order_id = generate_order_id()
         
+        # استخدام التوقيت المصري
+        cairo_time = get_cairo_time()
+        cairo_datetime = get_cairo_datetime()
+        
         order_data = {
             'order_id': order_id,
             'game': data.get('game', 'FC 25'),
@@ -765,8 +887,8 @@ def send_order():
             'payment_method': data.get('payment_method'),
             'customer_phone': data.get('customer_phone'),
             'payment_number': data.get('payment_number'),
-            'timestamp': datetime.now().strftime(DATETIME_FORMAT),
-            'date': datetime.now().strftime(DATE_FORMAT),
+            'timestamp': cairo_datetime,
+            'date': cairo_datetime.split(' ')[0],
             'status': 'pending'
         }
         
@@ -781,14 +903,21 @@ def send_order():
             if telegram_result.get('status') != 'success':
                 logger.warning(f"خطأ في إرسال إشعار التليجرام: {telegram_result.get('message')}")
         
-        whatsapp_message = MESSAGE_TEMPLATES['order_confirmation'].format(
-            game=order_data['game'],
-            platform=order_data['platform'],
-            account_type=order_data['account_type'],
-            price=order_data['price'],
-            payment_method=order_data['payment_method'],
-            timestamp=order_data['timestamp']
-        )
+        # تنسيق السعر في رسالة الواتساب
+        formatted_price = format_number(order_data['price'])
+        
+        whatsapp_message = f"""
+🎮 طلب جديد من منصة شهد السنيورة
+
+📱 اللعبة: {order_data['game']}
+🎯 المنصة: {order_data['platform']}
+💎 نوع الحساب: {order_data['account_type']}
+💰 السعر: {formatted_price} جنيه
+💳 طريقة الدفع: {order_data['payment_method']}
+⏰ وقت الطلب: {cairo_time}
+
+سيتم التواصل معك خلال 15 دقيقة! 🚀
+"""
         
         return jsonify({
             "status": "success",
@@ -800,6 +929,7 @@ def send_order():
     except Exception as e:
         logger.error(f"خطأ في إرسال الطلب: {str(e)}")
         return jsonify({"status": "error", "message": str(e)})
+
 
 @app.route('/test_telegram', methods=['POST'])
 def test_telegram():

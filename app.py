@@ -6,28 +6,56 @@ from datetime import datetime
 import uuid
 from functools import wraps
 import logging
+from pathlib import Path
 
-# إضافة import للـ admin blueprint
-from admin.admin_routes import admin_bp
+# إعداد نظام السجلات المحسن
+def setup_logging():
+    """إعداد نظام السجلات مع إنشاء المجلد المطلوب"""
+    handlers = []
+    
+    try:
+        # إنشاء مجلد logs إذا لم يكن موجوداً
+        os.makedirs('logs', exist_ok=True)
+        
+        # إضافة FileHandler
+        file_handler = logging.FileHandler('logs/app.log', encoding='utf-8')
+        handlers.append(file_handler)
+        print("✅ تم إنشاء ملف السجلات بنجاح")
+        
+    except Exception as e:
+        print(f"⚠️ تعذر إنشاء ملف السجلات: {str(e)}")
+    
+    # إضافة StreamHandler (دائماً متاح)
+    handlers.append(logging.StreamHandler())
+    
+    # إعداد التسجيل
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=handlers,
+        force=True
+    )
+
+# استدعاء الدالة قبل إنشاء logger
+setup_logging()
+logger = logging.getLogger(__name__)
+
+# إضافة import للـ admin blueprint مع معالجة الأخطاء
+try:
+    from admin.admin_routes import admin_bp
+    admin_bp_available = True
+except ImportError:
+    logger.warning("admin blueprint غير متوفر")
+    admin_bp_available = False
 
 app = Flask(__name__)
 
-# إعداد نظام السجلات
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/app.log', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# تسجيل الـ admin blueprint إذا كان متوفراً
+if admin_bp_available:
+    app.register_blueprint(admin_bp)
 
 # إضافة secret key للـ sessions
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here-change-it')
-
-# تسجيل الـ admin blueprint
-app.register_blueprint(admin_bp)
 
 # إعدادات الأدمن
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
@@ -162,9 +190,21 @@ def validate_order_data(order_data):
 
 # === الدوال الأساسية المحسنة ===
 
+def ensure_directories():
+    """التأكد من وجود المجلدات المطلوبة"""
+    directories = ['data', 'backups', 'logs']
+    for directory in directories:
+        try:
+            os.makedirs(directory, exist_ok=True)
+            logger.info(f"تم إنشاء/التحقق من المجلد: {directory}")
+        except Exception as e:
+            logger.error(f"خطأ في إنشاء المجلد {directory}: {str(e)}")
+
 def load_prices():
     """تحميل الأسعار من ملف JSON مع التحقق من صحتها"""
     try:
+        ensure_directories()
+        
         if os.path.exists('data/prices.json'):
             with open('data/prices.json', 'r', encoding='utf-8') as f:
                 prices = json.load(f)
@@ -191,20 +231,22 @@ def load_prices():
 def save_prices(prices):
     """حفظ الأسعار في ملف JSON مع التحقق من صحتها"""
     try:
+        ensure_directories()
+        
         # التحقق من صحة البيانات قبل الحفظ
         validated_prices = validate_and_fix_prices(prices)
         
-        os.makedirs('data', exist_ok=True)
-        
         # إنشاء نسخة احتياطية قبل الحفظ
         if os.path.exists('data/prices.json'):
-            backup_filename = f"backups/prices_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            os.makedirs('backups', exist_ok=True)
-            with open('data/prices.json', 'r', encoding='utf-8') as f:
-                backup_data = f.read()
-            with open(backup_filename, 'w', encoding='utf-8') as f:
-                f.write(backup_data)
-            logger.info(f"تم إنشاء نسخة احتياطية: {backup_filename}")
+            try:
+                backup_filename = f"backups/prices_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                with open('data/prices.json', 'r', encoding='utf-8') as f:
+                    backup_data = f.read()
+                with open(backup_filename, 'w', encoding='utf-8') as f:
+                    f.write(backup_data)
+                logger.info(f"تم إنشاء نسخة احتياطية: {backup_filename}")
+            except Exception as e:
+                logger.warning(f"تعذر إنشاء نسخة احتياطية: {str(e)}")
         
         with open('data/prices.json', 'w', encoding='utf-8') as f:
             json.dump(validated_prices, f, ensure_ascii=False, indent=2)
@@ -218,6 +260,8 @@ def save_prices(prices):
 def load_orders():
     """تحميل الطلبات من ملف JSON مع التحقق من صحتها"""
     try:
+        ensure_directories()
+        
         if os.path.exists('data/orders.json'):
             with open('data/orders.json', 'r', encoding='utf-8') as f:
                 orders = json.load(f)
@@ -231,6 +275,7 @@ def load_orders():
             return orders
         else:
             logger.info("ملف الطلبات غير موجود، إنشاء قائمة فارغة")
+            save_orders([])
             return []
             
     except json.JSONDecodeError as e:
@@ -243,22 +288,24 @@ def load_orders():
 def save_orders(orders):
     """حفظ الطلبات في ملف JSON مع التحقق من صحتها"""
     try:
+        ensure_directories()
+        
         # التأكد من أن البيانات عبارة عن قائمة
         if not isinstance(orders, list):
             logger.error("البيانات المراد حفظها ليست قائمة")
             raise ValueError("البيانات يجب أن تكون قائمة")
         
-        os.makedirs('data', exist_ok=True)
-        
         # إنشاء نسخة احتياطية قبل الحفظ
         if os.path.exists('data/orders.json'):
-            backup_filename = f"backups/orders_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            os.makedirs('backups', exist_ok=True)
-            with open('data/orders.json', 'r', encoding='utf-8') as f:
-                backup_data = f.read()
-            with open(backup_filename, 'w', encoding='utf-8') as f:
-                f.write(backup_data)
-            logger.info(f"تم إنشاء نسخة احتياطية للطلبات: {backup_filename}")
+            try:
+                backup_filename = f"backups/orders_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                with open('data/orders.json', 'r', encoding='utf-8') as f:
+                    backup_data = f.read()
+                with open(backup_filename, 'w', encoding='utf-8') as f:
+                    f.write(backup_data)
+                logger.info(f"تم إنشاء نسخة احتياطية للطلبات: {backup_filename}")
+            except Exception as e:
+                logger.warning(f"تعذر إنشاء نسخة احتياطية للطلبات: {str(e)}")
         
         with open('data/orders.json', 'w', encoding='utf-8') as f:
             json.dump(orders, f, ensure_ascii=False, indent=2)
@@ -894,14 +941,12 @@ def ping():
 
 # === إعداد النظام ===
 
-@app.before_request
-def before_request():
-    """إعداد النظام عند بدء التشغيل"""
+@app.before_first_request
+def initialize_app():
+    """إعداد النظام عند بدء التشغيل لأول مرة"""
     try:
-        # إنشاء المجلدات المطلوبة
-        os.makedirs('data', exist_ok=True)
-        os.makedirs('backups', exist_ok=True)
-        os.makedirs('logs', exist_ok=True)
+        # التأكد من وجود المجلدات المطلوبة
+        ensure_directories()
         
         # التحقق من وجود ملف الأسعار
         if not os.path.exists('data/prices.json'):
@@ -924,18 +969,48 @@ def before_request():
         except Exception as e:
             logger.error(f"خطأ في التحقق من بيانات الأسعار: {str(e)}")
             
+        logger.info("✅ تم تهيئة النظام بنجاح")
+        
     except Exception as e:
         logger.error(f"خطأ في إعداد النظام: {str(e)}")
 
+# === تشغيل التطبيق ===
+
 if __name__ == '__main__':
+    # تهيئة النظام
+    try:
+        ensure_directories()
+        
+        # التحقق من وجود الملفات الأساسية
+        if not os.path.exists('data/prices.json'):
+            default_prices = get_default_prices()
+            save_prices(default_prices)
+            logger.info("تم إنشاء ملف الأسعار الافتراضي")
+        
+        if not os.path.exists('data/orders.json'):
+            save_orders([])
+            logger.info("تم إنشاء ملف الطلبات الفارغ")
+            
+    except Exception as e:
+        logger.error(f"خطأ في التهيئة: {str(e)}")
+    
+    # الحصول على رقم البورت
     port = int(os.environ.get('PORT', 5000))
+    
+    # رسائل بدء التشغيل
+    logger.info("=" * 50)
     logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
     logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
     logger.info(f"🔧 الصيانة: {'مفعلة' if MAINTENANCE_MODE else 'معطلة'}")
     logger.info(f"👤 أدمن: {ADMIN_USERNAME}")
+    logger.info(f"📱 واتساب: {WHATSAPP_NUMBER}")
+    logger.info(f"📧 إيميل: {EMAIL_INFO}")
+    logger.info("=" * 50)
     
+    # تشغيل التطبيق
     app.run(
         host='0.0.0.0',
         port=port,
-        debug=DEBUG_MODE
+        debug=DEBUG_MODE,
+        threaded=True
     )

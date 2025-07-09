@@ -55,7 +55,7 @@
         </div>
     </section>
 
-    <!-- قسم الأسعار -->
+    <!-- قسم الأسعار المحسن -->
     <section id="pricing" class="pricing-section">
         <div class="container">
             <h2 class="section-title">🏷️ أسعار FC 25 لجميع المنصات</h2>
@@ -67,19 +67,19 @@
                         
                         {% for platform, price_types in platforms.items() %}
                             <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">
-{% if platform.upper() == 'PS4' %}PlayStation 4
-{% elif platform.upper() == 'PS5' %}PlayStation 5
-{% elif platform.upper() == 'XBOX' %}Xbox Series X/S & Xbox One
-{% elif platform.upper() == 'PC' %}PC (Steam/Epic Games)
-{% else %}{{ platform.upper() }}
-{% endif %}
+                                {% if platform.upper() == 'PS4' %}PlayStation 4
+                                {% elif platform.upper() == 'PS5' %}PlayStation 5
+                                {% elif platform.upper() == 'XBOX' %}Xbox Series X/S & Xbox One
+                                {% elif platform.upper() == 'PC' %}PC (Steam/Epic Games)
+                                {% else %}{{ platform.upper() }}
+                                {% endif %}
                             </h3>
                             
                             <div class="pricing-grid">
-{% if price_types.Primary %}
-    <div class="price-card primary" data-platform="{{ platform.upper() }}" data-account-type="Primary">
-        <h3>حساب Primary</h3>
-        <div class="price">{{ price_types.Primary }} جنيه</div>
+                                {% if price_types.Primary %}
+                                    <div class="price-card primary" data-platform="{{ platform.upper() }}" data-account-type="Primary">
+                                        <h3>حساب Primary</h3>
+                                        <div class="price">{{ price_types.Primary }} جنيه</div>
                                         <p>تفعيل أساسي - العب من حسابك الشخصي</p>
                                         <ul style="text-align: right; margin-bottom: 2rem;">
                                             <li>✅ تفعيل الحساب كأساسي</li>
@@ -91,10 +91,10 @@
                                     </div>
                                 {% endif %}
                                 
-{% if price_types.Full %}
-    <div class="price-card full" data-platform="{{ platform.upper() }}" data-account-type="Full">
-        <h3>حساب Full</h3>
-        <div class="price">{{ price_types.Full }} جنيه</div>
+                                {% if price_types.Secondary %}
+                                    <div class="price-card secondary" data-platform="{{ platform.upper() }}" data-account-type="Secondary">
+                                        <h3>حساب Secondary</h3>
+                                        <div class="price">{{ price_types.Secondary }} جنيه</div>
                                         <p>تسجيل دخول مؤقت - سعر أرخص</p>
                                         <ul style="text-align: right; margin-bottom: 2rem;">
                                             <li>✅ تسجيل دخول مؤقت</li>
@@ -106,10 +106,10 @@
                                     </div>
                                 {% endif %}
                                 
-                                {% if price_types.full %}
-                                    <div class="price-card full" data-platform="{{ platform.upper() }}" data-account-type="full">
+                                {% if price_types.Full %}
+                                    <div class="price-card full" data-platform="{{ platform.upper() }}" data-account-type="Full">
                                         <h3>حساب Full</h3>
-                                        <div class="price">{{ price_types.full }} جنيه</div>
+                                        <div class="price">{{ price_types.Full }} جنيه</div>
                                         <p>حساب كامل قابل للتعديل</p>
                                         <ul style="text-align: right; margin-bottom: 2rem;">
                                             <li>✅ حساب كامل</li>

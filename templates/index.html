@@ -66,14 +66,23 @@
                         <h2 style="text-align: center; margin-bottom: 2rem; color: #667eea;">{{ game.upper() }}</h2>
                         
                         {% for platform, price_types in platforms.items() %}
-<h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">
-    {% if platform.upper() == 'PS4' %}🎮 PlayStation 4
-    {% elif platform.upper() == 'PS5' %}🎮 PlayStation 5
-    {% elif platform.upper() == 'XBOX' %}🎮 Xbox Series X/S & Xbox One
-    {% elif platform.upper() == 'PC' %}💻 PC (Steam/Epic Games)
-    {% else %}🎮 {{ platform.upper() }}
-    {% endif %}
-</h3>
+                            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea; display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                                {% if platform.upper() == 'PS4' %}
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDQ4QzM3LjI1NDggNDggNDggMzcuMjU0OCA0OCAyNEM0OCAxMC43NDUyIDM3LjI1NDggMCAyNCAwQzEwLjc0NTIgMCAwIDEwLjc0NTIgMCAyNEMwIDM3LjI1NDggMTAuNzQ1MiA0OCAyNCA0OFoiIGZpbGw9IiMwMDcwRjMiLz4KPHBhdGggZD0iTTEyIDIwSDM2VjI4SDEyVjIwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEyIDIwSDM2VjI4SDEyVjIwWiIgZmlsbD0id2hpdGUiLz4KPHRleHQgeD0iMjQiIHk9IjI3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMDA3MEYzIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIj5QUzQ8L3RleHQ+Cjwvc3ZnPg==" alt="PlayStation 4" style="width: 32px; height: 32px;">
+                                    PlayStation 4
+                                {% elif platform.upper() == 'PS5' %}
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDQ4QzM3LjI1NDggNDggNDggMzcuMjU0OCA0OCAyNEM0OCAxMC43NDUyIDM3LjI1NDggMCAyNCAwQzEwLjc0NTIgMCAwIDEwLjc0NTIgMCAyNEMwIDM3LjI1NDggMTAuNzQ1MiA0OCAyNCA0OFoiIGZpbGw9IiMwMDcwRjMiLz4KPHBhdGggZD0iTTEyIDIwSDM2VjI4SDEyVjIwWiIgZmlsbD0id2hpdGUiLz4KPHRleHQgeD0iMjQiIHk9IjI3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMDA3MEYzIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIj5QUzU8L3RleHQ+Cjwvc3ZnPg==" alt="PlayStation 5" style="width: 32px; height: 32px;">
+                                    PlayStation 5
+                                {% elif platform.upper() == 'XBOX' %}
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDQ4QzM3LjI1NDggNDggNDggMzcuMjU0OCA0OCAyNEM0OCAxMC43NDUyIDM3LjI1NDggMCAyNCAwQzEwLjc0NTIgMCAwIDEwLjc0NTIgMCAyNEMwIDM3LjI1NDggMTAuNzQ1MiA0OCAyNCA0OFoiIGZpbGw9IiMxMDc5M0UiLz4KPHBhdGggZD0iTTI0IDEyQzI2LjIwOTEgMTIgMjggMTMuNzkwOSAyOCAxNkMyOCAxOC4yMDkxIDI2LjIwOTEgMjAgMjQgMjBDMjEuNzkwOSAyMCAyMCAxOC4yMDkxIDIwIDE2QzIwIDEzLjc5MDkgMjEuNzkwOSAxMiAyNCAxMloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMEMxOC4yMDkxIDIwIDIwIDIxLjc5MDkgMjAgMjRDMjAgMjYuMjA5MSAxOC4yMDkxIDI4IDE2IDI4QzEzLjc5MDkgMjggMTIgMjYuMjA5MSAxMiAyNEMxMiAyMS43OTA5IDEzLjc5MDkgMjAgMTYgMjBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMzIgMjBDMzQuMjA5MSAyMCAzNiAyMS43OTA5IDM2IDI0QzM2IDI2LjIwOTEgMzQuMjA5MSAyOCAzMiAyOEMyOS43OTA5IDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyOS43OTA5IDIwIDMyIDIwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTI0IDI4QzI2LjIwOTEgMjggMjggMjkuNzkwOSAyOCAzMkMyOCAzNC4yMDkxIDI2LjIwOTEgMzYgMjQgMzZDMjEuNzkwOSAzNiAyMCAzNC4yMDkxIDIwIDMyQzIwIDI5Ljc5MDkgMjEuNzkwOSAyOCAyNCAyOFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==" alt="Xbox" style="width: 32px; height: 32px;">
+                                    Xbox Series X/S & Xbox One
+                                {% elif platform.upper() == 'PC' %}
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDQ4QzM3LjI1NDggNDggNDggMzcuMjU0OCA0OCAyNEM0OCAxMC43NDUyIDM3LjI1NDggMCAyNCAwQzEwLjc0NTIgMCAwIDEwLjc0NTIgMCAyNEMwIDM3LjI1NDggMTAuNzQ1MiA0OCAyNCA0OFoiIGZpbGw9IiM2NjZCNzMiLz4KPHJlY3QgeD0iMTAiIHk9IjEyIiB3aWR0aD0iMjgiIGhlaWdodD0iMjAiIHJ4PSIyIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB4PSIxMiIgeT0iMTQiIHdpZHRoPSIyNCIgaGVpZ2h0PSIxNCIgZmlsbD0iIzMzMzMzMyIvPgo8cmVjdCB4PSIxMiIgeT0iMzIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyIiBmaWxsPSIjQ0NDQ0NDIi8+Cjwvc3ZnPg==" alt="PC" style="width: 32px; height: 32px;">
+                                    PC (Steam/Epic Games)
+                                {% else %}
+                                    {{ platform.upper() }}
+                                {% endif %}
+                            </h3>
                             
                             <div class="pricing-grid">
                                 {% if price_types.Primary %}

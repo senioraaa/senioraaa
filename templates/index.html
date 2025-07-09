@@ -67,12 +67,12 @@
                         
                         {% for platform, price_types in platforms.items() %}
                             <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">
-                                {% if platform == 'ps4' %}PlayStation 4
-                                {% elif platform == 'ps5' %}PlayStation 5
-                                {% elif platform == 'xbox' %}Xbox Series X/S & Xbox One
-                                {% elif platform == 'pc' %}PC (Steam/Epic Games)
-                                {% else %}{{ platform.upper() }}
-                                {% endif %}
+{% if platform.upper() == 'PS4' %}PlayStation 4
+{% elif platform.upper() == 'PS5' %}PlayStation 5
+{% elif platform.upper() == 'XBOX' %}Xbox Series X/S & Xbox One
+{% elif platform.upper() == 'PC' %}PC (Steam/Epic Games)
+{% else %}{{ platform.upper() }}
+{% endif %}
                             </h3>
                             
                             <div class="pricing-grid">

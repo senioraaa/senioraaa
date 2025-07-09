@@ -1,0 +1,290 @@
+<!-- templates/admin/prices.html -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الأسعار - منصة شهد السنيورة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .sidebar h4 {
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .sidebar .nav-link {
+            color: white;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .price-form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .platform-section {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .platform-section:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.1);
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 0.75rem;
+        }
+        .btn-save {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            color: white;
+            font-weight: 500;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar">
+                <h4>
+                    <i class="fas fa-gamepad me-2"></i>
+                    منصة شهد السنيورة
+                </h4>
+                
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-chart-line me-2"></i>
+                        لوحة الإدارة
+                    </a>
+                    <a class="nav-link active" href="{{ url_for('admin.prices') }}">
+                        <i class="fas fa-dollar-sign me-2"></i>
+                        إدارة الأسعار
+                    </a>
+                    <a class="nav-link" href="{{ url_for('admin.logout') }}">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        تسجيل الخروج
+                    </a>
+                </nav>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>إدارة الأسعار</h1>
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        العودة للوحة الإدارة
+                    </a>
+                </div>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Price Update Form -->
+                <div class="price-form-card">
+                    <h3 class="mb-4">تحديث أسعار FC 25</h3>
+                    
+                    <form method="POST" action="{{ url_for('admin.update_prices') }}">
+                        <!-- PlayStation 4 -->
+                        <div class="platform-section">
+                            <h4 class="mb-3">
+                                <i class="fab fa-playstation text-primary me-2"></i>
+                                PlayStation 4
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Primary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps4_primary" 
+                                               value="{{ prices.fc25.ps4.primary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Secondary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps4_secondary" 
+                                               value="{{ prices.fc25.ps4.secondary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Full Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps4_full" 
+                                               value="{{ prices.fc25.ps4.full }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PlayStation 5 -->
+                        <div class="platform-section">
+                            <h4 class="mb-3">
+                                <i class="fab fa-playstation text-primary me-2"></i>
+                                PlayStation 5
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Primary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps5_primary" 
+                                               value="{{ prices.fc25.ps5.primary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Secondary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps5_secondary" 
+                                               value="{{ prices.fc25.ps5.secondary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Full Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="ps5_full" 
+                                               value="{{ prices.fc25.ps5.full }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Xbox -->
+                        <div class="platform-section">
+                            <h4 class="mb-3">
+                                <i class="fab fa-xbox text-success me-2"></i>
+                                Xbox
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Primary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="xbox_primary" 
+                                               value="{{ prices.fc25.xbox.primary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Secondary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="xbox_secondary" 
+                                               value="{{ prices.fc25.xbox.secondary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Full Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="xbox_full" 
+                                               value="{{ prices.fc25.xbox.full }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PC -->
+                        <div class="platform-section">
+                            <h4 class="mb-3">
+                                <i class="fas fa-desktop text-info me-2"></i>
+                                PC
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Primary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="pc_primary" 
+                                               value="{{ prices.fc25.pc.primary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Secondary Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="pc_secondary" 
+                                               value="{{ prices.fc25.pc.secondary }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Full Account</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="pc_full" 
+                                               value="{{ prices.fc25.pc.full }}" min="1" required>
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Button -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-save btn-lg">
+                                <i class="fas fa-save me-2"></i>
+                                حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // إضافة تأكيد قبل الحفظ
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!confirm('هل أنت متأكد من تحديث الأسعار؟')) {
+                e.preventDefault();
+            }
+        });
+        
+        // تلوين الحقول عند التغيير
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('change', function() {
+                this.style.borderColor = '#28a745';
+                this.style.boxShadow = '0 0 5px rgba(40, 167, 69, 0.3)';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -179,6 +179,7 @@
             <p><strong>Primary:</strong> حساب أساسي - يفعل كرئيسي ويلعب العميل من حسابه الشخصي</p>
             <p><strong>Secondary:</strong> حساب ثانوي - تسجيل دخول مؤقت وتحميل اللعبة</p>
             <p><strong>Full:</strong> حساب كامل - يمكن تعديل البيانات بالكامل</p>
+            <p><strong>🔧 طريقة التحديث:</strong> يمكنك تعديل أي حقل منفرد دون الحاجة لملء باقي الحقول. اتركي الحقول فارغة إذا لم تريدي تغييرها.</p>
         </div>
 
         <form method="POST" class="price-form">
@@ -189,17 +190,17 @@
                     <div class="price-item">
                         <div class="price-type primary">● Primary Account</div>
                         <label for="ps4_primary">السعر (بالجنيه المصري):</label>
-<input type="number" id="ps4_primary" name="ps4_primary" value="{{ prices.ps4_primary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
+                        <input type="number" id="ps4_primary" name="ps4_primary" value="{{ prices.ps4_primary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type secondary">● Secondary Account</div>
                         <label for="ps4_secondary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="ps4_secondary" name="ps4_secondary" value="{{ prices.ps4_secondary }}" required>
+                        <input type="number" id="ps4_secondary" name="ps4_secondary" value="{{ prices.ps4_secondary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type full">● Full Account</div>
                         <label for="ps4_full">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="ps4_full" name="ps4_full" value="{{ prices.ps4_full }}" required>
+                        <input type="number" id="ps4_full" name="ps4_full" value="{{ prices.ps4_full }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                 </div>
             </div>
@@ -211,17 +212,17 @@
                     <div class="price-item">
                         <div class="price-type primary">● Primary Account</div>
                         <label for="ps5_primary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="ps5_primary" name="ps5_primary" value="{{ prices.ps5_primary }}" required>
+                        <input type="number" id="ps5_primary" name="ps5_primary" value="{{ prices.ps5_primary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type secondary">● Secondary Account</div>
                         <label for="ps5_secondary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="ps5_secondary" name="ps5_secondary" value="{{ prices.ps5_secondary }}" required>
+                        <input type="number" id="ps5_secondary" name="ps5_secondary" value="{{ prices.ps5_secondary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type full">● Full Account</div>
                         <label for="ps5_full">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="ps5_full" name="ps5_full" value="{{ prices.ps5_full }}" required>
+                        <input type="number" id="ps5_full" name="ps5_full" value="{{ prices.ps5_full }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                 </div>
             </div>
@@ -233,17 +234,17 @@
                     <div class="price-item">
                         <div class="price-type primary">● Primary Account</div>
                         <label for="xbox_primary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="xbox_primary" name="xbox_primary" value="{{ prices.xbox_primary }}" required>
+                        <input type="number" id="xbox_primary" name="xbox_primary" value="{{ prices.xbox_primary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type secondary">● Secondary Account</div>
                         <label for="xbox_secondary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="xbox_secondary" name="xbox_secondary" value="{{ prices.xbox_secondary }}" required>
+                        <input type="number" id="xbox_secondary" name="xbox_secondary" value="{{ prices.xbox_secondary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type full">● Full Account</div>
                         <label for="xbox_full">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="xbox_full" name="xbox_full" value="{{ prices.xbox_full }}" required>
+                        <input type="number" id="xbox_full" name="xbox_full" value="{{ prices.xbox_full }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                 </div>
             </div>
@@ -255,17 +256,17 @@
                     <div class="price-item">
                         <div class="price-type primary">● Primary Account</div>
                         <label for="pc_primary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="pc_primary" name="pc_primary" value="{{ prices.pc_primary }}" required>
+                        <input type="number" id="pc_primary" name="pc_primary" value="{{ prices.pc_primary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type secondary">● Secondary Account</div>
                         <label for="pc_secondary">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="pc_secondary" name="pc_secondary" value="{{ prices.pc_secondary }}" required>
+                        <input type="number" id="pc_secondary" name="pc_secondary" value="{{ prices.pc_secondary }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                     <div class="price-item">
                         <div class="price-type full">● Full Account</div>
                         <label for="pc_full">السعر (بالجنيه المصري):</label>
-                        <input type="number" id="pc_full" name="pc_full" value="{{ prices.pc_full }}" required>
+                        <input type="number" id="pc_full" name="pc_full" value="{{ prices.pc_full }}" placeholder="اتركه فارغ إذا لم تريد التغيير">
                     </div>
                 </div>
             </div>

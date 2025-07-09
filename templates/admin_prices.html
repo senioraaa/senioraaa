@@ -277,4 +277,43 @@
         </form>
     </div>
 </body>
+
+<script>
+// عرض الأسعار الحالية في الحقول
+document.addEventListener('DOMContentLoaded', function() {
+    const prices = {{ prices | tojson }};
+    
+    if (prices && prices.fc25) {
+        // PS4 prices
+        if (prices.fc25.PS4) {
+            document.querySelector('input[name="ps4_primary"]').placeholder = `الحالي: ${prices.fc25.PS4.Primary} جنيه`;
+            document.querySelector('input[name="ps4_secondary"]').placeholder = `الحالي: ${prices.fc25.PS4.Secondary} جنيه`;
+            document.querySelector('input[name="ps4_full"]').placeholder = `الحالي: ${prices.fc25.PS4.Full} جنيه`;
+        }
+        
+        // PS5 prices
+        if (prices.fc25.PS5) {
+            document.querySelector('input[name="ps5_primary"]').placeholder = `الحالي: ${prices.fc25.PS5.Primary} جنيه`;
+            document.querySelector('input[name="ps5_secondary"]').placeholder = `الحالي: ${prices.fc25.PS5.Secondary} جنيه`;
+            document.querySelector('input[name="ps5_full"]').placeholder = `الحالي: ${prices.fc25.PS5.Full} جنيه`;
+        }
+        
+        // Xbox prices
+        if (prices.fc25.Xbox) {
+            document.querySelector('input[name="xbox_primary"]').placeholder = `الحالي: ${prices.fc25.Xbox.Primary} جنيه`;
+            document.querySelector('input[name="xbox_secondary"]').placeholder = `الحالي: ${prices.fc25.Xbox.Secondary} جنيه`;
+            document.querySelector('input[name="xbox_full"]').placeholder = `الحالي: ${prices.fc25.Xbox.Full} جنيه`;
+        }
+        
+        // PC prices
+        if (prices.fc25.PC) {
+            document.querySelector('input[name="pc_primary"]').placeholder = `الحالي: ${prices.fc25.PC.Primary} جنيه`;
+            document.querySelector('input[name="pc_secondary"]').placeholder = `الحالي: ${prices.fc25.PC.Secondary} جنيه`;
+            document.querySelector('input[name="pc_full"]').placeholder = `الحالي: ${prices.fc25.PC.Full} جنيه`;
+        }
+    }
+});
+
+</script>
+
 </html>

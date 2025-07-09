@@ -91,6 +91,9 @@ SUPPORTED_GAMES = {
     }
 }
 
+# متغير للتحقق من التهيئة
+app_initialized = False
+
 # === دوال التحقق من صحة البيانات والإصلاح ===
 
 def get_default_prices():
@@ -320,6 +323,44 @@ def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
 
+def initialize_app():
+    """تهيئة التطبيق - يتم استدعاؤها مرة واحدة فقط"""
+    global app_initialized
+    
+    if app_initialized:
+        return
+    
+    try:
+        # التأكد من وجود المجلدات المطلوبة
+        ensure_directories()
+        
+        # التحقق من وجود ملف الأسعار
+        if not os.path.exists('data/prices.json'):
+            default_prices = get_default_prices()
+            save_prices(default_prices)
+            logger.info("تم إنشاء ملف الأسعار الافتراضي")
+        
+        # التحقق من وجود ملف الطلبات
+        if not os.path.exists('data/orders.json'):
+            save_orders([])
+            logger.info("تم إنشاء ملف الطلبات الفارغ")
+        
+        # التحقق من صحة البيانات الموجودة
+        try:
+            prices = load_prices()
+            validated_prices = validate_and_fix_prices(prices)
+            if prices != validated_prices:
+                save_prices(validated_prices)
+                logger.info("تم إصلاح بيانات الأسعار")
+        except Exception as e:
+            logger.error(f"خطأ في التحقق من بيانات الأسعار: {str(e)}")
+            
+        app_initialized = True
+        logger.info("✅ تم تهيئة النظام بنجاح")
+        
+    except Exception as e:
+        logger.error(f"خطأ في إعداد النظام: {str(e)}")
+
 # قوالب الرسائل
 MESSAGE_TEMPLATES = {
     'order_confirmation': """
@@ -388,7 +429,7 @@ def send_order_notification(order_data):
 💰 السعر: {order_data['price']} جنيه
 💳 طريقة الدفع: {order_data['payment_method']}
 📞 رقم العميل: {order_data['customer_phone']}
-💸 رقم الدفع: {order_data['payment_number']}
+💸 رقم الدفع: {order_data.get('payment_number', 'غير محدد')}
 ⏰ الوقت: {order_data['timestamp']}
 """
     return send_telegram_message(message)
@@ -424,6 +465,13 @@ def send_customer_message(name, phone, subject, message):
 ⏰ الوقت: {datetime.now().strftime(DATETIME_FORMAT)}
 """
     return send_telegram_message(customer_message)
+
+# === إعداد التهيئة للطلبات ===
+
+@app.before_request
+def before_request():
+    """تهيئة التطبيق قبل كل طلب"""
+    initialize_app()
 
 # === routes إدارة الأدمن ===
 
@@ -716,7 +764,7 @@ def send_order():
             'price': int(data.get('price')),
             'payment_method': data.get('payment_method'),
             'customer_phone': data.get('customer_phone'),
-            'payment_number': data.get('payment_number'),
+            'payment_number': data.get('payment_number', ''),
             'timestamp': datetime.now().strftime(DATETIME_FORMAT),
             'date': datetime.now().strftime(DATE_FORMAT),
             'status': 'pending'
@@ -926,71 +974,83 @@ def api_game_info(game_id):
 def not_found_error(error):
     """معالج الأخطاء 404"""
     logger.warning(f"صفحة غير موجودة: {request.url}")
-    return render_template('404.html'), 404
+    try:
+        return render_template('404.html'), 404
+    except:
+        return jsonify({"error": "صفحة غير موجودة"}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """معالج الأخطاء 500"""
     logger.error(f"خطأ داخلي: {str(error)}")
-    return render_template('500.html'), 500
+    try:
+        return render_template('500.html'), 500
+    except:
+        return jsonify({"error": "خطأ داخلي في الخادم"}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """معالج عام للأخطاء"""
+    logger.error(f"خطأ غير متوقع: {str(e)}")
+    try:
+        return render_template('500.html'), 500
+    except:
+        return jsonify({"error": "خطأ في الخادم"}), 500
 
 @app.route('/ping')
 def ping():
     """Health check للـ Render"""
     return "OK", 200
 
-# === إعداد النظام ===
-
-@app.before_first_request
-def initialize_app():
-    """إعداد النظام عند بدء التشغيل لأول مرة"""
+@app.route('/health')
+def health():
+    """Health check مفصل"""
     try:
-        # التأكد من وجود المجلدات المطلوبة
-        ensure_directories()
+        # التحقق من وجود الملفات الأساسية
+        files_status = {
+            'prices': os.path.exists('data/prices.json'),
+            'orders': os.path.exists('data/orders.json'),
+            'logs': os.path.exists('logs/app.log')
+        }
         
-        # التحقق من وجود ملف الأسعار
-        if not os.path.exists('data/prices.json'):
-            default_prices = get_default_prices()
-            save_prices(default_prices)
-            logger.info("تم إنشاء ملف الأسعار الافتراضي")
-        
-        # التحقق من وجود ملف الطلبات
-        if not os.path.exists('data/orders.json'):
-            save_orders([])
-            logger.info("تم إنشاء ملف الطلبات الفارغ")
-        
-        # التحقق من صحة البيانات الموجودة
+        # التحقق من إمكانية تحميل البيانات
         try:
             prices = load_prices()
-            validated_prices = validate_and_fix_prices(prices)
-            if prices != validated_prices:
-                save_prices(validated_prices)
-                logger.info("تم إصلاح بيانات الأسعار")
+            orders = load_orders()
+            data_status = {
+                'prices_loaded': True,
+                'orders_loaded': True,
+                'prices_count': len(prices),
+                'orders_count': len(orders)
+            }
         except Exception as e:
-            logger.error(f"خطأ في التحقق من بيانات الأسعار: {str(e)}")
-            
-        logger.info("✅ تم تهيئة النظام بنجاح")
+            data_status = {
+                'prices_loaded': False,
+                'orders_loaded': False,
+                'error': str(e)
+            }
         
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'files': files_status,
+            'data': data_status,
+            'app_initialized': app_initialized
+        })
     except Exception as e:
-        logger.error(f"خطأ في إعداد النظام: {str(e)}")
+        logger.error(f"خطأ في فحص الصحة: {str(e)}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 # === تشغيل التطبيق ===
 
 if __name__ == '__main__':
     # تهيئة النظام
     try:
-        ensure_directories()
-        
-        # التحقق من وجود الملفات الأساسية
-        if not os.path.exists('data/prices.json'):
-            default_prices = get_default_prices()
-            save_prices(default_prices)
-            logger.info("تم إنشاء ملف الأسعار الافتراضي")
-        
-        if not os.path.exists('data/orders.json'):
-            save_orders([])
-            logger.info("تم إنشاء ملف الطلبات الفارغ")
-            
+        initialize_app()
+        logger.info("تم تهيئة النظام بنجاح")
     except Exception as e:
         logger.error(f"خطأ في التهيئة: {str(e)}")
     
@@ -998,19 +1058,22 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     
     # رسائل بدء التشغيل
-    logger.info("=" * 50)
+    logger.info("=" * 60)
     logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
     logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
     logger.info(f"🔧 الصيانة: {'مفعلة' if MAINTENANCE_MODE else 'معطلة'}")
     logger.info(f"👤 أدمن: {ADMIN_USERNAME}")
     logger.info(f"📱 واتساب: {WHATSAPP_NUMBER}")
     logger.info(f"📧 إيميل: {EMAIL_INFO}")
-    logger.info("=" * 50)
+    logger.info(f"🤖 تليجرام: {'مفعل' if TELEGRAM_BOT_TOKEN else 'معطل'}")
+    logger.info(f"📊 إحصائيات: متوفرة على /health")
+    logger.info("=" * 60)
     
     # تشغيل التطبيق
     app.run(
         host='0.0.0.0',
         port=port,
         debug=DEBUG_MODE,
-        threaded=True
+        threaded=True,
+        use_reloader=False  # تجنب مشاكل التطوير
     )

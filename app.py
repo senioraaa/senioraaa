@@ -722,29 +722,42 @@ def admin_prices():
             logger.info("تم تحديث الأسعار بواسطة الأدمن")
             flash('تم تحديث الأسعار بنجاح', 'success')
             
-            # إرسال إشعار التحديث فقط للأسعار التي تغيرت
+            # إرسال إشعار فقط للأسعار التي تم تغييرها
             if NOTIFICATION_SETTINGS['price_update']:
-                changed_prices = []
+                changes_detected = False
+                change_message = "🔄 تحديث الأسعار:\n\n"
+                
                 for game in validated_prices:
                     if game in old_prices:
                         for platform in validated_prices[game]:
                             if platform in old_prices[game]:
-                                for account_type in validated_prices[game][platform]:
-                                    old_price = old_prices[game][platform].get(account_type, 0)
-                                    new_price = validated_prices[game][platform][account_type]
+                                for price_type in validated_prices[game][platform]:
+                                    old_price = old_prices[game][platform].get(price_type, 0)
+                                    new_price = validated_prices[game][platform][price_type]
                                     
                                     if old_price != new_price:
-                                        changed_prices.append({
-                                            'game': game,
-                                            'platform': platform,
-                                            'account_type': account_type,
-                                            'old_price': old_price,
-                                            'new_price': new_price
-                                        })
+                                        changes_detected = True
+                                        platform_name = {
+                                            'PS4': 'PlayStation 4',
+                                            'PS5': 'PlayStation 5',
+                                            'Xbox': 'Xbox',
+                                            'PC': 'PC'
+                                        }.get(platform, platform)
+                                        
+                                        account_name = {
+                                            'Primary': 'أساسي',
+                                            'Secondary': 'ثانوي',
+                                            'Full': 'كامل'
+                                        }.get(price_type, price_type)
+                                        
+                                        change_message += f"🎮 {game.upper()} - {platform_name}\n"
+                                        change_message += f"💎 {account_name}: {old_price} ← {new_price} جنيه\n\n"
                 
-                # إرسال إشعار واحد مجمع للأسعار المتغيرة
-                if changed_prices:
-                    send_bulk_price_update(changed_prices)
+                if changes_detected:
+                    change_message += f"⏰ وقت التحديث: {datetime.now().strftime(DATETIME_FORMAT)}"
+                    send_telegram_message(change_message)
+                else:
+                    logger.info("لم يتم تغيير أي سعر، لن يتم إرسال إشعار")
             
             return redirect(url_for('admin_prices'))
             

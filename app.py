@@ -18,7 +18,7 @@ app.register_blueprint(admin_bp)
 
 # إعدادات الموقع
 SITE_NAME = "منصة شهد السنيورة"
-WHATSAPP_NUMBER = "01234567890"
+WHATSAPP_NUMBER = "01094591331"
 EMAIL_INFO = "info@senioraa.com"
 MAINTENANCE_MODE = False
 MAINTENANCE_MESSAGE = "الموقع تحت الصيانة"

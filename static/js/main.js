@@ -40,10 +40,6 @@ function handleOrderClick(event) {
         timestamp: new Date().toISOString()
     };
     
-    // عرض نموذج الطلب
-    showOrderForm(orderData);
-}
-
 // عرض نموذج الطلب
 function showOrderForm(orderData) {
     const modal = document.createElement('div');
@@ -65,15 +61,51 @@ function showOrderForm(orderData) {
                 
                 <div class="order-form">
                     <h3>بيانات الطلب:</h3>
-                    <input type="text" id="customerPhone" placeholder="رقم الهاتف" required>
-                    <select id="paymentMethod" required>
-                        <option value="">اختر طريقة الدفع</option>
-                        <option value="فودافون كاش">فودافون كاش</option>
-                        <option value="أورانج موني">أورانج موني</option>
-                        <option value="إتصالات كاش">إتصالات كاش</option>
-                        <option value="تحويل بنكي">تحويل بنكي</option>
-                    </select>
-                    <input type="text" id="paymentNumber" placeholder="رقم الدفع/البطاقة">
+                    <input type="text" id="customerPhone" placeholder="رقم الواتساب (مثال: 01234567890)" required pattern="01[0-2][0-9]{8}">
+                    <div id="phoneError" class="error-message" style="display: none;">رقم الواتساب يجب أن يكون 11 رقم ويبدأ بـ 01</div>
+                    
+                    <div class="payment-methods">
+                        <h4>طريقة الدفع:</h4>
+                        <div class="payment-grid">
+                            <div class="payment-option" onclick="selectPayment('vodafone_cash')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNFNjAwMDAiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xOSA3SDE0VjVIMTBWN0g1QzMuOSA3IDMgNy45IDMgOVYxN0MzIDE4LjEgMy45IDE5IDUgMTlIMTlDMjAuMSAxOSAyMSAxOC4xIDIxIDE3VjlDMjEgNy45IDIwLjEgNyAxOSA3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Vodafone Cash">
+                                <span>Vodafone Cash</span>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment('etisalat_cash')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGRkE1MDAiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xOSA3SDE0VjVIMTBWN0g1QzMuOSA3IDMgNy45IDMgOVYxN0MzIDE4LjEgMy45IDE5IDUgMTlIMTlDMjAuMSAxOSAyMSAxOC4xIDIxIDE3VjlDMjEgNy45IDIwLjEgNyAxOSA3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Etisalat Cash">
+                                <span>Etisalat Cash</span>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment('we_cash')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5QjU5QjYiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xOSA3SDE0VjVIMTBWN0g1QzMuOSA3IDMgNy45IDMgOVYxN0MzIDE4LjEgMy45IDE5IDUgMTlIMTlDMjAuMSAxOSAyMSAxOC4xIDIxIDE3VjlDMjEgNy45IDIwLjEgNyAxOSA3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="WE Cash">
+                                <span>WE Cash</span>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment('orange_cash')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGRjY2MDAiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xOSA3SDE0VjVIMTBWN0g1QzMuOSA3IDMgNy45IDMgOVYxN0MzIDE4LjEgMy45IDE5IDUgMTlIMTlDMjAuMSAxOSAyMSAxOC4xIDIxIDE3VjlDMjEgNy45IDIwLjEgNyAxOSA3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Orange Cash">
+                                <span>Orange Cash</span>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment('bank_wallet')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0Q0FGNTFCL2NpcmNsZSI+CjxzdmcgeD0iOCIgeT0iOCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiPgo8cGF0aCBkPSJNMTIgMkwxMyA5SDE4TDIwIDEyTDE4IDE0SDEzTDEyIDIxSDEwTDkgMTNINUwyIDEyTDUgMTBIOUwxMCAySDE0WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Bank Wallet">
+                                <span>Bank Wallet</span>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment('instapay')">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMwMDc4RDQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMiAyTDEzLjA5IDguMjZMMjAgN0wyMSAxMEwyMCAxM0gxN0wxNiAyMUgxNEwxMyAxNUg5TDggMTNMOSAxMEwxMiA5VjJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+Cjwvc3ZnPgo=" alt="InstaPay">
+                                <span>InstaPay</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="selectedPayment" value="">
+                    <div id="paymentError" class="error-message" style="display: none;">يرجى اختيار طريقة الدفع</div>
+                    
+                    <div id="paymentNumberGroup" style="display: none;">
+                        <input type="text" id="paymentNumber" placeholder="رقم الدفع">
+                        <div id="paymentNumberError" class="error-message" style="display: none;">يرجى إدخال رقم الدفع</div>
+                    </div>
+                    
+                    <div id="instaPayGroup" style="display: none;">
+                        <input type="text" id="instaPayUsername" placeholder="يوزر InstaPay أو الرابط">
+                        <div id="instaPayError" class="error-message" style="display: none;">يرجى إدخال يوزر InstaPay أو الرابط</div>
+                    </div>
                 </div>
                 
                 <div class="modal-footer">
@@ -92,23 +124,86 @@ function showOrderForm(orderData) {
     addModalStyles();
 }
 
+// اختيار طريقة الدفع
+function selectPayment(paymentType) {
+    // إزالة التحديد من جميع الخيارات
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // إضافة التحديد للخيار المختار
+    event.target.closest('.payment-option').classList.add('selected');
+    
+    // تحديث الحقل المخفي
+    document.getElementById('selectedPayment').value = paymentType;
+    
+    // إخفاء رسالة الخطأ
+    document.getElementById('paymentError').style.display = 'none';
+    
+    // إظهار الحقل المناسب
+    const paymentNumberGroup = document.getElementById('paymentNumberGroup');
+    const instaPayGroup = document.getElementById('instaPayGroup');
+    const paymentNumberInput = document.getElementById('paymentNumber');
+    const instaPayInput = document.getElementById('instaPayUsername');
+    
+    if (paymentType === 'instapay') {
+        paymentNumberGroup.style.display = 'none';
+        instaPayGroup.style.display = 'block';
+        instaPayInput.placeholder = 'يوزر InstaPay أو الرابط';
+    } else {
+        paymentNumberGroup.style.display = 'block';
+        instaPayGroup.style.display = 'none';
+        paymentNumberInput.placeholder = 'رقم الدفع';
+    }
+}
+
 // تأكيد الطلب وإرسال للواتساب
 function confirmOrder(orderData) {
     const customerPhone = document.getElementById('customerPhone').value;
-    const paymentMethod = document.getElementById('paymentMethod').value;
+    const selectedPayment = document.getElementById('selectedPayment').value;
     const paymentNumber = document.getElementById('paymentNumber').value;
+    const instaPayUsername = document.getElementById('instaPayUsername').value;
     
-    if (!customerPhone || !paymentMethod) {
-        alert('يرجى ملء جميع البيانات المطلوبة');
+    // التحقق من رقم الواتساب
+    const phoneRegex = /^01[0-2][0-9]{8}$/;
+    if (!phoneRegex.test(customerPhone)) {
+        document.getElementById('phoneError').style.display = 'block';
         return;
+    } else {
+        document.getElementById('phoneError').style.display = 'none';
+    }
+    
+    // التحقق من اختيار طريقة الدفع
+    if (!selectedPayment) {
+        document.getElementById('paymentError').style.display = 'block';
+        return;
+    } else {
+        document.getElementById('paymentError').style.display = 'none';
+    }
+    
+    // التحقق من بيانات الدفع
+    if (selectedPayment === 'instapay') {
+        if (!instaPayUsername) {
+            document.getElementById('instaPayError').style.display = 'block';
+            return;
+        } else {
+            document.getElementById('instaPayError').style.display = 'none';
+        }
+    } else {
+        if (!paymentNumber) {
+            document.getElementById('paymentNumberError').style.display = 'block';
+            return;
+        } else {
+            document.getElementById('paymentNumberError').style.display = 'none';
+        }
     }
     
     // إعداد بيانات الطلب الكاملة
     const fullOrderData = {
         ...orderData,
         customer_phone: customerPhone,
-        payment_method: paymentMethod,
-        payment_number: paymentNumber
+        payment_method: selectedPayment,
+        payment_number: selectedPayment === 'instapay' ? instaPayUsername : paymentNumber
     };
     
     // إرسال الطلب للخادم
@@ -140,6 +235,7 @@ function confirmOrder(orderData) {
         alert('حدث خطأ في إرسال الطلب');
     });
 }
+
 
 // إغلاق المودال
 function closeModal() {
@@ -238,8 +334,8 @@ function addModalStyles() {
             background: white;
             border-radius: 15px;
             width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
+            max-width: 600px;
+            max-height: 90vh;
             overflow-y: auto;
         }
         
@@ -268,14 +364,65 @@ function addModalStyles() {
             margin-bottom: 2rem;
         }
         
-        .order-form input,
-        .order-form select {
+        .order-form input {
             width: 100%;
             padding: 0.8rem;
             margin-bottom: 1rem;
             border: 2px solid #e0e0e0;
             border-radius: 5px;
             font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .payment-methods {
+            margin: 2rem 0;
+        }
+        
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .payment-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        
+        .payment-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .payment-option img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-option span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .error-message {
+            color: #f44336;
+            font-size: 0.9rem;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
         }
         
         .modal-footer {
@@ -318,10 +465,21 @@ function addModalStyles() {
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+        
+        @media (max-width: 768px) {
+            .payment-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+        }
     `;
     
     document.head.appendChild(styles);
 }
+
 
 // وظائف إضافية
 function scrollToSection(sectionId) {

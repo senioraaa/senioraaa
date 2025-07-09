@@ -1,0 +1,46 @@
+{
+    "domain": "shahd-senior.com",
+    "subdomain": "www",
+    "records": [
+        {
+            "type": "A",
+            "name": "@",
+            "value": "216.24.57.1",
+            "ttl": 3600
+        },
+        {
+            "type": "CNAME",
+            "name": "www",
+            "value": "shahd-senior.onrender.com",
+            "ttl": 3600
+        },
+        {
+            "type": "MX",
+            "name": "@",
+            "value": "mail.shahd-senior.com",
+            "priority": 10,
+            "ttl": 3600
+        },
+        {
+            "type": "TXT",
+            "name": "@",
+            "value": "v=spf1 include:_spf.google.com ~all",
+            "ttl": 3600
+        },
+        {
+            "type": "TXT",
+            "name": "_dmarc",
+            "value": "v=DMARC1; p=quarantine; rua=mailto:dmarc@shahd-senior.com",
+            "ttl": 3600
+        }
+    ],
+    "nameservers": [
+        "ns1.render.com",
+        "ns2.render.com"
+    ],
+    "verification": {
+        "method": "html",
+        "token": "shahd-senior-verification-token-2024"
+    }
+}
+    

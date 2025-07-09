@@ -49,13 +49,14 @@ function handleOrderClick(event) {
     const priceText = card.querySelector('.price').textContent;
     const price = priceText.replace(/[^0-9]/g, '');
     
-    const orderData = {
-        game: 'FC 25',
-        platform: card.dataset.platform || 'PS5',
-        account_type: card.dataset.accountType || 'Primary',
-        price: price,
-        timestamp: new Date().toISOString()
-    };
+// استخراج بيانات الطلب
+const orderData = {
+    game: 'FC 25',
+    platform: card.dataset.platform || 'PS5',
+    account_type: card.dataset.accountType || 'Primary',
+    price: card.querySelector('.price').textContent.replace(/[^0-9]/g, ''),
+    timestamp: new Date().toISOString()
+};
     
     console.log('بيانات الطلب:', orderData);
     

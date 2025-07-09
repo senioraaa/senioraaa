@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, jsonify, g, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, g, session, redirect, url_for, flash
 import os
 import json
 import requests
 from datetime import datetime
 import uuid
+from functools import wraps
 
 # إضافة import للـ admin blueprint
 from admin.admin_routes import admin_bp
@@ -15,6 +16,10 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here-change-it')
 
 # تسجيل الـ admin blueprint
 app.register_blueprint(admin_bp)
+
+# إعدادات الأدمن
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 
 # إعدادات الموقع
 SITE_NAME = "منصة شهد السنيورة"
@@ -71,6 +76,17 @@ MESSAGE_TEMPLATES = {
 سيتم التواصل معك خلال 15 دقيقة! 🚀
 """
 }
+
+# === دوال حماية الأدمن ===
+
+def admin_required(f):
+    """Decorator للتحقق من تسجيل دخول الأدمن"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # === دوال مساعدة ===
 
@@ -180,6 +196,166 @@ def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
 
+# === routes إدارة الأدمن الجديدة ===
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """صفحة تسجيل دخول الأدمن"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            flash('تم تسجيل الدخول بنجاح', 'success')
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('اسم المستخدم أو كلمة المرور غير صحيحة', 'error')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    """لوحة إدارة الأدمن"""
+    try:
+        prices = load_prices()
+        orders = load_orders()
+        
+        # إحصائيات بسيطة
+        today = datetime.now().strftime('%Y-%m-%d')
+        today_orders = [order for order in orders if order.get('date', '').startswith(today)]
+        
+        stats = {
+            'orders_today': len(today_orders),
+            'revenue_today': sum(order.get('price', 0) for order in today_orders),
+            'total_orders': len(orders),
+            'popular_platform': 'PS5',
+            'popular_account_type': 'Primary'
+        }
+        
+        return render_template('admin_dashboard.html', 
+                             prices=prices, 
+                             orders=orders[:10],  # آخر 10 طلبات
+                             stats=stats,
+                             site_name=SITE_NAME,
+                             maintenance_mode=MAINTENANCE_MODE)
+    except Exception as e:
+        flash(f'خطأ في تحميل البيانات: {str(e)}', 'error')
+        return render_template('admin_dashboard.html', 
+                             prices={}, 
+                             orders=[],
+                             stats={},
+                             site_name=SITE_NAME,
+                             maintenance_mode=MAINTENANCE_MODE)
+
+@app.route('/admin/prices', methods=['GET', 'POST'])
+@admin_required
+def admin_prices():
+    """صفحة إدارة الأسعار"""
+    if request.method == 'POST':
+        try:
+            # تحديث الأسعار
+            new_prices = {
+                'fc25': {
+                    'PS4': {
+                        'Primary': int(request.form.get('ps4_primary', 50)),
+                        'Secondary': int(request.form.get('ps4_secondary', 30)),
+                        'Full': int(request.form.get('ps4_full', 80))
+                    },
+                    'PS5': {
+                        'Primary': int(request.form.get('ps5_primary', 60)),
+                        'Secondary': int(request.form.get('ps5_secondary', 40)),
+                        'Full': int(request.form.get('ps5_full', 100))
+                    },
+                    'Xbox': {
+                        'Primary': int(request.form.get('xbox_primary', 55)),
+                        'Secondary': int(request.form.get('xbox_secondary', 35)),
+                        'Full': int(request.form.get('xbox_full', 90))
+                    },
+                    'PC': {
+                        'Primary': int(request.form.get('pc_primary', 45)),
+                        'Secondary': int(request.form.get('pc_secondary', 25)),
+                        'Full': int(request.form.get('pc_full', 70))
+                    }
+                }
+            }
+            
+            # حفظ الأسعار
+            save_prices(new_prices)
+            flash('تم تحديث الأسعار بنجاح', 'success')
+            
+            # إرسال إشعار التحديث
+            if NOTIFICATION_SETTINGS['price_update']:
+                send_telegram_message(f"🔄 تم تحديث الأسعار بواسطة الأدمن في {datetime.now().strftime(DATETIME_FORMAT)}")
+            
+            return redirect(url_for('admin_prices'))
+            
+        except Exception as e:
+            flash(f'خطأ في حفظ الأسعار: {str(e)}', 'error')
+    
+    # تحميل الأسعار الحالية
+    try:
+        prices = load_prices()
+    except Exception as e:
+        prices = DEFAULT_PRICES
+        flash(f'تم تحميل الأسعار الافتراضية: {str(e)}', 'warning')
+    
+    return render_template('admin_prices.html', 
+                         prices=prices,
+                         site_name=SITE_NAME)
+
+@app.route('/admin/orders')
+@admin_required
+def admin_orders():
+    """صفحة إدارة الطلبات"""
+    try:
+        orders = load_orders()
+        sorted_orders = sorted(orders, key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        return render_template('admin_orders.html',
+                             orders=sorted_orders,
+                             site_name=SITE_NAME)
+    except Exception as e:
+        flash(f'خطأ في تحميل الطلبات: {str(e)}', 'error')
+        return render_template('admin_orders.html',
+                             orders=[],
+                             site_name=SITE_NAME)
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@admin_required
+def admin_settings():
+    """صفحة إعدادات الأدمن"""
+    global MAINTENANCE_MODE, NOTIFICATION_SETTINGS
+    
+    if request.method == 'POST':
+        try:
+            # تحديث إعدادات الصيانة
+            MAINTENANCE_MODE = request.form.get('maintenance_mode') == 'on'
+            
+            # تحديث إعدادات الإشعارات
+            NOTIFICATION_SETTINGS['new_order'] = request.form.get('notify_new_order') == 'on'
+            NOTIFICATION_SETTINGS['price_update'] = request.form.get('notify_price_update') == 'on'
+            NOTIFICATION_SETTINGS['customer_message'] = request.form.get('notify_customer_message') == 'on'
+            
+            flash('تم حفظ الإعدادات بنجاح', 'success')
+            
+        except Exception as e:
+            flash(f'خطأ في حفظ الإعدادات: {str(e)}', 'error')
+    
+    return render_template('admin_settings.html',
+                         maintenance_mode=MAINTENANCE_MODE,
+                         notification_settings=NOTIFICATION_SETTINGS,
+                         site_name=SITE_NAME)
+
+@app.route('/admin/logout')
+@admin_required
+def admin_logout():
+    """تسجيل خروج الأدمن"""
+    session.pop('admin_logged_in', None)
+    flash('تم تسجيل الخروج بنجاح', 'success')
+    return redirect(url_for('admin_login'))
+
 # === إضافة route للحصول على الأسعار في الموقع الرئيسي ===
 @app.route('/api/get_prices')
 def get_prices():
@@ -216,26 +392,8 @@ def index():
 
 @app.route('/admin')
 def admin():
-    """صفحة الإدارة"""
-    prices = load_prices()
-    orders = load_orders()
-    
-    # إحصائيات بسيطة
-    today = datetime.now().strftime('%Y-%m-%d')
-    today_orders = [order for order in orders if order.get('date', '').startswith(today)]
-    
-    stats = {
-        'orders_today': len(today_orders),
-        'revenue_today': sum(order.get('price', 0) for order in today_orders),
-        'total_orders': len(orders),
-        'popular_platform': 'PS5',
-        'popular_account_type': 'Primary'
-    }
-    
-    return render_template('admin.html', 
-                         prices=prices, 
-                         stats=stats,
-                         site_name=SITE_NAME)
+    """صفحة الإدارة - توجيه للداشبورد"""
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/faq')
 def faq():
@@ -463,7 +621,7 @@ def toggle_maintenance():
 @app.route('/dashboard')
 def dashboard():
     """Dashboard redirect"""
-    return redirect(url_for('admin'))
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/api/prices')
 def api_prices():
@@ -533,6 +691,7 @@ if __name__ == '__main__':
     print(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
     print(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
     print(f"🔧 الصيانة: {'مفعلة' if MAINTENANCE_MODE else 'معطلة'}")
+    print(f"👤 أدمن: {ADMIN_USERNAME}")
     
     app.run(
         host='0.0.0.0',

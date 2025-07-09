@@ -469,42 +469,71 @@ def admin_prices():
     """صفحة إدارة الأسعار"""
     if request.method == 'POST':
         try:
-            # تحديث الأسعار
-            new_prices = {
-                'fc25': {
-                    'PS4': {
-                        'Primary': int(request.form.get('ps4_primary', 50)),
-                        'Secondary': int(request.form.get('ps4_secondary', 30)),
-                        'Full': int(request.form.get('ps4_full', 80))
-                    },
-                    'PS5': {
-                        'Primary': int(request.form.get('ps5_primary', 60)),
-                        'Secondary': int(request.form.get('ps5_secondary', 40)),
-                        'Full': int(request.form.get('ps5_full', 100))
-                    },
-                    'Xbox': {
-                        'Primary': int(request.form.get('xbox_primary', 55)),
-                        'Secondary': int(request.form.get('xbox_secondary', 35)),
-                        'Full': int(request.form.get('xbox_full', 90))
-                    },
-                    'PC': {
-                        'Primary': int(request.form.get('pc_primary', 45)),
-                        'Secondary': int(request.form.get('pc_secondary', 25)),
-                        'Full': int(request.form.get('pc_full', 70))
-                    }
-                }
-            }
+            # تحميل الأسعار الحالية
+            current_prices = load_prices()
             
-            # التحقق من صحة الأسعار وحفظها
-            validated_prices = validate_and_fix_prices(new_prices)
+            # تحديث الأسعار فقط للحقول التي تم تعديلها (غير فارغة)
+            updated_prices = current_prices.copy()
+            
+            # التأكد من وجود البنية الأساسية
+            if 'fc25' not in updated_prices:
+                updated_prices['fc25'] = {}
+            
+            # دالة مساعدة لتحديث سعر واحد إذا تم تمرير قيمة
+            def update_price_if_provided(platform, account_type, form_field):
+                value = request.form.get(form_field)
+                if value and value.strip():  # إذا كانت القيمة موجودة وغير فارغة
+                    try:
+                        price = int(value)
+                        if price > 0:  # التأكد من أن السعر أكبر من صفر
+                            # التأكد من وجود المنصة
+                            if platform not in updated_prices['fc25']:
+                                updated_prices['fc25'][platform] = {}
+                            # التأكد من وجود نوع الحساب
+                            if account_type not in updated_prices['fc25'][platform]:
+                                updated_prices['fc25'][platform][account_type] = 0
+                            
+                            old_price = updated_prices['fc25'][platform][account_type]
+                            updated_prices['fc25'][platform][account_type] = price
+                            
+                            logger.info(f"تم تحديث سعر {platform} {account_type} من {old_price} إلى {price}")
+                            
+                            # إرسال إشعار التحديث
+                            if NOTIFICATION_SETTINGS['price_update']:
+                                send_price_update('FC25', platform, account_type, old_price, price)
+                    except ValueError:
+                        logger.warning(f"قيمة سعر غير صحيحة: {value} للحقل {form_field}")
+            
+            # تحديث أسعار PS4
+            update_price_if_provided('PS4', 'Primary', 'ps4_primary')
+            update_price_if_provided('PS4', 'Secondary', 'ps4_secondary')
+            update_price_if_provided('PS4', 'Full', 'ps4_full')
+            
+            # تحديث أسعار PS5
+            update_price_if_provided('PS5', 'Primary', 'ps5_primary')
+            update_price_if_provided('PS5', 'Secondary', 'ps5_secondary')
+            update_price_if_provided('PS5', 'Full', 'ps5_full')
+            
+            # تحديث أسعار Xbox
+            update_price_if_provided('Xbox', 'Primary', 'xbox_primary')
+            update_price_if_provided('Xbox', 'Secondary', 'xbox_secondary')
+            update_price_if_provided('Xbox', 'Full', 'xbox_full')
+            
+            # تحديث أسعار PC
+            update_price_if_provided('PC', 'Primary', 'pc_primary')
+            update_price_if_provided('PC', 'Secondary', 'pc_secondary')
+            update_price_if_provided('PC', 'Full', 'pc_full')
+            
+            # التحقق من صحة البيانات وحفظها
+            validated_prices = validate_and_fix_prices(updated_prices)
             save_prices(validated_prices)
             
             logger.info("تم تحديث الأسعار بواسطة الأدمن")
             flash('تم تحديث الأسعار بنجاح', 'success')
             
-            # إرسال إشعار التحديث
+            # إرسال إشعار عام
             if NOTIFICATION_SETTINGS['price_update']:
-                send_telegram_message(f"🔄 تم تحديث الأسعار بواسطة الأدمن في {datetime.now().strftime(DATETIME_FORMAT)}")
+                send_telegram_message(f"🔄 تم تحديث أسعار FC25 بواسطة الأدمن في {datetime.now().strftime(DATETIME_FORMAT)}")
             
             return redirect(url_for('admin_prices'))
             
@@ -512,16 +541,54 @@ def admin_prices():
             logger.error(f"خطأ في حفظ الأسعار: {str(e)}")
             flash(f'خطأ في حفظ الأسعار: {str(e)}', 'error')
     
-    # تحميل الأسعار الحالية
+    # تحميل الأسعار الحالية لعرضها في النموذج
     try:
-        prices = load_prices()
+        current_prices = load_prices()
+        
+        # تحويل البيانات إلى بنية مسطحة للقالب
+        flat_prices = {}
+        
+        # استخراج أسعار fc25 إذا كانت موجودة
+        fc25_prices = current_prices.get('fc25', {})
+        
+        # PS4 prices
+        ps4_prices = fc25_prices.get('PS4', {})
+        flat_prices['ps4_primary'] = ps4_prices.get('Primary', '')
+        flat_prices['ps4_secondary'] = ps4_prices.get('Secondary', '')
+        flat_prices['ps4_full'] = ps4_prices.get('Full', '')
+        
+        # PS5 prices
+        ps5_prices = fc25_prices.get('PS5', {})
+        flat_prices['ps5_primary'] = ps5_prices.get('Primary', '')
+        flat_prices['ps5_secondary'] = ps5_prices.get('Secondary', '')
+        flat_prices['ps5_full'] = ps5_prices.get('Full', '')
+        
+        # Xbox prices
+        xbox_prices = fc25_prices.get('Xbox', {})
+        flat_prices['xbox_primary'] = xbox_prices.get('Primary', '')
+        flat_prices['xbox_secondary'] = xbox_prices.get('Secondary', '')
+        flat_prices['xbox_full'] = xbox_prices.get('Full', '')
+        
+        # PC prices
+        pc_prices = fc25_prices.get('PC', {})
+        flat_prices['pc_primary'] = pc_prices.get('Primary', '')
+        flat_prices['pc_secondary'] = pc_prices.get('Secondary', '')
+        flat_prices['pc_full'] = pc_prices.get('Full', '')
+        
+        logger.info("تم تحميل صفحة إدارة الأسعار بنجاح")
+        
     except Exception as e:
         logger.error(f"خطأ في تحميل الأسعار: {str(e)}")
-        prices = get_default_prices()
+        flat_prices = {
+            'ps4_primary': '', 'ps4_secondary': '', 'ps4_full': '',
+            'ps5_primary': '', 'ps5_secondary': '', 'ps5_full': '',
+            'xbox_primary': '', 'xbox_secondary': '', 'xbox_full': '',
+            'pc_primary': '', 'pc_secondary': '', 'pc_full': ''
+        }
         flash(f'تم تحميل الأسعار الافتراضية: {str(e)}', 'warning')
     
     return render_template('admin_prices.html', 
-                         prices=prices,
+                         prices=flat_prices,
                          site_name=SITE_NAME)
 
 @app.route('/admin/orders')

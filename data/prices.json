@@ -1,0 +1,24 @@
+{
+  "fc25": {
+    "ps4": {
+      "primary": 50,
+      "secondary": 30,
+      "full": 80
+    },
+    "ps5": {
+      "primary": 60,
+      "secondary": 40,
+      "full": 100
+    },
+    "xbox": {
+      "primary": 55,
+      "secondary": 35,
+      "full": 90
+    },
+    "pc": {
+      "primary": 45,
+      "secondary": 25,
+      "full": 70
+    }
+  }
+}

@@ -603,7 +603,15 @@ def send_bulk_price_update(changed_prices):
         elif platform_name == 'PC':
             platform_name = 'PC'
         
-        message += f"🎮 {platform_name} - {price_change['account_type']}\n"
+        account_name = price_change['account_type']
+        if account_name == 'Primary':
+            account_name = 'أساسي'
+        elif account_name == 'Secondary':
+            account_name = 'ثانوي'
+        elif account_name == 'Full':
+            account_name = 'كامل'
+        
+        message += f"🎮 {platform_name} - {account_name}\n"
         message += f"📉 السعر القديم: {price_change['old_price']} جنيه\n"
         message += f"📈 السعر الجديد: {price_change['new_price']} جنيه\n"
         message += f"──────────────────\n"
@@ -725,7 +733,7 @@ def admin_prices():
             # إرسال إشعار فقط للأسعار التي تم تغييرها
             if NOTIFICATION_SETTINGS['price_update']:
                 changes_detected = False
-                change_message = "🔄 تحديث الأسعار:\n\n"
+                changed_prices = []
                 
                 for game in validated_prices:
                     if game in old_prices:
@@ -737,25 +745,16 @@ def admin_prices():
                                     
                                     if old_price != new_price:
                                         changes_detected = True
-                                        platform_name = {
-                                            'PS4': 'PlayStation 4',
-                                            'PS5': 'PlayStation 5',
-                                            'Xbox': 'Xbox',
-                                            'PC': 'PC'
-                                        }.get(platform, platform)
-                                        
-                                        account_name = {
-                                            'Primary': 'أساسي',
-                                            'Secondary': 'ثانوي',
-                                            'Full': 'كامل'
-                                        }.get(price_type, price_type)
-                                        
-                                        change_message += f"🎮 {game.upper()} - {platform_name}\n"
-                                        change_message += f"💎 {account_name}: {old_price} ← {new_price} جنيه\n\n"
+                                        changed_prices.append({
+                                            'game': game,
+                                            'platform': platform,
+                                            'account_type': price_type,
+                                            'old_price': old_price,
+                                            'new_price': new_price
+                                        })
                 
                 if changes_detected:
-                    change_message += f"⏰ وقت التحديث: {datetime.now().strftime(DATETIME_FORMAT)}"
-                    send_telegram_message(change_message)
+                    send_bulk_price_update(changed_prices)
                 else:
                     logger.info("لم يتم تغيير أي سعر، لن يتم إرسال إشعار")
             

@@ -91,10 +91,10 @@
                                     </div>
                                 {% endif %}
                                 
-                                {% if price_types.secondary %}
-                                    <div class="price-card secondary" data-platform="{{ platform.upper() }}" data-account-type="secondary">
-                                        <h3>حساب Secondary</h3>
-                                        <div class="price">{{ price_types.secondary }} جنيه</div>
+{% if price_types.Full %}
+    <div class="price-card full" data-platform="{{ platform.upper() }}" data-account-type="Full">
+        <h3>حساب Full</h3>
+        <div class="price">{{ price_types.Full }} جنيه</div>
                                         <p>تسجيل دخول مؤقت - سعر أرخص</p>
                                         <ul style="text-align: right; margin-bottom: 2rem;">
                                             <li>✅ تسجيل دخول مؤقت</li>

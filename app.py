@@ -63,7 +63,7 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 
 # إعدادات الموقع
 SITE_NAME = "منصة شهد السنيورة"
-WHATSAPP_NUMBER = "01094591331"
+WHATSAPP_NUMBER = "201094591331"
 EMAIL_INFO = "info@senioraa.com"
 MAINTENANCE_MODE = False
 MAINTENANCE_MESSAGE = "الموقع تحت الصيانة"

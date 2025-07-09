@@ -367,8 +367,11 @@ def ping():
     return "OK", 200
 
 # إعداد النظام عند بدء التشغيل
-@app.before_first_request
-def setup_system():
+@app.before_request
+def before_request():
+    if not hasattr(g, 'initialized'):
+        g.initialized = True
+        initialize_database()
     # إنشاء المجلدات المطلوبة
     os.makedirs('data', exist_ok=True)
     os.makedirs('backups', exist_ok=True)

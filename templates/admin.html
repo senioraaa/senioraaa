@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة - منصة شهد السنيورة</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- الهيدر -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🎮 شهد السنيورة - لوحة الإدارة</div>
+                <nav>
+                    <ul>
+                        <li><a href="/">الرئيسية</a></li>
+                        <li><a href="/admin">الإدارة</a></li>
+                        <li><a href="/faq">الأسئلة الشائعة</a></li>
+                        <li><a href="/terms">الشروط</a></li>
+                        <li><a href="/contact">التواصل</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- لوحة الإدارة -->
+    <section style="padding: 2rem 0; min-height: 80vh; background: #f8f9fa;">
+        <div class="container">
+            <h1 style="text-align: center; margin-bottom: 3rem; color: #667eea;">🔧 لوحة إدارة الأسعار</h1>
+            
+            <!-- رسائل التنبيه -->
+            <div id="alert-container"></div>
+            
+            <!-- قسم إدارة أسعار PS4 -->
+            <div class="admin-panel">
+                <h2>🎮 إدارة أسعار PlayStation 4</h2>
+                <div class="price-editor">
+                    <div class="price-input">
+                        <label>حساب Primary:</label>
+                        <input type="number" id="ps4-primary" value="{{ prices.fc25.ps4.primary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps4', 'primary', 'ps4-primary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Secondary:</label>
+                        <input type="number" id="ps4-secondary" value="{{ prices.fc25.ps4.secondary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps4', 'secondary', 'ps4-secondary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Full:</label>
+                        <input type="number" id="ps4-full" value="{{ prices.fc25.ps4.full }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps4', 'full', 'ps4-full')">تحديث</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم إدارة أسعار PS5 -->
+            <div class="admin-panel">
+                <h2>🎮 إدارة أسعار PlayStation 5</h2>
+                <div class="price-editor">
+                    <div class="price-input">
+                        <label>حساب Primary:</label>
+                        <input type="number" id="ps5-primary" value="{{ prices.fc25.ps5.primary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps5', 'primary', 'ps5-primary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Secondary:</label>
+                        <input type="number" id="ps5-secondary" value="{{ prices.fc25.ps5.secondary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps5', 'secondary', 'ps5-secondary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Full:</label>
+                        <input type="number" id="ps5-full" value="{{ prices.fc25.ps5.full }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'ps5', 'full', 'ps5-full')">تحديث</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم إدارة أسعار Xbox -->
+            <div class="admin-panel">
+                <h2>🎮 إدارة أسعار Xbox</h2>
+                <div class="price-editor">
+                    <div class="price-input">
+                        <label>حساب Primary:</label>
+                        <input type="number" id="xbox-primary" value="{{ prices.fc25.xbox.primary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'xbox', 'primary', 'xbox-primary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Secondary:</label>
+                        <input type="number" id="xbox-secondary" value="{{ prices.fc25.xbox.secondary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'xbox', 'secondary', 'xbox-secondary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Full:</label>
+                        <input type="number" id="xbox-full" value="{{ prices.fc25.xbox.full }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'xbox', 'full', 'xbox-full')">تحديث</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم إدارة أسعار PC -->
+            <div class="admin-panel">
+                <h2>🎮 إدارة أسعار PC</h2>
+                <div class="price-editor">
+                    <div class="price-input">
+                        <label>حساب Primary:</label>
+                        <input type="number" id="pc-primary" value="{{ prices.fc25.pc.primary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'pc', 'primary', 'pc-primary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Secondary:</label>
+                        <input type="number" id="pc-secondary" value="{{ prices.fc25.pc.secondary }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'pc', 'secondary', 'pc-secondary')">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>حساب Full:</label>
+                        <input type="number" id="pc-full" value="{{ prices.fc25.pc.full }}" min="1" max="1000">
+                        <button class="update-btn" onclick="updatePrice('fc25', 'pc', 'full', 'pc-full')">تحديث</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم الإحصائيات -->
+            <div class="admin-panel">
+                <h2>📊 إحصائيات اليوم</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div style="background: #4CAF50; color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <h3>الطلبات اليوم</h3>
+                        <p style="font-size: 2rem; margin: 0;">0</p>
+                    </div>
+                    <div style="background: #2196F3; color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <h3>الإيرادات اليوم</h3>
+                        <p style="font-size: 2rem; margin: 0;">0 جنيه</p>
+                    </div>
+                    <div style="background: #FF9800; color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <h3>أشهر منصة</h3>
+                        <p style="font-size: 1.5rem; margin: 0;">PS5</p>
+                    </div>
+                    <div style="background: #9C27B0; color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <h3>أشهر نوع حساب</h3>
+                        <p style="font-size: 1.5rem; margin: 0;">Primary</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم اختبار التليجرام -->
+            <div class="admin-panel">
+                <h2>📱 اختبار بوت التليجرام</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" id="test-message" placeholder="رسالة تجريبية" style="flex: 1; padding: 0.5rem;">
+                    <button class="update-btn" onclick="testTelegram()">إرسال تجريبي</button>
+                </div>
+            </div>
+            
+            <!-- قسم إعدادات البوت -->
+            <div class="admin-panel">
+                <h2>⚙️ إعدادات البوت</h2>
+                <div class="price-editor">
+                    <div class="price-input">
+                        <label>رقم الواتساب:</label>
+                        <input type="text" id="whatsapp-number" value="201234567890" placeholder="201234567890">
+                        <button class="update-btn" onclick="updateWhatsAppNumber()">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>توكن التليجرام:</label>
+                        <input type="text" id="telegram-token" placeholder="ضع توكن البوت هنا">
+                        <button class="update-btn" onclick="updateTelegramToken()">تحديث</button>
+                    </div>
+                    
+                    <div class="price-input">
+                        <label>Chat ID التليجرام:</label>
+                        <input type="text" id="telegram-chat-id" placeholder="ضع Chat ID هنا">
+                        <button class="update-btn" onclick="updateTelegramChatId()">تحديث</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer>
+        <div class="container">
+            <div style="text-align: center; padding: 2rem;">
+                <p>&copy; 2024 منصة شهد السنيورة - لوحة الإدارة</p>
+                <p>إدارة أسعار الألعاب الرقمية 🎮</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // وظائف إضافية لصفحة الإدارة
+        function updatePrice(game, platform, accountType, inputId) {
+            const newPrice = document.getElementById(inputId).value;
+            
+            if (!newPrice || newPrice <= 0) {
+                showAlert('يرجى إدخال سعر صحيح', 'error');
+                return;
+            }
+            
+            fetch('/update_prices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    game: game,
+                    platform: platform,
+                    account_type: accountType,
+                    price: parseInt(newPrice)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('تم تحديث السعر بنجاح! 🎉', 'success');
+                } else {
+                    showAlert('حدث خطأ: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+        
+        function testTelegram() {
+            const message = document.getElementById('test-message').value;
+            
+            if (!message) {
+                showAlert('يرجى كتابة رسالة', 'error');
+                return;
+            }
+            
+            fetch('/test_telegram', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('تم إرسال الرسالة بنجاح! 📱', 'success');
+                } else {
+                    showAlert('فشل إرسال الرسالة: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('خطأ في إرسال الرسالة', 'error');
+            });
+        }
+        
+        function updateWhatsAppNumber() {
+            const number = document.getElementById('whatsapp-number').value;
+            showAlert('تم تحديث رقم الواتساب: ' + number, 'success');
+        }
+        
+        function updateTelegramToken() {
+            const token = document.getElementById('telegram-token').value;
+            if (token) {
+                showAlert('تم تحديث توكن التليجرام بنجاح', 'success');
+            } else {
+                showAlert('يرجى إدخال توكن صحيح', 'error');
+            }
+        }
+        
+        function updateTelegramChatId() {
+            const chatId = document.getElementById('telegram-chat-id').value;
+            if (chatId) {
+                showAlert('تم تحديث Chat ID بنجاح', 'success');
+            } else {
+                showAlert('يرجى إدخال Chat ID صحيح', 'error');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

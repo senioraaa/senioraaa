@@ -5,8 +5,16 @@ import requests
 from datetime import datetime
 import uuid
 
+# إضافة import للـ admin blueprint
+from admin.admin_routes import admin_bp
+
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+
+# إضافة secret key للـ sessions
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here-change-it')
+
+# تسجيل الـ admin blueprint
+app.register_blueprint(admin_bp)
 
 # إعدادات الموقع
 SITE_NAME = "منصة شهد السنيورة"
@@ -171,6 +179,26 @@ def save_orders(orders):
 def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+
+# === إضافة route للحصول على الأسعار في الموقع الرئيسي ===
+@app.route('/api/get_prices')
+def get_prices():
+    """API للحصول على الأسعار للموقع الرئيسي"""
+    try:
+        with open('data/prices.json', 'r', encoding='utf-8') as f:
+            prices = json.load(f)
+        return jsonify(prices)
+    except FileNotFoundError:
+        # الأسعار الافتراضية
+        default_prices = {
+            "fc25": {
+                "ps4": {"primary": 50, "secondary": 30, "full": 80},
+                "ps5": {"primary": 60, "secondary": 40, "full": 100},
+                "xbox": {"primary": 55, "secondary": 35, "full": 90},
+                "pc": {"primary": 45, "secondary": 25, "full": 70}
+            }
+        }
+        return jsonify(default_prices)
 
 # === صفحات الموقع ===
 

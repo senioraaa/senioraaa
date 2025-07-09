@@ -35,7 +35,7 @@ function handleOrderClick(event) {
     const orderData = {
         game: 'FC 25',
         platform: card.dataset.platform || 'PS5',
-        account_type: card.dataset.accountType || 'primary',
+        account_type: card.dataset.accountType || 'Primary',
         price: card.querySelector('.price').textContent.replace(/[^0-9]/g, ''),
         timestamp: new Date().toISOString()
     };

@@ -894,37 +894,58 @@ def get_prices():
 
 @app.route('/update_prices', methods=['POST'])
 def update_prices():
-    """تحديث الأسعار مع إرسال إشعار فقط عند التغيير"""
+    """تحديث الأسعار"""
     try:
-        prices = load_prices()
+        old_prices = load_prices()
         game = request.json.get('game')
         platform = request.json.get('platform')
         account_type = request.json.get('account_type')
         new_price = request.json.get('price')
         
         if game and platform and account_type and new_price:
-            # الحصول على السعر القديم
-            old_price = prices.get(game, {}).get(platform, {}).get(account_type, 0)
+            old_price = old_prices.get(game, {}).get(platform, {}).get(account_type, 0)
             
-            if game not in prices:
-                prices[game] = {}
-            if platform not in prices[game]:
-                prices[game][platform] = {}
+            if game not in old_prices:
+                old_prices[game] = {}
+            if platform not in old_prices[game]:
+                old_prices[game][platform] = {}
             
-            # تحديث السعر
-            prices[game][platform][account_type] = int(new_price)
+            old_prices[game][platform][account_type] = int(new_price)
             
             # التحقق من صحة البيانات وحفظها
-            validated_prices = validate_and_fix_prices(prices)
+            validated_prices = validate_and_fix_prices(old_prices)
             save_prices(validated_prices)
             
             logger.info(f"تم تحديث سعر {game} {platform} {account_type} من {old_price} إلى {new_price}")
             
-            # إرسال إشعار فقط إذا تغير السعر
-            if NOTIFICATION_SETTINGS['price_update']:
-                notification_result = send_price_update(game, platform, account_type, old_price, int(new_price))
-                if notification_result.get('status') == 'skipped':
-                    logger.info("تم تخطي إرسال الإشعار لعدم تغيير السعر")
+            # إرسال إشعار فقط إذا تم تغيير السعر فعلاً
+            if NOTIFICATION_SETTINGS['price_update'] and old_price != int(new_price):
+                platform_name = {
+                    'PS4': 'PlayStation 4',
+                    'PS5': 'PlayStation 5',
+                    'Xbox': 'Xbox',
+                    'PC': 'PC'
+                }.get(platform, platform)
+                
+                account_name = {
+                    'Primary': 'أساسي',
+                    'Secondary': 'ثانوي',
+                    'Full': 'كامل'
+                }.get(account_type, account_type)
+                
+                change_message = f"""
+🔄 تحديث سعر!
+
+🎮 اللعبة: {game.upper()}
+📱 المنصة: {platform_name}
+💎 نوع الحساب: {account_name}
+📉 السعر القديم: {old_price} جنيه
+📈 السعر الجديد: {new_price} جنيه
+⏰ وقت التحديث: {datetime.now().strftime(DATETIME_FORMAT)}
+"""
+                send_telegram_message(change_message)
+            elif old_price == int(new_price):
+                logger.info(f"السعر لم يتغير ({old_price} = {new_price})، لن يتم إرسال إشعار")
             
             return jsonify({"status": "success", "message": "تم تحديث السعر بنجاح"})
         else:

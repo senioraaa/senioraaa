@@ -11,11 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // إعداد مستمعي الأحداث
 function setupEventListeners() {
-    // أزرار الطلب
-    const orderButtons = document.querySelectorAll('.order-btn');
-    orderButtons.forEach(button => {
-        button.addEventListener('click', handleOrderClick);
-    });
+    // إزالة المستمعين القدامى أولاً
+    document.removeEventListener('click', handleDocumentClick);
+    
+    // إضافة مستمع للنقرات على المستند
+    document.addEventListener('click', handleDocumentClick);
     
     // أزرار تحديث الأسعار (في صفحة الإدارة)
     const updateButtons = document.querySelectorAll('.update-btn');
@@ -24,21 +24,44 @@ function setupEventListeners() {
     });
 }
 
+// التعامل مع النقرات على المستند
+function handleDocumentClick(event) {
+    // التحقق من أن النقرة على زر الطلب
+    if (event.target.classList.contains('order-btn')) {
+        handleOrderClick(event);
+    }
+}
+
 // التعامل مع النقر على زر الطلب
 function handleOrderClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
     const button = event.target;
     const card = button.closest('.price-card');
     
-    if (!card) return;
+    if (!card) {
+        console.error('لم يتم العثور على بطاقة السعر');
+        return;
+    }
     
     // استخراج بيانات الطلب
+    const priceText = card.querySelector('.price').textContent;
+    const price = priceText.replace(/[^0-9]/g, '');
+    
     const orderData = {
         game: 'FC 25',
         platform: card.dataset.platform || 'PS5',
         account_type: card.dataset.accountType || 'Primary',
-        price: card.querySelector('.price').textContent.replace(/[^0-9]/g, ''),
+        price: price,
         timestamp: new Date().toISOString()
     };
+    
+    console.log('بيانات الطلب:', orderData);
+    
+    // عرض نموذج الطلب
+    showOrderForm(orderData);
+}
     
 // عرض نموذج الطلب
 function showOrderForm(orderData) {

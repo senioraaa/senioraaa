@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأسئلة الشائعة - منصة شهد السنيورة</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- الهيدر -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🎮 شهد السنيورة</div>
+                <nav>
+                    <ul>
+                        <li><a href="/">الرئيسية</a></li>
+                        <li><a href="/#pricing">الأسعار</a></li>
+                        <li><a href="/faq">الأسئلة الشائعة</a></li>
+                        <li><a href="/terms">الشروط</a></li>
+                        <li><a href="/contact">التواصل</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- قسم الأسئلة الشائعة -->
+    <section style="padding: 4rem 0; background: #f8f9fa; min-height: 80vh;">
+        <div class="container">
+            <h1 style="text-align: center; margin-bottom: 3rem; color: #667eea;">❓ الأسئلة الشائعة</h1>
+            
+            <!-- الأسئلة -->
+            <div style="max-width: 800px; margin: 0 auto;">
+                
+                <!-- السؤال الأول -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>❓ ما الفرق بين حساب Primary و Secondary و Full؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🟢 حساب Primary (أساسي) - الأفضل:</h4>
+                            <ul>
+                                <li>✅ تفعل الحساب كأساسي على جهازك</li>
+                                <li>✅ تلعب من حسابك الشخصي</li>
+                                <li>✅ الألعاب متاحة لكل المستخدمين على الجهاز</li>
+                                <li>✅ ضمان أطول وأكثر استقرارًا</li>
+                            </ul>
+                            
+                            <h4>🟡 حساب Secondary (ثانوي):</h4>
+                            <ul>
+                                <li>✅ تسجل دخول للحساب مؤقتًا</li>
+                                <li>✅ تحمل اللعبة وترجع لحسابك</li>
+                                <li>⚠️ قيود أكثر في الاستخدام</li>
+                                <li>💰 سعر أرخص</li>
+                            </ul>
+                            
+                            <h4>🔵 حساب Full (كامل):</h4>
+                            <ul>
+                                <li>✅ حساب كامل قابل للتعديل</li>
+                                <li>✅ مرونة أكبر في الاستخدام</li>
+                                <li>💰 الأغلى سعرًا لكن الأكثر مرونة</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال الثاني -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>⏰ كم مدة التسليم؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <p><strong>📱 التسليم فوري إلى 15 ساعة</strong> حسب وقت الطلب وضغط الطلبات</p>
+                            <ul>
+                                <li>🌅 الطلبات الصباحية: 1-3 ساعات</li>
+                                <li>🌆 الطلبات المسائية: 3-8 ساعات</li>
+                                <li>🌙 الطلبات الليلية: 8-15 ساعة</li>
+                                <li>🎯 أوقات الذروة: قد تصل إلى 15 ساعة</li>
+                            </ul>
+                            <p><strong>💬 سيتم التواصل معك على الواتساب فور جاهزية الحساب!</strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال الثالث -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🛡️ ما هو الضمان المقدم؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🛡️ ضمان 6 أشهر شامل:</h4>
+                            <ul>
+                                <li>✅ ضمان 6 أشهر مع عدم مخالفة الشروط</li>
+                                <li>🔄 استبدال فوري في حالة أي مشكلة</li>
+                                <li>🆓 دعم فني مجاني عبر الواتساب</li>
+                                <li>⚡ حل المشاكل خلال 24 ساعة</li>
+                            </ul>
+                            
+                            <h4>⚠️ شروط الضمان:</h4>
+                            <ul>
+                                <li>عدم تغيير كلمة المرور</li>
+                                <li>عدم تغيير الإيميل أو اسم المستخدم</li>
+                                <li>عدم مشاركة الحساب مع الآخرين</li>
+                                <li>الالتزام بنوع الحساب المشتري</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال الرابع -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>💳 ما هي طرق الدفع المتاحة؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>💳 طرق الدفع المتاحة:</h4>
+                            <ul>
+                                <li>📱 فودافون كاش</li>
+                                <li>🟠 أورانج موني</li>
+                                <li>🟢 إتصالات كاش</li>
+                                <li>🏦 تحويل بنكي</li>
+                                <li>💳 فيزا أو ماستركارد</li>
+                            </ul>
+                            
+                            <h4>💡 نصائح للدفع:</h4>
+                            <ul>
+                                <li>تأكد من صحة رقم الدفع</li>
+                                <li>احتفظ بإيصال الدفع</li>
+                                <li>لا تشارك بيانات الدفع مع الآخرين</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال الخامس -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🎮 كيف أفعل الحساب Primary؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🎮 خطوات تفعيل حساب Primary للـ PlayStation:</h4>
+                            <ol>
+                                <li>🔐 سجل دخول للحساب الجديد</li>
+                                <li>⚙️ اذهب إلى Settings</li>
+                                <li>👤 اختر Account Management</li>
+                                <li>🎯 اضغط على Activate as Primary PS4/PS5</li>
+                                <li>✅ اضغط Activate</li>
+                                <li>🔄 ارجع لحسابك الشخصي</li>
+                                <li>🎮 استمتع باللعب!</li>
+                            </ol>
+                            
+                            <h4>🎮 خطوات تفعيل حساب Primary للـ Xbox:</h4>
+                            <ol>
+                                <li>🔐 سجل دخول للحساب الجديد</li>
+                                <li>⚙️ اذهب إلى Settings</li>
+                                <li>👤 اختر Personalization</li>
+                                <li>🏠 اختر "My home Xbox"</li>
+                                <li>✅ اضغط "Make this my home Xbox"</li>
+                                <li>🔄 ارجع لحسابك الشخصي</li>
+                                <li>🎮 استمتع باللعب!</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال السادس -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🚫 ماذا يحدث في حالة المخالفة؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>⚖️ نظام المخالفات:</h4>
+                            <ul>
+                                <li>🟡 <strong>المخالفة الأولى:</strong> تحذير وإصلاح المشكلة</li>
+                                <li>🔴 <strong>المخالفة الثانية:</strong> سحب الحساب نهائيًا</li>
+                                <li>❌ <strong>لا استرداد:</strong> في حالة المخالفة</li>
+                                <li>💬 <strong>المخالفة بدون قصد:</strong> تواصل معنا فورًا</li>
+                            </ul>
+                            
+                            <h4>🚫 المخالفات الشائعة:</h4>
+                            <ul>
+                                <li>تغيير كلمة المرور</li>
+                                <li>تغيير الإيميل</li>
+                                <li>مشاركة الحساب</li>
+                                <li>تفعيل Secondary كـ Primary</li>
+                                <li>استخدام PS4 على PS5 أو العكس</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال السابع -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🔧 كيف أحصل على الدعم الفني؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>📞 طرق التواصل للدعم:</h4>
+                            <ul>
+                                <li>📱 <strong>واتساب:</strong> <a href="https://wa.me/201234567890">01234567890</a></li>
+                                <li>✉️ <strong>إيميل:</strong> info@senioraa.com</li>
+                                <li>🤖 <strong>تليجرام:</strong> @senioraa_bot</li>
+                                <li>💬 <strong>فيسبوك:</strong> صفحة شهد السنيورة</li>
+                            </ul>
+                            
+                            <h4>🕒 أوقات الدعم:</h4>
+                            <ul>
+                                <li>🕌 يوم الجمعة: 2 بعد الظهر - 12 منتصف الليل</li>
+                                <li>🚨 للطوارئ: 24/7 عبر الواتساب</li>
+                                <li>⚡ متوسط وقت الاستجابة: 15 دقيقة</li>
+                            </ul>
+                            
+                            <h4>📋 معلومات مطلوبة عند التواصل:</h4>
+                            <ul>
+                                <li>رقم الطلب</li>
+                                <li>نوع المشكلة</li>
+                                <li>لقطة شاشة للمشكلة</li>
+                                <li>المنصة المستخدمة</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال الثامن -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🎯 هل يمكنني تغيير نوع الحساب بعد الشراء؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🔄 سياسة تغيير نوع الحساب:</h4>
+                            <ul>
+                                <li>⚠️ <strong>غير مسموح:</strong> تغيير نوع الحساب بعد الشراء</li>
+                                <li>🎯 <strong>السبب:</strong> كل نوع له خصائص مختلفة</li>
+                                <li>💡 <strong>الحل:</strong> شراء حساب جديد بالنوع المطلوب</li>
+                                <li>🔄 <strong>في حالات خاصة:</strong> تواصل معنا لإيجاد حل</li>
+                            </ul>
+                            
+                            <h4>💰 بدائل متاحة:</h4>
+                            <ul>
+                                <li>خصم 20% على الحساب الثاني</li>
+                                <li>عرض "اشتري 2 احصل على خصم 30%"</li>
+                                <li>برنامج الولاء للعملاء المتكررين</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال التاسع -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🌍 هل يمكنني تغيير المنطقة الجغرافية؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🌍 سياسة المناطق الجغرافية:</h4>
+                            <ul>
+                                <li>🚫 <strong>ممنوع:</strong> تغيير المنطقة نهائيًا</li>
+                                <li>🎯 <strong>السبب:</strong> قد يؤثر على الحساب</li>
+                                <li>✅ <strong>الحل:</strong> الحسابات تعمل في جميع المناطق</li>
+                                <li>🌐 <strong>متاح:</strong> تغيير لغة اللعبة فقط</li>
+                            </ul>
+                            
+                            <h4>🎮 المناطق المدعومة:</h4>
+                            <ul>
+                                <li>🇪🇬 مصر (المنطقة الأساسية)</li>
+                                <li>🇸🇦 السعودية والخليج</li>
+                                <li>🇯🇴 الأردن ولبنان</li>
+                                <li>🇲🇦 المغرب وتونس</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- السؤال العاشر -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleAnswer(this)">
+                        <h3>🔒 كيف أحمي حسابي من المشاكل؟</h3>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="answer-content">
+                            <h4>🔒 نصائح الحماية:</h4>
+                            <ul>
+                                <li>📝 <strong>اقرأ الشروط:</strong> قبل الشراء</li>
+                                <li>🚫 <strong>لا تغير:</strong> أي بيانات في الحساب</li>
+                                <li>🤐 <strong>لا تشارك:</strong> الحساب مع الآخرين</li>
+                                <li>📱 <strong>تواصل فورًا:</strong> عند أي مشكلة</li>
+                                <li>💾 <strong>احفظ:</strong> بيانات الحساب في مكان آمن</li>
+                            </ul>
+                            
+                            <h4>⚠️ تحذيرات مهمة:</h4>
+                            <ul>
+                                <li>لا تحاول "إصلاح" أي مشكلة بنفسك</li>
+                                <li>لا تستخدم برامج VPN أو تغيير IP</li>
+                                <li>لا تدخل الحساب من أجهزة متعددة</li>
+                                <li>لا تحاول استرداد الحساب</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- قسم التواصل السريع -->
+            <div style="background: white; padding: 2rem; border-radius: 15px; margin-top: 3rem; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">لم تجد إجابة لسؤالك؟</h3>
+                <p>تواصل معنا مباشرة وسنكون سعداء بمساعدتك!</p>
+                <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                    <a href="https://wa.me/201234567890" style="background: #25D366; color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        📱 واتساب
+                    </a>
+                    <a href="mailto:info@senioraa.com" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        ✉️ إيميل
+                    </a>
+                    <a href="https://t.me/senioraa_bot" style="background: #0088cc; color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        🤖 تليجرام
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer>
+        <div class="container">
+            <div style="text-align: center; padding: 2rem;">
+                <p>&copy; 2024 منصة شهد السنيورة. جميع الحقوق محفوظة.</p>
+                <p>أرخص أسعار الألعاب الرقمية في مصر 🇪🇬</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // وظيفة فتح وإغلاق الأسئلة
+        function toggleAnswer(element) {
+            const faqItem = element.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            const icon = element.querySelector('.toggle-icon');
+            
+            // إغلاق جميع الأسئلة الأخرى
+            const allFaqItems = document.querySelectorAll('.faq-item');
+            allFaqItems.forEach(item => {
+                if (item !== faqItem) {
+                    item.classList.remove('active');
+                    item.querySelector('.faq-answer').style.display = 'none';
+                    item.querySelector('.toggle-icon').textContent = '+';
+                }
+            });
+            
+            // فتح أو إغلاق السؤال الحالي
+            if (faqItem.classList.contains('active')) {
+                faqItem.classList.remove('active');
+                answer.style.display = 'none';
+                icon.textContent = '+';
+            } else {
+                faqItem.classList.add('active');
+                answer.style.display = 'block';
+                icon.textContent = '-';
+            }
+        }
+    </script>
+    
+    <style>
+        .faq-item {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.3s;
+        }
+        
+        .faq-question:hover {
+            background: #f8f9fa;
+        }
+        
+        .faq-question h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .toggle-icon {
+            font-size: 1.5rem;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .faq-answer {
+            display: none;
+            padding: 0;
+        }
+        
+        .answer-content {
+            padding: 1.5rem;
+            line-height: 1.8;
+        }
+        
+        .answer-content h4 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .answer-content ul {
+            margin-bottom: 1rem;
+        }
+        
+        .answer-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .answer-content ol {
+            margin-bottom: 1rem;
+        }
+        
+        .answer-content ol li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .faq-item.active .faq-question {
+            background: #667eea;
+            color: white;
+        }
+        
+        .faq-item.active .faq-question h3 {
+            color: white;
+        }
+        
+        .faq-item.active .toggle-icon {
+            color: white;
+        }
+    </style>
+</body>
+</html>

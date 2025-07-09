@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 try:
     from admin.admin_routes import admin_bp
     admin_bp_available = True
+    logger.info("تم تحميل admin blueprint بنجاح")
 except ImportError:
     logger.warning("admin blueprint غير متوفر")
     admin_bp_available = False
@@ -55,7 +56,7 @@ if admin_bp_available:
     app.register_blueprint(admin_bp)
 
 # إضافة secret key للـ sessions
-app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here-change-it')
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here-change-it-in-production')
 
 # إعدادات الأدمن
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
@@ -90,9 +91,6 @@ SUPPORTED_GAMES = {
         'platforms': ['PS4', 'PS5', 'Xbox', 'PC']
     }
 }
-
-# متغير للتحقق من التهيئة
-app_initialized = False
 
 # === دوال التحقق من صحة البيانات والإصلاح ===
 
@@ -194,14 +192,14 @@ def validate_order_data(order_data):
 # === الدوال الأساسية المحسنة ===
 
 def ensure_directories():
-    """التأكد من وجود المجلدات المطلوبة"""
-    directories = ['data', 'backups', 'logs']
-    for directory in directories:
-        try:
+    """إنشاء المجلدات المطلوبة"""
+    try:
+        directories = ['data', 'backups', 'logs']
+        for directory in directories:
             os.makedirs(directory, exist_ok=True)
             logger.info(f"تم إنشاء/التحقق من المجلد: {directory}")
-        except Exception as e:
-            logger.error(f"خطأ في إنشاء المجلد {directory}: {str(e)}")
+    except Exception as e:
+        logger.error(f"خطأ في إنشاء المجلدات: {str(e)}")
 
 def load_prices():
     """تحميل الأسعار من ملف JSON مع التحقق من صحتها"""
@@ -241,15 +239,12 @@ def save_prices(prices):
         
         # إنشاء نسخة احتياطية قبل الحفظ
         if os.path.exists('data/prices.json'):
-            try:
-                backup_filename = f"backups/prices_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                with open('data/prices.json', 'r', encoding='utf-8') as f:
-                    backup_data = f.read()
-                with open(backup_filename, 'w', encoding='utf-8') as f:
-                    f.write(backup_data)
-                logger.info(f"تم إنشاء نسخة احتياطية: {backup_filename}")
-            except Exception as e:
-                logger.warning(f"تعذر إنشاء نسخة احتياطية: {str(e)}")
+            backup_filename = f"backups/prices_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open('data/prices.json', 'r', encoding='utf-8') as f:
+                backup_data = f.read()
+            with open(backup_filename, 'w', encoding='utf-8') as f:
+                f.write(backup_data)
+            logger.info(f"تم إنشاء نسخة احتياطية: {backup_filename}")
         
         with open('data/prices.json', 'w', encoding='utf-8') as f:
             json.dump(validated_prices, f, ensure_ascii=False, indent=2)
@@ -278,7 +273,6 @@ def load_orders():
             return orders
         else:
             logger.info("ملف الطلبات غير موجود، إنشاء قائمة فارغة")
-            save_orders([])
             return []
             
     except json.JSONDecodeError as e:
@@ -300,15 +294,12 @@ def save_orders(orders):
         
         # إنشاء نسخة احتياطية قبل الحفظ
         if os.path.exists('data/orders.json'):
-            try:
-                backup_filename = f"backups/orders_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                with open('data/orders.json', 'r', encoding='utf-8') as f:
-                    backup_data = f.read()
-                with open(backup_filename, 'w', encoding='utf-8') as f:
-                    f.write(backup_data)
-                logger.info(f"تم إنشاء نسخة احتياطية للطلبات: {backup_filename}")
-            except Exception as e:
-                logger.warning(f"تعذر إنشاء نسخة احتياطية للطلبات: {str(e)}")
+            backup_filename = f"backups/orders_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open('data/orders.json', 'r', encoding='utf-8') as f:
+                backup_data = f.read()
+            with open(backup_filename, 'w', encoding='utf-8') as f:
+                f.write(backup_data)
+            logger.info(f"تم إنشاء نسخة احتياطية للطلبات: {backup_filename}")
         
         with open('data/orders.json', 'w', encoding='utf-8') as f:
             json.dump(orders, f, ensure_ascii=False, indent=2)
@@ -322,44 +313,6 @@ def save_orders(orders):
 def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
-
-def initialize_app():
-    """تهيئة التطبيق - يتم استدعاؤها مرة واحدة فقط"""
-    global app_initialized
-    
-    if app_initialized:
-        return
-    
-    try:
-        # التأكد من وجود المجلدات المطلوبة
-        ensure_directories()
-        
-        # التحقق من وجود ملف الأسعار
-        if not os.path.exists('data/prices.json'):
-            default_prices = get_default_prices()
-            save_prices(default_prices)
-            logger.info("تم إنشاء ملف الأسعار الافتراضي")
-        
-        # التحقق من وجود ملف الطلبات
-        if not os.path.exists('data/orders.json'):
-            save_orders([])
-            logger.info("تم إنشاء ملف الطلبات الفارغ")
-        
-        # التحقق من صحة البيانات الموجودة
-        try:
-            prices = load_prices()
-            validated_prices = validate_and_fix_prices(prices)
-            if prices != validated_prices:
-                save_prices(validated_prices)
-                logger.info("تم إصلاح بيانات الأسعار")
-        except Exception as e:
-            logger.error(f"خطأ في التحقق من بيانات الأسعار: {str(e)}")
-            
-        app_initialized = True
-        logger.info("✅ تم تهيئة النظام بنجاح")
-        
-    except Exception as e:
-        logger.error(f"خطأ في إعداد النظام: {str(e)}")
 
 # قوالب الرسائل
 MESSAGE_TEMPLATES = {
@@ -429,7 +382,7 @@ def send_order_notification(order_data):
 💰 السعر: {order_data['price']} جنيه
 💳 طريقة الدفع: {order_data['payment_method']}
 📞 رقم العميل: {order_data['customer_phone']}
-💸 رقم الدفع: {order_data.get('payment_number', 'غير محدد')}
+💸 رقم الدفع: {order_data['payment_number']}
 ⏰ الوقت: {order_data['timestamp']}
 """
     return send_telegram_message(message)
@@ -465,13 +418,6 @@ def send_customer_message(name, phone, subject, message):
 ⏰ الوقت: {datetime.now().strftime(DATETIME_FORMAT)}
 """
     return send_telegram_message(customer_message)
-
-# === إعداد التهيئة للطلبات ===
-
-@app.before_request
-def before_request():
-    """تهيئة التطبيق قبل كل طلب"""
-    initialize_app()
 
 # === routes إدارة الأدمن ===
 
@@ -536,34 +482,34 @@ def admin_prices():
     """صفحة إدارة الأسعار"""
     if request.method == 'POST':
         try:
-            # تحديث الأسعار
-            new_prices = {
-                'fc25': {
-                    'PS4': {
-                        'Primary': int(request.form.get('ps4_primary', 50)),
-                        'Secondary': int(request.form.get('ps4_secondary', 30)),
-                        'Full': int(request.form.get('ps4_full', 80))
-                    },
-                    'PS5': {
-                        'Primary': int(request.form.get('ps5_primary', 60)),
-                        'Secondary': int(request.form.get('ps5_secondary', 40)),
-                        'Full': int(request.form.get('ps5_full', 100))
-                    },
-                    'Xbox': {
-                        'Primary': int(request.form.get('xbox_primary', 55)),
-                        'Secondary': int(request.form.get('xbox_secondary', 35)),
-                        'Full': int(request.form.get('xbox_full', 90))
-                    },
-                    'PC': {
-                        'Primary': int(request.form.get('pc_primary', 45)),
-                        'Secondary': int(request.form.get('pc_secondary', 25)),
-                        'Full': int(request.form.get('pc_full', 70))
-                    }
-                }
-            }
+            # تحديث الأسعار بشكل آمن
+            current_prices = load_prices()
+            
+            # تحديث كل سعر بشكل منفصل
+            price_updates = [
+                ('fc25', 'PS4', 'Primary', request.form.get('ps4_primary', 50)),
+                ('fc25', 'PS4', 'Secondary', request.form.get('ps4_secondary', 30)),
+                ('fc25', 'PS4', 'Full', request.form.get('ps4_full', 80)),
+                ('fc25', 'PS5', 'Primary', request.form.get('ps5_primary', 60)),
+                ('fc25', 'PS5', 'Secondary', request.form.get('ps5_secondary', 40)),
+                ('fc25', 'PS5', 'Full', request.form.get('ps5_full', 100)),
+                ('fc25', 'Xbox', 'Primary', request.form.get('xbox_primary', 55)),
+                ('fc25', 'Xbox', 'Secondary', request.form.get('xbox_secondary', 35)),
+                ('fc25', 'Xbox', 'Full', request.form.get('xbox_full', 90)),
+                ('fc25', 'PC', 'Primary', request.form.get('pc_primary', 45)),
+                ('fc25', 'PC', 'Secondary', request.form.get('pc_secondary', 25)),
+                ('fc25', 'PC', 'Full', request.form.get('pc_full', 70))
+            ]
+            
+            # تطبيق التحديثات
+            for game, platform, account_type, new_price in price_updates:
+                try:
+                    current_prices[game][platform][account_type] = int(new_price)
+                except (ValueError, TypeError, KeyError):
+                    logger.warning(f"قيمة غير صحيحة للسعر: {game} {platform} {account_type} = {new_price}")
             
             # التحقق من صحة الأسعار وحفظها
-            validated_prices = validate_and_fix_prices(new_prices)
+            validated_prices = validate_and_fix_prices(current_prices)
             save_prices(validated_prices)
             
             logger.info("تم تحديث الأسعار بواسطة الأدمن")
@@ -764,7 +710,7 @@ def send_order():
             'price': int(data.get('price')),
             'payment_method': data.get('payment_method'),
             'customer_phone': data.get('customer_phone'),
-            'payment_number': data.get('payment_number', ''),
+            'payment_number': data.get('payment_number'),
             'timestamp': datetime.now().strftime(DATETIME_FORMAT),
             'date': datetime.now().strftime(DATE_FORMAT),
             'status': 'pending'
@@ -974,106 +920,90 @@ def api_game_info(game_id):
 def not_found_error(error):
     """معالج الأخطاء 404"""
     logger.warning(f"صفحة غير موجودة: {request.url}")
-    try:
-        return render_template('404.html'), 404
-    except:
-        return jsonify({"error": "صفحة غير موجودة"}), 404
+    return render_template('404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """معالج الأخطاء 500"""
     logger.error(f"خطأ داخلي: {str(error)}")
-    try:
-        return render_template('500.html'), 500
-    except:
-        return jsonify({"error": "خطأ داخلي في الخادم"}), 500
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    """معالج عام للأخطاء"""
-    logger.error(f"خطأ غير متوقع: {str(e)}")
-    try:
-        return render_template('500.html'), 500
-    except:
-        return jsonify({"error": "خطأ في الخادم"}), 500
+    return render_template('500.html'), 500
 
 @app.route('/ping')
 def ping():
     """Health check للـ Render"""
     return "OK", 200
 
-@app.route('/health')
-def health():
-    """Health check مفصل"""
+# === إعداد النظام ===
+
+@app.before_request
+def before_request():
+    """إعداد النظام عند بدء التشغيل"""
     try:
-        # التحقق من وجود الملفات الأساسية
-        files_status = {
-            'prices': os.path.exists('data/prices.json'),
-            'orders': os.path.exists('data/orders.json'),
-            'logs': os.path.exists('logs/app.log')
-        }
+        # إنشاء المجلدات المطلوبة
+        ensure_directories()
         
-        # التحقق من إمكانية تحميل البيانات
+        # التحقق من وجود ملف الأسعار
+        if not os.path.exists('data/prices.json'):
+            default_prices = get_default_prices()
+            save_prices(default_prices)
+            logger.info("تم إنشاء ملف الأسعار الافتراضي")
+        
+        # التحقق من وجود ملف الطلبات
+        if not os.path.exists('data/orders.json'):
+            save_orders([])
+            logger.info("تم إنشاء ملف الطلبات الفارغ")
+        
+        # التحقق من صحة البيانات الموجودة
         try:
             prices = load_prices()
-            orders = load_orders()
-            data_status = {
-                'prices_loaded': True,
-                'orders_loaded': True,
-                'prices_count': len(prices),
-                'orders_count': len(orders)
-            }
+            validated_prices = validate_and_fix_prices(prices)
+            if prices != validated_prices:
+                save_prices(validated_prices)
+                logger.info("تم إصلاح بيانات الأسعار")
         except Exception as e:
-            data_status = {
-                'prices_loaded': False,
-                'orders_loaded': False,
-                'error': str(e)
-            }
-        
-        return jsonify({
-            'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
-            'files': files_status,
-            'data': data_status,
-            'app_initialized': app_initialized
-        })
+            logger.error(f"خطأ في التحقق من بيانات الأسعار: {str(e)}")
+            
     except Exception as e:
-        logger.error(f"خطأ في فحص الصحة: {str(e)}")
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e)
-        }), 500
+        logger.error(f"خطأ في إعداد النظام: {str(e)}")
 
 # === تشغيل التطبيق ===
 
 if __name__ == '__main__':
-    # تهيئة النظام
     try:
-        initialize_app()
-        logger.info("تم تهيئة النظام بنجاح")
+        # إعداد المتغيرات
+        port = int(os.environ.get('PORT', 5000))
+        
+        # رسائل البدء
+        logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
+        logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
+        logger.info(f"🔧 الصيانة: {'مفعلة' if MAINTENANCE_MODE else 'معطلة'}")
+        logger.info(f"👤 أدمن: {ADMIN_USERNAME}")
+        
+        # إعداد أولي
+        ensure_directories()
+        
+        # التحقق من الأسعار
+        try:
+            prices = load_prices()
+            logger.info("✅ تم تحميل الأسعار بنجاح")
+        except Exception as e:
+            logger.error(f"❌ خطأ في تحميل الأسعار: {str(e)}")
+        
+        # التحقق من الطلبات
+        try:
+            orders = load_orders()
+            logger.info(f"✅ تم تحميل {len(orders)} طلب")
+        except Exception as e:
+            logger.error(f"❌ خطأ في تحميل الطلبات: {str(e)}")
+        
+        # تشغيل التطبيق
+        app.run(
+            host='0.0.0.0',
+            port=port,
+            debug=DEBUG_MODE,
+            threaded=True
+        )
+        
     except Exception as e:
-        logger.error(f"خطأ في التهيئة: {str(e)}")
-    
-    # الحصول على رقم البورت
-    port = int(os.environ.get('PORT', 5000))
-    
-    # رسائل بدء التشغيل
-    logger.info("=" * 60)
-    logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
-    logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
-    logger.info(f"🔧 الصيانة: {'مفعلة' if MAINTENANCE_MODE else 'معطلة'}")
-    logger.info(f"👤 أدمن: {ADMIN_USERNAME}")
-    logger.info(f"📱 واتساب: {WHATSAPP_NUMBER}")
-    logger.info(f"📧 إيميل: {EMAIL_INFO}")
-    logger.info(f"🤖 تليجرام: {'مفعل' if TELEGRAM_BOT_TOKEN else 'معطل'}")
-    logger.info(f"📊 إحصائيات: متوفرة على /health")
-    logger.info("=" * 60)
-    
-    # تشغيل التطبيق
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=DEBUG_MODE,
-        threaded=True,
-        use_reloader=False  # تجنب مشاكل التطوير
-    )
+        logger.error(f"❌ خطأ في تشغيل التطبيق: {str(e)}")
+        print(f"خطأ في تشغيل التطبيق: {str(e)}")

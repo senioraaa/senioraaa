@@ -660,3 +660,88 @@ footer {
 .order-btn:active {
     transform: translateY(0);
 }
+
+/* أنماط الأيقونات الاحترافية */
+.platform-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.platform-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
+
+.platform-icon.playstation {
+    background: linear-gradient(45deg, #006FCD, #00439C);
+}
+
+.platform-icon.xbox {
+    background: linear-gradient(45deg, #107C10, #0E6E0E);
+    border-radius: 50%;
+}
+
+.platform-icon.pc {
+    background: linear-gradient(45deg, #4A4A4A, #2D2D2D);
+    border-radius: 6px;
+}
+
+.platform-icon span {
+    color: white;
+    font-weight: bold;
+}
+
+/* تحسين عرض أيقونات البطاقات */
+.price-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.price-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.price-card.primary::before {
+    background: linear-gradient(90deg, #FFD700, #FFA500);
+}
+
+.price-card.secondary::before {
+    background: linear-gradient(90deg, #C0C0C0, #808080);
+}
+
+.price-card.full::before {
+    background: linear-gradient(90deg, #8A2BE2, #4B0082);
+}
+
+/* تحسين التصميم العام */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+@media (max-width: 768px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .platform-icon {
+        width: 35px;
+        height: 35px;
+    }
+}
+

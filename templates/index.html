@@ -72,37 +72,26 @@
                         {% for platform, price_types in platforms.items() %}
 <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea; display: flex; align-items: center; justify-content: center; gap: 1rem;">
     {% if platform.upper() == 'PS4' %}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="8" fill="#003791"/>
-            <path d="M12 10h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H12c-1.1 0-2-.9-2-2V12c0-1.1.9-2 2-2zm2 6v8h2v-6h2v6h2v-8h-6zm8 0v8h2v-3h2c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-4zm2 2h2v2h-2v-2z" fill="white"/>
-            <text x="20" y="35" text-anchor="middle" fill="white" font-size="8" font-weight="bold">PS4</text>
-        </svg>
+        <div style="width: 40px; height: 40px; background: linear-gradient(45deg, #006FCD, #00439C); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,111,205,0.3);">
+            <span style="color: white; font-weight: bold; font-size: 18px;">PS</span>
+        </div>
         PlayStation 4
     {% elif platform.upper() == 'PS5' %}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="8" fill="#0070f3"/>
-            <path d="M12 10h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H12c-1.1 0-2-.9-2-2V12c0-1.1.9-2 2-2zm2 6v8h2v-6h2v6h2v-8h-6zm8 0v8h2v-3h2c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-4zm2 2h2v2h-2v-2z" fill="white"/>
-            <text x="20" y="35" text-anchor="middle" fill="white" font-size="8" font-weight="bold">PS5</text>
-        </svg>
+        <div style="width: 40px; height: 40px; background: linear-gradient(45deg, #006FCD, #00439C); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,111,205,0.3);">
+            <span style="color: white; font-weight: bold; font-size: 18px;">PS</span>
+        </div>
         PlayStation 5
     {% elif platform.upper() == 'XBOX' %}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="8" fill="#107c10"/>
-            <path d="M20 8c-6.6 0-12 5.4-12 12s5.4 12 12 12 12-5.4 12-12-5.4-12-12-12zm0 20c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-4-12h2v8h-2v-8zm4 0h2v8h-2v-8z" fill="white"/>
-            <circle cx="20" cy="20" r="8" stroke="white" stroke-width="2" fill="none"/>
-        </svg>
+        <div style="width: 40px; height: 40px; background: linear-gradient(45deg, #107C10, #0E6E0E); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(16,124,16,0.3);">
+            <span style="color: white; font-weight: bold; font-size: 20px;">✕</span>
+        </div>
         Xbox Series X/S & Xbox One
     {% elif platform.upper() == 'PC' %}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="8" fill="#4a90e2"/>
-            <rect x="8" y="12" width="24" height="16" rx="2" fill="white"/>
-            <rect x="10" y="14" width="20" height="10" rx="1" fill="#4a90e2"/>
-            <rect x="12" y="26" width="16" height="2" rx="1" fill="white"/>
-            <rect x="16" y="28" width="8" height="2" rx="1" fill="white"/>
-        </svg>
+        <div style="width: 40px; height: 40px; background: linear-gradient(45deg, #4A4A4A, #2D2D2D); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(74,74,74,0.3);">
+            <span style="color: white; font-weight: bold; font-size: 16px;">🖥️</span>
+        </div>
         PC (Steam/Epic Games)
     {% else %}
-        <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 50%; font-weight: bold;">{{ platform[0] }}</span>
         {{ platform.upper() }}
     {% endif %}
 </h3>

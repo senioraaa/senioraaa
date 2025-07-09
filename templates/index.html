@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    {% if error %}
+        <div class="error-message">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
     <!-- الهيدر -->
     <header>
         <div class="container">
@@ -54,177 +60,75 @@
         <div class="container">
             <h2 class="section-title">🏷️ أسعار FC 25 لجميع المنصات</h2>
             
-            <!-- أسعار PS4 -->
-            <h3 style="text-align: center; margin-bottom: 2rem; color: #667eea;">PlayStation 4</h3>
-            <div class="pricing-grid">
-                <div class="price-card primary" data-platform="PS4" data-account-type="primary">
-                    <h3>حساب Primary</h3>
-                    <div class="price">{{ prices.fc25.ps4.primary }} جنيه</div>
-                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تفعيل الحساب كأساسي</li>
-                        <li>✅ اللعب من حسابك الشخصي</li>
-                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
-                        <li>✅ ضمان أطول</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
+            {% if prices %}
+                {% for game, platforms in prices.items() %}
+                    <div class="game-section">
+                        <h2 style="text-align: center; margin-bottom: 2rem; color: #667eea;">{{ game.upper() }}</h2>
+                        
+                        {% for platform, price_types in platforms.items() %}
+                            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">
+                                {% if platform == 'ps4' %}PlayStation 4
+                                {% elif platform == 'ps5' %}PlayStation 5
+                                {% elif platform == 'xbox' %}Xbox Series X/S & Xbox One
+                                {% elif platform == 'pc' %}PC (Steam/Epic Games)
+                                {% else %}{{ platform.upper() }}
+                                {% endif %}
+                            </h3>
+                            
+                            <div class="pricing-grid">
+                                {% if price_types.primary %}
+                                    <div class="price-card primary" data-platform="{{ platform.upper() }}" data-account-type="primary">
+                                        <h3>حساب Primary</h3>
+                                        <div class="price">{{ price_types.primary }} جنيه</div>
+                                        <p>تفعيل أساسي - العب من حسابك الشخصي</p>
+                                        <ul style="text-align: right; margin-bottom: 2rem;">
+                                            <li>✅ تفعيل الحساب كأساسي</li>
+                                            <li>✅ اللعب من حسابك الشخصي</li>
+                                            <li>✅ الألعاب متاحة لكل المستخدمين</li>
+                                            <li>✅ ضمان أطول</li>
+                                        </ul>
+                                        <button class="order-btn">اطلب الآن</button>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if price_types.secondary %}
+                                    <div class="price-card secondary" data-platform="{{ platform.upper() }}" data-account-type="secondary">
+                                        <h3>حساب Secondary</h3>
+                                        <div class="price">{{ price_types.secondary }} جنيه</div>
+                                        <p>تسجيل دخول مؤقت - سعر أرخص</p>
+                                        <ul style="text-align: right; margin-bottom: 2rem;">
+                                            <li>✅ تسجيل دخول مؤقت</li>
+                                            <li>✅ تحميل اللعبة</li>
+                                            <li>✅ العودة لحسابك الشخصي</li>
+                                            <li>⚠️ قيود أكثر في الاستخدام</li>
+                                        </ul>
+                                        <button class="order-btn">اطلب الآن</button>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if price_types.full %}
+                                    <div class="price-card full" data-platform="{{ platform.upper() }}" data-account-type="full">
+                                        <h3>حساب Full</h3>
+                                        <div class="price">{{ price_types.full }} جنيه</div>
+                                        <p>حساب كامل قابل للتعديل</p>
+                                        <ul style="text-align: right; margin-bottom: 2rem;">
+                                            <li>✅ حساب كامل</li>
+                                            <li>✅ قابل للتعديل</li>
+                                            <li>✅ مرونة كاملة</li>
+                                            <li>✅ أفضل قيمة</li>
+                                        </ul>
+                                        <button class="order-btn">اطلب الآن</button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">
+                    <p>لا توجد بيانات متاحة حالياً</p>
                 </div>
-                
-                <div class="price-card secondary" data-platform="PS4" data-account-type="secondary">
-                    <h3>حساب Secondary</h3>
-                    <div class="price">{{ prices.fc25.ps4.secondary }} جنيه</div>
-                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تسجيل دخول مؤقت</li>
-                        <li>✅ تحميل اللعبة</li>
-                        <li>✅ العودة لحسابك الشخصي</li>
-                        <li>⚠️ قيود أكثر في الاستخدام</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card full" data-platform="PS4" data-account-type="full">
-                    <h3>حساب Full</h3>
-                    <div class="price">{{ prices.fc25.ps4.full }} جنيه</div>
-                    <p>حساب كامل قابل للتعديل</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ حساب كامل</li>
-                        <li>✅ قابل للتعديل</li>
-                        <li>✅ مرونة كاملة</li>
-                        <li>✅ أفضل قيمة</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-            </div>
-
-            <!-- أسعار PS5 -->
-            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">PlayStation 5</h3>
-            <div class="pricing-grid">
-                <div class="price-card primary" data-platform="PS5" data-account-type="primary">
-                    <h3>حساب Primary</h3>
-                    <div class="price">{{ prices.fc25.ps5.primary }} جنيه</div>
-                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تفعيل الحساب كأساسي</li>
-                        <li>✅ اللعب من حسابك الشخصي</li>
-                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
-                        <li>✅ ضمان أطول</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card secondary" data-platform="PS5" data-account-type="secondary">
-                    <h3>حساب Secondary</h3>
-                    <div class="price">{{ prices.fc25.ps5.secondary }} جنيه</div>
-                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تسجيل دخول مؤقت</li>
-                        <li>✅ تحميل اللعبة</li>
-                        <li>✅ العودة لحسابك الشخصي</li>
-                        <li>⚠️ قيود أكثر في الاستخدام</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card full" data-platform="PS5" data-account-type="full">
-                    <h3>حساب Full</h3>
-                    <div class="price">{{ prices.fc25.ps5.full }} جنيه</div>
-                    <p>حساب كامل قابل للتعديل</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ حساب كامل</li>
-                        <li>✅ قابل للتعديل</li>
-                        <li>✅ مرونة كاملة</li>
-                        <li>✅ أفضل قيمة</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-            </div>
-
-            <!-- أسعار Xbox -->
-            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">Xbox Series X/S & Xbox One</h3>
-            <div class="pricing-grid">
-                <div class="price-card primary" data-platform="Xbox" data-account-type="primary">
-                    <h3>حساب Primary</h3>
-                    <div class="price">{{ prices.fc25.xbox.primary }} جنيه</div>
-                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تفعيل الحساب كأساسي</li>
-                        <li>✅ اللعب من حسابك الشخصي</li>
-                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
-                        <li>✅ ضمان أطول</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card secondary" data-platform="Xbox" data-account-type="secondary">
-                    <h3>حساب Secondary</h3>
-                    <div class="price">{{ prices.fc25.xbox.secondary }} جنيه</div>
-                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تسجيل دخول مؤقت</li>
-                        <li>✅ تحميل اللعبة</li>
-                        <li>✅ العودة لحسابك الشخصي</li>
-                        <li>⚠️ قيود أكثر في الاستخدام</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card full" data-platform="Xbox" data-account-type="full">
-                    <h3>حساب Full</h3>
-                    <div class="price">{{ prices.fc25.xbox.full }} جنيه</div>
-                    <p>حساب كامل قابل للتعديل</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ حساب كامل</li>
-                        <li>✅ قابل للتعديل</li>
-                        <li>✅ مرونة كاملة</li>
-                        <li>✅ أفضل قيمة</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-            </div>
-
-            <!-- أسعار PC -->
-            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">PC (Steam/Epic Games)</h3>
-            <div class="pricing-grid">
-                <div class="price-card primary" data-platform="PC" data-account-type="primary">
-                    <h3>حساب Primary</h3>
-                    <div class="price">{{ prices.fc25.pc.primary }} جنيه</div>
-                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تفعيل الحساب كأساسي</li>
-                        <li>✅ اللعب من حسابك الشخصي</li>
-                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
-                        <li>✅ ضمان أطول</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card secondary" data-platform="PC" data-account-type="secondary">
-                    <h3>حساب Secondary</h3>
-                    <div class="price">{{ prices.fc25.pc.secondary }} جنيه</div>
-                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ تسجيل دخول مؤقت</li>
-                        <li>✅ تحميل اللعبة</li>
-                        <li>✅ العودة لحسابك الشخصي</li>
-                        <li>⚠️ قيود أكثر في الاستخدام</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-                
-                <div class="price-card full" data-platform="PC" data-account-type="full">
-                    <h3>حساب Full</h3>
-                    <div class="price">{{ prices.fc25.pc.full }} جنيه</div>
-                    <p>حساب كامل قابل للتعديل</p>
-                    <ul style="text-align: right; margin-bottom: 2rem;">
-                        <li>✅ حساب كامل</li>
-                        <li>✅ قابل للتعديل</li>
-                        <li>✅ مرونة كاملة</li>
-                        <li>✅ أفضل قيمة</li>
-                    </ul>
-                    <button class="order-btn">اطلب الآن</button>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </section>
 

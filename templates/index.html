@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة شهد السنيورة - أرخص أسعار FC 25 في مصر</title>
+    <meta name="description" content="احصل على FC 25 بأرخص الأسعار في مصر - حسابات Primary, Secondary, Full لجميع المنصات">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- الهيدر -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🎮 شهد السنيورة</div>
+                <nav>
+                    <ul>
+                        <li><a href="#home">الرئيسية</a></li>
+                        <li><a href="#pricing">الأسعار</a></li>
+                        <li><a href="#comparison">المقارنة</a></li>
+                        <li><a href="#terms">الشروط</a></li>
+                        <li><a href="#contact">التواصل</a></li>
+                        <li><a href="/admin">الإدارة</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- القسم الرئيسي -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>🎮 احصل على FC 25 بأرخص الأسعار في مصر</h1>
+            <p>منصتك الأولى لشراء حسابات الألعاب الرقمية بأفضل الأسعار وأسرع الطرق</p>
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px;">
+                    <h3>جميع المنصات</h3>
+                    <p>PS4, PS5, Xbox, PC</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px;">
+                    <h3>تسليم سريع</h3>
+                    <p>خلال 15 ساعة</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px;">
+                    <h3>ضمان 6 أشهر</h3>
+                    <p>مع عدم المخالفة</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم الأسعار -->
+    <section id="pricing" class="pricing-section">
+        <div class="container">
+            <h2 class="section-title">🏷️ أسعار FC 25 لجميع المنصات</h2>
+            
+            <!-- أسعار PS4 -->
+            <h3 style="text-align: center; margin-bottom: 2rem; color: #667eea;">PlayStation 4</h3>
+            <div class="pricing-grid">
+                <div class="price-card primary" data-platform="PS4" data-account-type="primary">
+                    <h3>حساب Primary</h3>
+                    <div class="price">{{ prices.fc25.ps4.primary }} جنيه</div>
+                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تفعيل الحساب كأساسي</li>
+                        <li>✅ اللعب من حسابك الشخصي</li>
+                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
+                        <li>✅ ضمان أطول</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card secondary" data-platform="PS4" data-account-type="secondary">
+                    <h3>حساب Secondary</h3>
+                    <div class="price">{{ prices.fc25.ps4.secondary }} جنيه</div>
+                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تسجيل دخول مؤقت</li>
+                        <li>✅ تحميل اللعبة</li>
+                        <li>✅ العودة لحسابك الشخصي</li>
+                        <li>⚠️ قيود أكثر في الاستخدام</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card full" data-platform="PS4" data-account-type="full">
+                    <h3>حساب Full</h3>
+                    <div class="price">{{ prices.fc25.ps4.full }} جنيه</div>
+                    <p>حساب كامل قابل للتعديل</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ حساب كامل</li>
+                        <li>✅ قابل للتعديل</li>
+                        <li>✅ مرونة كاملة</li>
+                        <li>✅ أفضل قيمة</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+            </div>
+
+            <!-- أسعار PS5 -->
+            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">PlayStation 5</h3>
+            <div class="pricing-grid">
+                <div class="price-card primary" data-platform="PS5" data-account-type="primary">
+                    <h3>حساب Primary</h3>
+                    <div class="price">{{ prices.fc25.ps5.primary }} جنيه</div>
+                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تفعيل الحساب كأساسي</li>
+                        <li>✅ اللعب من حسابك الشخصي</li>
+                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
+                        <li>✅ ضمان أطول</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card secondary" data-platform="PS5" data-account-type="secondary">
+                    <h3>حساب Secondary</h3>
+                    <div class="price">{{ prices.fc25.ps5.secondary }} جنيه</div>
+                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تسجيل دخول مؤقت</li>
+                        <li>✅ تحميل اللعبة</li>
+                        <li>✅ العودة لحسابك الشخصي</li>
+                        <li>⚠️ قيود أكثر في الاستخدام</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card full" data-platform="PS5" data-account-type="full">
+                    <h3>حساب Full</h3>
+                    <div class="price">{{ prices.fc25.ps5.full }} جنيه</div>
+                    <p>حساب كامل قابل للتعديل</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ حساب كامل</li>
+                        <li>✅ قابل للتعديل</li>
+                        <li>✅ مرونة كاملة</li>
+                        <li>✅ أفضل قيمة</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+            </div>
+
+            <!-- أسعار Xbox -->
+            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">Xbox Series X/S & Xbox One</h3>
+            <div class="pricing-grid">
+                <div class="price-card primary" data-platform="Xbox" data-account-type="primary">
+                    <h3>حساب Primary</h3>
+                    <div class="price">{{ prices.fc25.xbox.primary }} جنيه</div>
+                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تفعيل الحساب كأساسي</li>
+                        <li>✅ اللعب من حسابك الشخصي</li>
+                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
+                        <li>✅ ضمان أطول</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card secondary" data-platform="Xbox" data-account-type="secondary">
+                    <h3>حساب Secondary</h3>
+                    <div class="price">{{ prices.fc25.xbox.secondary }} جنيه</div>
+                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تسجيل دخول مؤقت</li>
+                        <li>✅ تحميل اللعبة</li>
+                        <li>✅ العودة لحسابك الشخصي</li>
+                        <li>⚠️ قيود أكثر في الاستخدام</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card full" data-platform="Xbox" data-account-type="full">
+                    <h3>حساب Full</h3>
+                    <div class="price">{{ prices.fc25.xbox.full }} جنيه</div>
+                    <p>حساب كامل قابل للتعديل</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ حساب كامل</li>
+                        <li>✅ قابل للتعديل</li>
+                        <li>✅ مرونة كاملة</li>
+                        <li>✅ أفضل قيمة</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+            </div>
+
+            <!-- أسعار PC -->
+            <h3 style="text-align: center; margin: 3rem 0 2rem 0; color: #667eea;">PC (Steam/Epic Games)</h3>
+            <div class="pricing-grid">
+                <div class="price-card primary" data-platform="PC" data-account-type="primary">
+                    <h3>حساب Primary</h3>
+                    <div class="price">{{ prices.fc25.pc.primary }} جنيه</div>
+                    <p>تفعيل أساسي - العب من حسابك الشخصي</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تفعيل الحساب كأساسي</li>
+                        <li>✅ اللعب من حسابك الشخصي</li>
+                        <li>✅ الألعاب متاحة لكل المستخدمين</li>
+                        <li>✅ ضمان أطول</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card secondary" data-platform="PC" data-account-type="secondary">
+                    <h3>حساب Secondary</h3>
+                    <div class="price">{{ prices.fc25.pc.secondary }} جنيه</div>
+                    <p>تسجيل دخول مؤقت - سعر أرخص</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ تسجيل دخول مؤقت</li>
+                        <li>✅ تحميل اللعبة</li>
+                        <li>✅ العودة لحسابك الشخصي</li>
+                        <li>⚠️ قيود أكثر في الاستخدام</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+                
+                <div class="price-card full" data-platform="PC" data-account-type="full">
+                    <h3>حساب Full</h3>
+                    <div class="price">{{ prices.fc25.pc.full }} جنيه</div>
+                    <p>حساب كامل قابل للتعديل</p>
+                    <ul style="text-align: right; margin-bottom: 2rem;">
+                        <li>✅ حساب كامل</li>
+                        <li>✅ قابل للتعديل</li>
+                        <li>✅ مرونة كاملة</li>
+                        <li>✅ أفضل قيمة</li>
+                    </ul>
+                    <button class="order-btn">اطلب الآن</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم المقارنة -->
+    <section id="comparison" class="comparison-section">
+        <div class="container">
+            <h2 class="section-title">⚖️ مقارنة أنواع الحسابات</h2>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الميزة</th>
+                            <th>Primary</th>
+                            <th>Secondary</th>
+                            <th>Full</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>تفعيل الحساب كأساسي</td>
+                            <td>✅</td>
+                            <td>❌</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>اللعب من حسابك الشخصي</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>الألعاب متاحة لكل المستخدمين</td>
+                            <td>✅</td>
+                            <td>❌</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>إمكانية تعديل البيانات</td>
+                            <td>❌</td>
+                            <td>❌</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>مدة الضمان</td>
+                            <td>6 أشهر</td>
+                            <td>6 أشهر</td>
+                            <td>6 أشهر</td>
+                        </tr>
+                        <tr>
+                            <td>السعر</td>
+                            <td>متوسط</td>
+                            <td>أرخص</td>
+                            <td>أغلى</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم الشروط والأحكام -->
+    <section id="terms" class="terms-section">
+        <div class="container">
+            <h2 class="section-title">📋 الشروط والأحكام</h2>
+            <div class="terms-box">
+                <h3>⚠️ شروط الاستخدام:</h3>
+                <ul>
+                    <li>🔒 ممنوع تماماً تغيير كلمة المرور</li>
+                    <li>🔒 ممنوع تغيير اسم المستخدم</li>
+                    <li>🔒 ممنوع تغيير الإيميل</li>
+                    <li>🔒 ممنوع إضافة رقم هاتف أو إيميل استرجاع</li>
+                    <li>🔒 ممنوع مشاركة الحساب مع الآخرين</li>
+                    <li>🎮 الحساب الأساسي: فعله كأساسي والعب من حسابك الشخصي</li>
+                    <li>🎮 الحساب الثانوي: ممنوع تفعيله كأساسي نهائياً</li>
+                    <li>🎮 PS4 مخصص للـ PS4 فقط و PS5 مخصص للـ PS5 فقط</li>
+                </ul>
+            </div>
+            
+            <div class="terms-box" style="margin-top: 2rem;">
+                <h3>🛡️ الضمان والدعم:</h3>
+                <ul>
+                    <li>✅ ضمان 6 أشهر مع عدم مخالفة الشروط</li>
+                    <li>✅ استبدال فوري في حالة المشاكل</li>
+                    <li>✅ تسليم خلال 15 ساعة كحد أقصى</li>
+                    <li>✅ دعم فني مجاني عبر الواتساب</li>
+                    <li>⚠️ المخالفة الأولى: تحذير</li>
+                    <li>⚠️ المخالفة الثانية: سحب الحساب نهائياً</li>
+                    <li>❌ لا استرداد في حالة المخالفة</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- آراء العملاء -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">💬 آراء العملاء</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"خدمة ممتازة وسرعة في التسليم. حصلت على FC 25 للـ PS5 في أقل من ساعة!"</p>
+                    <h4>- أحمد محمد</h4>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"أسعار تنافسية جداً ودعم فني ممتاز. بالتأكيد سأطلب مرة أخرى."</p>
+                    <h4>- سارة أحمد</h4>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"شرح واضح للفروقات بين الأنواع وصدق في التعامل. موقع موثوق 100%"</p>
+                    <h4>- محمد علي</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>📞 التواصل</h3>
+                    <ul>
+                        <li><a href="https://wa.me/201234567890">واتساب: 01234567890</a></li>
+                        <li><a href="mailto:info@senioraa.com">إيميل: info@senioraa.com</a></li>
+                        <li><a href="https://t.me/senioraa_bot">تليجرام: @senioraa_bot</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🔗 روابط مفيدة</h3>
+                    <ul>
+                        <li><a href="#pricing">الأسعار</a></li>
+                        <li><a href="#comparison">المقارنة</a></li>
+                        <li><a href="#terms">الشروط والأحكام</a></li>
+                        <li><a href="/faq">الأسئلة الشائعة</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🎮 الألعاب المتوفرة</h3>
+                    <ul>
+                        <li>EA Sports FC 25</li>
+                        <li>جميع المنصات</li>
+                        <li>PS4, PS5, Xbox, PC</li>
+                        <li>تحديثات مستمرة</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #555;">
+                <p>&copy; 2024 منصة شهد السنيورة. جميع الحقوق محفوظة.</p>
+                <p>أرخص أسعار الألعاب الرقمية في مصر 🇪🇬</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

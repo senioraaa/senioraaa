@@ -561,3 +561,102 @@ footer {
     color: #2e7d32;
     font-weight: bold;
 }
+
+/* تحسينات الأيقونات والتصميم */
+.platform-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 3rem 0 2rem 0;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.platform-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.platform-icon.ps4 {
+    background: linear-gradient(135deg, #003791 0%, #0056d4 100%);
+}
+
+.platform-icon.ps5 {
+    background: linear-gradient(135deg, #0070f3 0%, #0084ff 100%);
+}
+
+.platform-icon.xbox {
+    background: linear-gradient(135deg, #107c10 0%, #16a316 100%);
+}
+
+.platform-icon.pc {
+    background: linear-gradient(135deg, #4a90e2 0%, #5ba3f5 100%);
+}
+
+/* تحسينات بطاقات الأسعار */
+.price-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.price-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.price-card.primary {
+    border-color: #4CAF50;
+}
+
+.price-card.secondary {
+    border-color: #ff9800;
+}
+
+.price-card.full {
+    border-color: #2196F3;
+}
+
+/* إضافة أنيميشن للأسعار */
+.price {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    animation: priceGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes priceGlow {
+    0% { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    100% { text-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 20px rgba(102, 126, 234, 0.3); }
+}
+
+/* تحسينات الأزرار */
+.order-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.order-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.order-btn:active {
+    transform: translateY(0);
+}

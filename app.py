@@ -165,7 +165,7 @@ def validate_and_fix_prices(prices):
     return prices
 
 def validate_order_data(order_data):
-    """التحقق من صحة بيانات الطلب"""
+    """التحقق من صحة بيانات الطلب مع التحقق من رقم الواتساب"""
     required_fields = ['game', 'platform', 'account_type', 'price', 'payment_method', 'customer_phone']
     
     for field in required_fields:
@@ -181,10 +181,22 @@ def validate_order_data(order_data):
     except (ValueError, TypeError):
         return False, "السعر يجب أن يكون رقماً صحيحاً"
     
-    # التحقق من صحة رقم الهاتف
+    # التحقق من صحة رقم الواتساب
     phone = order_data['customer_phone']
-    if not phone.isdigit() or len(phone) < 10:
-        return False, "رقم الهاتف غير صحيح"
+    import re
+    phone_pattern = r'^01[0-2][0-9]{8}$'
+    if not re.match(phone_pattern, phone):
+        return False, "رقم الواتساب يجب أن يكون 11 رقم ويبدأ بـ 01"
+    
+    # التحقق من طريقة الدفع
+    valid_payment_methods = ['vodafone_cash', 'etisalat_cash', 'we_cash', 'orange_cash', 'bank_wallet', 'instapay']
+    if order_data['payment_method'] not in valid_payment_methods:
+        return False, "طريقة الدفع غير صحيحة"
+    
+    # التحقق من رقم الدفع
+    payment_number = order_data.get('payment_number')
+    if not payment_number:
+        return False, "رقم الدفع مطلوب"
     
     return True, "البيانات صحيحة"
 
@@ -300,6 +312,30 @@ def save_orders(orders):
 def generate_order_id():
     """توليد رقم طلب فريد"""
     return f"ORD{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+
+def format_arabic_datetime(dt=None):
+    """تحويل التاريخ إلى التنسيق العربي"""
+    if dt is None:
+        dt = datetime.now()
+    
+    # أسماء الأيام بالعربية
+    days_arabic = {
+        'Monday': 'الإثنين',
+        'Tuesday': 'الثلاثاء', 
+        'Wednesday': 'الأربعاء',
+        'Thursday': 'الخميس',
+        'Friday': 'الجمعة',
+        'Saturday': 'السبت',
+        'Sunday': 'الأحد'
+    }
+    
+    # تنسيق التاريخ
+    day_name = days_arabic.get(dt.strftime('%A'), dt.strftime('%A'))
+    day_num = dt.strftime('%d')
+    month_num = dt.strftime('%m')
+    time_12h = dt.strftime('%I:%M %p').replace('AM', 'AM').replace('PM', 'PM')
+    
+    return f"{day_name} ( {month_num}/{day_num} ) {time_12h}"
 
 def format_number(number):
     """تنسيق الأرقام بالجذر العشري"""
@@ -417,41 +453,56 @@ def send_telegram_message(message):
         return {"status": "error", "message": str(e)}
 
 def send_order_notification(order_data):
-    """إرسال إشعار طلب جديد مع التنسيق المحدث"""
+    """إرسال إشعار طلب جديد بتنسيق محسن"""
     try:
-        # تنسيق السعر
-        formatted_price = format_number(order_data['price'])
+        # تحويل التاريخ إلى التنسيق العربي
+        now = datetime.now()
         
-        # الحصول على التوقيت المصري
-        cairo_time = get_cairo_time()
-        
-        # إضافة الأيقونات للمنصات
-        platform_icons = {
-            'PS4': '🎮',
-            'PS5': '🎮', 
-            'Xbox': '🎮',
-            'PC': '💻'
+        # أسماء الأيام بالعربية
+        days_arabic = {
+            'Monday': 'الإثنين',
+            'Tuesday': 'الثلاثاء', 
+            'Wednesday': 'الأربعاء',
+            'Thursday': 'الخميس',
+            'Friday': 'الجمعة',
+            'Saturday': 'السبت',
+            'Sunday': 'الأحد'
         }
         
-        platform_icon = platform_icons.get(order_data['platform'], '🎮')
+        # تنسيق التاريخ
+        day_name = days_arabic.get(now.strftime('%A'), now.strftime('%A'))
+        day_num = now.strftime('%d')
+        month_num = now.strftime('%m')
+        time_12h = now.strftime('%I:%M %p').replace('AM', 'AM').replace('PM', 'PM')
+        
+        formatted_date = f"{day_name} ( {month_num}/{day_num} ) {time_12h}"
+        
+        # ترجمة طرق الدفع
+        payment_methods_ar = {
+            'vodafone_cash': 'فودافون كاش',
+            'etisalat_cash': 'اتصالات كاش',
+            'we_cash': 'وي كاش',
+            'orange_cash': 'أورانج كاش',
+            'bank_wallet': 'محفظة بنكية',
+            'instapay': 'إنستا باي'
+        }
+        
+        payment_method_ar = payment_methods_ar.get(order_data['payment_method'], order_data['payment_method'])
         
         message = f"""
 🚨 طلب جديد!
 
 🆔 رقم الطلب: {order_data['order_id']}
-{platform_icon} اللعبة: {order_data['game']}
+🎮 اللعبة: {order_data['game']}
 📱 المنصة: {order_data['platform']}
 💎 نوع الحساب: {order_data['account_type']}
-💰 السعر: {formatted_price} جنيه
-💳 طريقة الدفع: {order_data['payment_method']}
+💰 السعر: {order_data['price']} جنيه
+💳 طريقة الدفع: {payment_method_ar}
 📞 رقم العميل: {order_data['customer_phone']}
 💸 رقم الدفع: {order_data['payment_number']}
-⏰ الوقت: {cairo_time}
+📅 {formatted_date}
 """
-        
-        result = send_telegram_message(message)
-        logger.info(f"تم إرسال إشعار طلب جديد: {order_data['order_id']}")
-        return result
+        return send_telegram_message(message)
         
     except Exception as e:
         logger.error(f"خطأ في إرسال إشعار الطلب: {str(e)}")

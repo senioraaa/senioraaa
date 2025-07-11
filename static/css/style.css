@@ -755,14 +755,22 @@ footer {
 
 .container {
     text-align: center;
+/* إصلاح السعر - الكود الصحيح */
+.price {
+    color: #007bff !important;
+    text-align: center !important;
+    font-weight: bold !important;
 }
 
-/* إصلاح السعر */
-* {
-    color: inherit;
+.price-card .price {
+    color: #007bff !important;
+    text-align: center !important;
 }
 
-div, span, h1, h2, h3, h4, h5, h6, p {
+/* إصلاح محدد للسعر الذي يحتوي على جنيه */
+.price-card h3:contains("جنيه"),
+.price-card span:contains("جنيه"),
+.price-card div:contains("جنيه") {
     color: #007bff !important;
     text-align: center !important;
 }

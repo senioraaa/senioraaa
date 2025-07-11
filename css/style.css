@@ -340,7 +340,10 @@ body {
 .price {
     font-size: 2.5rem;
     font-weight: 700;
+    color: #3498db;      /* <-- ضيف السطر ده عشان اللون الأزرق */
+    text-align: center; /* <-- ضيف السطر ده عشان المحاذاة في الوسط */
 }
+ 
 
 .currency {
     font-size: 1rem;

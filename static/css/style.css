@@ -745,3 +745,14 @@ footer {
     }
 }
 
+/* إصلاح السعر - إضافة جديدة */
+*[class*="price"],
+*:contains("جنيه") {
+    color: #007bff !important;
+    text-align: center !important;
+    font-weight: bold !important;
+}
+
+.container {
+    text-align: center;
+}

@@ -743,3 +743,17 @@ footer {
         width: 35px;
         height: 35px;
     }
+
+/* إصلاح السعر - الكود الصحيح */
+.price-card .price {
+    color: #007bff !important;
+    text-align: center !important;
+    font-weight: bold !important;
+}
+
+/* إصلاح النص الذي يحتوي على جنيه */
+.price-card h3:contains("جنيه") {
+    color: #007bff !important;
+    text-align: center !important;
+}
+

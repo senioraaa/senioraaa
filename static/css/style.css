@@ -743,34 +743,29 @@ footer {
         width: 35px;
         height: 35px;
     }
-}
-
-/* إصلاح السعر - إضافة جديدة */
-*[class*="price"],
-*:contains("جنيه") {
-    color: #007bff !important;
-    text-align: center !important;
-    font-weight: bold !important;
-}
-
-.container {
-    text-align: center;
 /* إصلاح السعر - الكود الصحيح */
 .price {
     color: #007bff !important;
     text-align: center !important;
     font-weight: bold !important;
+    font-size: 2.5rem !important;
+    margin-bottom: 1rem !important;
 }
 
+/* إصلاح محدد للأسعار في البطاقات */
 .price-card .price {
     color: #007bff !important;
     text-align: center !important;
 }
 
-/* إصلاح محدد للسعر الذي يحتوي على جنيه */
-.price-card h3:contains("جنيه"),
-.price-card span:contains("جنيه"),
-.price-card div:contains("جنيه") {
-    color: #007bff !important;
+/* إصلاح أي عنصر يحتوي على كلمة جنيه */
+.price-card h3,
+.price-card span,
+.price-card div {
     text-align: center !important;
+}
+
+/* إصلاح لون النص الذي يحتوي على الرقم والعملة */
+.price-card h3:contains("جنيه") {
+    color: #007bff !important;
 }

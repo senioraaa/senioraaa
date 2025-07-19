@@ -1,7 +1,8 @@
 import os
 import logging
 import requests
-from flask import Flask, request, jsonify
+import json
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # إعداد اللوجر
@@ -9,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = 'senior_aaa_secret_key_2024'
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # المتغيرات البيئية
@@ -19,6 +21,32 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://senioraaa.onrender.com')
 
 # التليجرام API URLs
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+
+# بيانات الأسعار المؤقتة (يمكن نقلها لقاعدة بيانات لاحقاً)
+PRICES_DATA = {
+    "fc25": {
+        "ps4": {
+            "Primary": 85,
+            "Secondary": 70,
+            "Full": 120
+        },
+        "ps5": {
+            "Primary": 90,
+            "Secondary": 75,
+            "Full": 125
+        },
+        "xbox": {
+            "Primary": 85,
+            "Secondary": 70,
+            "Full": 120
+        },
+        "pc": {
+            "Primary": 80,
+            "Secondary": 65,
+            "Full": 115
+        }
+    }
+}
 
 def send_message(chat_id, text, reply_markup=None):
     """إرسال رسالة عبر التليجرام"""
@@ -104,27 +132,116 @@ def process_message(message):
         
         # رد تلقائي
         if text.lower() == '/start':
-            welcome_text = "مرحباً! أنا بوت FIFA EA FC ⚽\nاستخدم الأوامر التالية:\n\n/help - للمساعدة\n/status - حالة البوت"
+            welcome_text = f"""
+🎮 مرحباً بك في منصة شهد السنيورة!
+
+🏆 أرخص أسعار FC 25 في مصر
+💎 جميع المنصات متوفرة
+⚡ تسليم سريع خلال 15 ساعة
+🛡️ ضمان سنة كاملة
+
+🌐 زيارة المنصة: {WEBHOOK_URL}
+📱 للطلب: /order
+💬 المساعدة: /help
+            """
             send_message(chat_id, welcome_text)
         
         elif text.lower() == '/help':
-            help_text = "الأوامر المتاحة:\n\n/start - بداية التفاعل\n/help - هذه المساعدة\n/status - حالة البوت\n/admin - لوحة الإدارة"
+            help_text = """
+📋 الأوامر المتاحة:
+
+/start - بداية التفاعل
+/order - طلب FC 25
+/prices - عرض الأسعار
+/status - حالة البوت
+/support - الدعم الفني
+/admin - لوحة الإدارة (للمدير فقط)
+
+🌐 الموقع الكامل: {WEBHOOK_URL}
+            """.format(WEBHOOK_URL=WEBHOOK_URL)
             send_message(chat_id, help_text)
         
+        elif text.lower() == '/prices':
+            prices_text = """
+💰 أسعار FC 25 - جميع المنصات:
+
+🎮 PS4/PS5:
+• Primary: 85/90 جنيه
+• Secondary: 70/75 جنيه  
+• Full: 120/125 جنيه
+
+🎮 Xbox:
+• Primary: 85 جنيه
+• Secondary: 70 جنيه
+• Full: 120 جنيه
+
+💻 PC:
+• Primary: 80 جنيه
+• Secondary: 65 جنيه
+• Full: 115 جنيه
+
+🛒 للطلب: /order
+🌐 الموقع: {WEBHOOK_URL}
+            """.format(WEBHOOK_URL=WEBHOOK_URL)
+            send_message(chat_id, prices_text)
+        
+        elif text.lower() == '/order':
+            order_text = f"""
+🛒 لطلب FC 25:
+
+1️⃣ زيارة الموقع: {WEBHOOK_URL}
+2️⃣ اختيار المنصة ونوع الحساب
+3️⃣ التواصل عبر الواتساب: 01094591331
+
+⚡ تسليم خلال 15 ساعة
+🛡️ ضمان سنة كاملة
+💎 أرخص الأسعار في مصر
+            """
+            send_message(chat_id, order_text)
+        
         elif text.lower() == '/status':
-            status_text = "✅ البوت يعمل بشكل طبيعي"
+            status_text = "✅ البوت والمنصة يعملان بشكل طبيعي"
             send_message(chat_id, status_text)
+        
+        elif text.lower() == '/support':
+            support_text = """
+🆘 الدعم الفني:
+
+📱 واتساب: 01094591331
+🌐 الموقع: {WEBHOOK_URL}
+⏰ نعمل 24/7
+
+💬 يمكنك أيضاً كتابة مشكلتك هنا وسيتم الرد عليك
+            """.format(WEBHOOK_URL=WEBHOOK_URL)
+            send_message(chat_id, support_text)
         
         elif text.lower() == '/admin':
             if str(user_id) == CHAT_ID:
-                admin_text = f"لوحة الإدارة 👨‍💻\n\nرابط الإدارة: {WEBHOOK_URL}/admin"
+                admin_text = f"""
+👨‍💻 لوحة الإدارة:
+
+🌐 رابط الإدارة: {WEBHOOK_URL}/admin
+📊 إحصائيات: {WEBHOOK_URL}/stats
+⚙️ إعدادات: {WEBHOOK_URL}/settings
+
+استخدم الروابط أعلاه للوصول لجميع أدوات الإدارة
+                """
                 send_message(chat_id, admin_text)
             else:
                 send_message(chat_id, "❌ غير مسموح لك بالوصول للوحة الإدارة")
         
         else:
             # رد عام
-            reply_text = f"تم استلام رسالتك: {text}\n\nاستخدم /help للمساعدة"
+            reply_text = f"""
+📝 تم استلام رسالتك: "{text}"
+
+🤖 للمساعدة استخدم:
+• /help - قائمة الأوامر
+• /order - لطلب FC 25
+• /prices - عرض الأسعار
+
+📱 للتواصل المباشر: 01094591331
+            """
             send_message(chat_id, reply_text)
         
         return True
@@ -140,8 +257,12 @@ def process_callback_query(callback_query):
         message_id = callback_query.get('message', {}).get('message_id')
         
         # معالجة البيانات
-        if data == 'test_button':
-            send_message(chat_id, "تم الضغط على زر الاختبار! ✅")
+        if data == 'order_fc25':
+            send_message(chat_id, f"🛒 لطلب FC 25، قم بزيارة: {WEBHOOK_URL}")
+        elif data == 'view_prices':
+            send_message(chat_id, "💰 لعرض الأسعار الكاملة، استخدم /prices")
+        elif data == 'contact_support':
+            send_message(chat_id, "📱 للدعم الفني: 01094591331")
         
         # إشعار بأن الزر تم الضغط عليه
         callback_url = f"{TELEGRAM_API}/answerCallbackQuery"
@@ -169,18 +290,45 @@ def setup_webhook():
 with app.app_context():
     setup_webhook()
 
+# Routes المنصة الرئيسية
 @app.route('/')
 def home():
-    """الصفحة الرئيسية"""
+    """الصفحة الرئيسية للمنصة"""
+    try:
+        return render_template('index.html', prices=PRICES_DATA)
+    except Exception as e:
+        logger.error(f"خطأ في تحميل الصفحة الرئيسية: {e}")
+        return jsonify({
+            'status': 'active',
+            'bot': BOT_USERNAME,
+            'message': 'منصة شهد السنيورة - أرخص أسعار FC 25 في مصر! ✅'
+        })
+
+@app.route('/api/prices')
+def api_prices():
+    """API للأسعار"""
+    return jsonify(PRICES_DATA)
+
+@app.route('/order')
+def order_page():
+    """صفحة الطلب"""
+    return redirect("https://wa.me/201094591331?text=مرحباً، أريد طلب FC 25")
+
+@app.route('/faq')
+def faq_page():
+    """صفحة الأسئلة الشائعة"""
     return jsonify({
-        'status': 'active',
-        'bot': BOT_USERNAME,
-        'message': 'Bot is running successfully! ✅'
+        'faq': [
+            {'q': 'ما هو الفرق بين Primary و Secondary؟', 'a': 'Primary يتم تفعيله كحساب أساسي، Secondary للتحميل فقط'},
+            {'q': 'كم مدة الضمان؟', 'a': 'سنة كاملة مع عدم مخالفة الشروط'},
+            {'q': 'متى يتم التسليم؟', 'a': 'خلال 15 ساعة كحد أقصى'},
+            {'q': 'هل يمكن تغيير بيانات الحساب؟', 'a': 'ممنوع نهائياً تغيير أي بيانات'}
+        ]
     })
 
 @app.route('/admin')
 def admin():
-    """لوحة الإدارة"""
+    """لوحة الإدارة المحسنة"""
     webhook_info = get_webhook_info()
     
     html = f"""
@@ -189,7 +337,7 @@ def admin():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>لوحة إدارة البوت</title>
+        <title>لوحة إدارة منصة شهد السنيورة</title>
         <style>
             body {{
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -197,69 +345,136 @@ def admin():
                 padding: 20px;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: #333;
+                min-height: 100vh;
             }}
             .container {{
-                max-width: 800px;
+                max-width: 1200px;
                 margin: 0 auto;
                 background: white;
                 border-radius: 15px;
                 padding: 30px;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             }}
-            h1 {{
-                color: #764ba2;
+            .header {{
                 text-align: center;
-                margin-bottom: 30px;
+                margin-bottom: 40px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #667eea;
+            }}
+            .header h1 {{
+                color: #667eea;
+                margin: 0;
+                font-size: 2.5rem;
+            }}
+            .stats-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+            }}
+            .stat-card {{
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
             }}
             .info-box {{
                 background: #f8f9fa;
-                border-left: 4px solid #007bff;
-                padding: 15px;
-                margin: 15px 0;
-                border-radius: 5px;
+                border-left: 4px solid #667eea;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 8px;
+            }}
+            .btn-group {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: center;
+                margin: 30px 0;
             }}
             .btn {{
-                background: linear-gradient(45deg, #007bff, #0056b3);
+                background: linear-gradient(45deg, #667eea, #764ba2);
                 color: white;
                 border: none;
-                padding: 10px 20px;
+                padding: 12px 25px;
                 border-radius: 25px;
                 cursor: pointer;
-                margin: 5px;
                 transition: all 0.3s;
+                text-decoration: none;
+                display: inline-block;
             }}
             .btn:hover {{
                 transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
             }}
-            .status-ok {{ color: #28a745; }}
-            .status-error {{ color: #dc3545; }}
+            .btn-danger {{
+                background: linear-gradient(45deg, #dc3545, #c82333);
+            }}
+            .btn-success {{
+                background: linear-gradient(45deg, #28a745, #20a039);
+            }}
+            .status-ok {{ color: #28a745; font-weight: bold; }}
+            .status-error {{ color: #dc3545; font-weight: bold; }}
+            .webhook-info {{
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                font-family: 'Courier New', monospace;
+                white-space: pre-wrap;
+                max-height: 300px;
+                overflow-y: auto;
+            }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🤖 لوحة إدارة البوت</h1>
+            <div class="header">
+                <h1>🎮 لوحة إدارة منصة شهد السنيورة</h1>
+                <p>نظام إدارة شامل لمنصة FC 25</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>🤖 البوت</h3>
+                    <p>{BOT_USERNAME}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>💬 Chat ID</h3>
+                    <p>{CHAT_ID}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>🌐 المنصة</h3>
+                    <p>نشطة ✅</p>
+                </div>
+                <div class="stat-card">
+                    <h3>📱 الألعاب</h3>
+                    <p>FC 25</p>
+                </div>
+            </div>
             
             <div class="info-box">
-                <h3>معلومات البوت:</h3>
-                <p><strong>اسم البوت:</strong> {BOT_USERNAME}</p>
-                <p><strong>Chat ID:</strong> {CHAT_ID}</p>
+                <h3>🔗 روابط المنصة:</h3>
+                <p><strong>الموقع الرئيسي:</strong> <a href="{WEBHOOK_URL}" target="_blank">{WEBHOOK_URL}</a></p>
+                <p><strong>API الأسعار:</strong> <a href="{WEBHOOK_URL}/api/prices" target="_blank">{WEBHOOK_URL}/api/prices</a></p>
                 <p><strong>Webhook URL:</strong> {WEBHOOK_URL}/webhook/{BOT_TOKEN}</p>
             </div>
             
             <div class="info-box">
-                <h3>حالة الويبهوك:</h3>
-                <pre>{webhook_info}</pre>
+                <h3>📊 حالة الويبهوك:</h3>
+                <div class="webhook-info">{webhook_info}</div>
             </div>
             
-            <div style="text-align: center; margin-top: 30px;">
-                <button class="btn" onclick="setWebhook()">تعيين الويبهوك</button>
-                <button class="btn" onclick="deleteWebhook()">حذف الويبهوك</button>
-                <button class="btn" onclick="testBot()">اختبار البوت</button>
-                <button class="btn" onclick="location.reload()">تحديث الصفحة</button>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="setWebhook()">✅ تعيين الويبهوك</button>
+                <button class="btn btn-danger" onclick="deleteWebhook()">❌ حذف الويبهوك</button>
+                <button class="btn" onclick="testBot()">🔧 اختبار البوت</button>
+                <a href="{WEBHOOK_URL}" class="btn">🌐 زيارة المنصة</a>
+                <a href="{WEBHOOK_URL}/api/prices" class="btn">📊 API الأسعار</a>
+                <button class="btn" onclick="location.reload()">🔄 تحديث الصفحة</button>
             </div>
             
-            <div id="result" style="margin-top: 20px;"></div>
+            <div id="result" style="margin-top: 30px;"></div>
         </div>
         
         <script>
@@ -269,7 +484,7 @@ def admin():
                     .then(data => {{
                         document.getElementById('result').innerHTML = 
                             '<div class="info-box ' + (data.success ? 'status-ok' : 'status-error') + '">' + 
-                            data.message + '</div>';
+                            '🎯 ' + data.message + '</div>';
                     }});
             }}
             
@@ -279,7 +494,7 @@ def admin():
                     .then(data => {{
                         document.getElementById('result').innerHTML = 
                             '<div class="info-box ' + (data.success ? 'status-ok' : 'status-error') + '">' + 
-                            data.message + '</div>';
+                            '🗑️ ' + data.message + '</div>';
                     }});
             }}
             
@@ -289,7 +504,7 @@ def admin():
                     .then(data => {{
                         document.getElementById('result').innerHTML = 
                             '<div class="info-box ' + (data.success ? 'status-ok' : 'status-error') + '">' + 
-                            data.message + '</div>';
+                            '🔧 ' + data.message + '</div>';
                     }});
             }}
         </script>
@@ -320,7 +535,17 @@ def delete_webhook_route():
 def test_bot():
     """اختبار البوت"""
     try:
-        result = send_message(CHAT_ID, "🔧 اختبار البوت - التوقيت: " + str(os.getenv('TZ', 'UTC')))
+        test_message = f"""
+🔧 اختبار المنصة والبوت
+
+🌐 الموقع: {WEBHOOK_URL}
+🤖 البوت: {BOT_USERNAME}
+⏰ الوقت: {os.getenv('TZ', 'UTC')}
+📱 المنصة: نشطة ✅
+
+💎 منصة شهد السنيورة - أرخص أسعار FC 25 في مصر!
+        """
+        result = send_message(CHAT_ID, test_message)
         success = result is not None
         return jsonify({
             'success': success,
@@ -378,7 +603,43 @@ def webhook_info():
 @app.route('/ping')
 def ping():
     """نقطة فحص للخدمة"""
-    return jsonify({'status': 'alive', 'timestamp': str(os.getenv('TZ', 'UTC'))})
+    return jsonify({
+        'status': 'alive', 
+        'platform': 'شهد السنيورة',
+        'service': 'FC 25 Platform',
+        'timestamp': str(os.getenv('TZ', 'UTC'))
+    })
+
+@app.route('/stats')
+def stats():
+    """إحصائيات المنصة"""
+    return jsonify({
+        'platform': 'منصة شهد السنيورة',
+        'game': 'EA Sports FC 25',
+        'platforms': ['PS4', 'PS5', 'Xbox', 'PC'],
+        'account_types': ['Primary', 'Secondary', 'Full'],
+        'guarantee': '1 year',
+        'delivery': '15 hours max',
+        'whatsapp': '01094591331',
+        'status': 'active'
+    })
+
+# معالج الأخطاء
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({
+        'error': 'صفحة غير موجودة',
+        'platform': 'منصة شهد السنيورة',
+        'home': WEBHOOK_URL
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({
+        'error': 'خطأ في الخادم',
+        'platform': 'منصة شهد السنيورة',
+        'support': '01094591331'
+    }), 500
 
 if __name__ == '__main__':
     # للتطوير المحلي فقط

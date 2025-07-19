@@ -51,9 +51,9 @@ MAINTENANCE_MESSAGE = "الموقع تحت الصيانة"
 DEBUG_MODE = False
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-# إعدادات التليجرام
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '7607085569:AAFE_NO4pVcgfVenU5R_GSEnauoFIQ0iVXo')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '1124247595')
+# إعدادات التليجرام - البيانات مباشرة
+TELEGRAM_BOT_TOKEN = '7607085569:AAFE_NO4pVcgfVenU5R_GSEnauoFIQ0iVXo'
+TELEGRAM_CHAT_ID = '1124247595'
 
 # إعدادات الإشعارات
 NOTIFICATION_SETTINGS = {
@@ -467,21 +467,33 @@ def submit_order():
 def telegram_webhook():
     """معالج webhook للتليجرام لتحديث الأسعار"""
     try:
+        # إضافة logging مُحسن للـ debugging
+        logger.info("🤖 تم استقبال webhook request من التليجرام")
+        
         data = request.get_json()
+        logger.info(f"📥 البيانات المستقبلة: {data}")
         
         if 'message' in data and 'text' in data['message']:
             text = data['message']['text']
             chat_id = data['message']['chat']['id']
             
+            logger.info(f"💬 الرسالة: {text}")
+            logger.info(f"👤 Chat ID: {chat_id}")
+            logger.info(f"🔐 Expected Chat ID: {TELEGRAM_CHAT_ID}")
+            
             # التحقق من أن المرسل هو الأدمن
             if str(chat_id) != TELEGRAM_CHAT_ID:
+                logger.warning(f"⚠️ رسالة من chat ID غير مصرح: {chat_id}")
                 return jsonify({"status": "unauthorized"})
             
             # تحديث الأسعار عبر أمر: /price PS5 Primary 100
             if text.startswith('/price'):
+                logger.info("💰 معالجة أمر تحديث الأسعار")
                 parts = text.split()
                 if len(parts) == 4:
                     _, platform, account_type, price = parts
+                    
+                    logger.info(f"🎮 تحديث: {platform} {account_type} = {price}")
                     
                     prices = load_prices()
                     old_price = prices.get('fc25', {}).get(platform, {}).get(account_type, 0)
@@ -498,6 +510,8 @@ def telegram_webhook():
                     confirm_msg = f"✅ تم تحديث سعر {platform} {account_type} من {old_price} إلى {price} جنيه"
                     send_telegram_message(confirm_msg)
                     
+                    logger.info("✅ تم تحديث السعر بنجاح")
+                    
                 else:
                     # إرسال رسالة مساعدة
                     help_msg = """
@@ -513,6 +527,7 @@ def telegram_webhook():
             
             # عرض الأسعار الحالية
             elif text.startswith('/prices'):
+                logger.info("📊 عرض الأسعار الحالية")
                 prices = load_prices()
                 prices_msg = "💰 الأسعار الحالية:\n\n"
                 
@@ -525,10 +540,11 @@ def telegram_webhook():
                         prices_msg += "\n"
                 
                 send_telegram_message(prices_msg)
+                logger.info("✅ تم إرسال الأسعار")
         
         return jsonify({"status": "ok"})
     except Exception as e:
-        logger.error(f"خطأ في webhook التليجرام: {str(e)}")
+        logger.error(f"❌ خطأ في webhook التليجرام: {str(e)}")
         return jsonify({"status": "error"})
 
 # === معالج الأخطاء ===
@@ -550,6 +566,8 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
     logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
+    logger.info(f"🤖 البوت Token: {TELEGRAM_BOT_TOKEN[:10]}...")
+    logger.info(f"👤 Chat ID: {TELEGRAM_CHAT_ID}")
     
     app.run(
         host='0.0.0.0',

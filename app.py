@@ -955,73 +955,41 @@ def update_prices():
 
 @app.route('/send_order', methods=['POST'])
 def send_order():
-    """إرسال الطلب للتليجرام والواتساب مع التنسيق المحدث"""
+    """فتح الواتساب مباشرة بدون حفظ أي طلب"""
     try:
         data = request.json
         
-        # التحقق من صحة البيانات
-        is_valid, message = validate_order_data(data)
-        if not is_valid:
-            logger.warning(f"بيانات طلب غير صحيحة: {message}")
-            return jsonify({"status": "error", "message": message})
+        # التحقق من صحة البيانات الأساسية فقط
+        game = data.get('game', 'FC 25')
+        platform = data.get('platform', 'غير محدد')
+        account_type = data.get('account_type', 'غير محدد')
+        price = data.get('price', 0)
         
-        order_id = generate_order_id()
+        # تنسيق السعر
+        formatted_price = format_number(int(price)) if price else '0'
         
-        # استخدام التوقيت المصري
-        cairo_time = get_cairo_time()
-        cairo_datetime = get_cairo_datetime()
-        
-        order_data = {
-            'order_id': order_id,
-            'game': data.get('game', 'FC 25'),
-            'platform': data.get('platform'),
-            'account_type': data.get('account_type'),
-            'price': int(data.get('price')),
-            'payment_method': data.get('payment_method'),
-            'customer_phone': data.get('customer_phone'),
-            'payment_number': data.get('payment_number'),
-            'timestamp': cairo_datetime,
-            'date': cairo_datetime.split(' ')[0],
-            'status': 'pending'
-        }
-        
-        orders = load_orders()
-        orders.append(order_data)
-        save_orders(orders)
-        
-        logger.info(f"تم إنشاء طلب جديد: {order_id}")
-        
-        if NOTIFICATION_SETTINGS['new_order']:
-            telegram_result = send_order_notification(order_data)
-            if telegram_result.get('status') != 'success':
-                logger.warning(f"خطأ في إرسال إشعار التليجرام: {telegram_result.get('message')}")
-        
-        # تنسيق السعر في رسالة الواتساب
-        formatted_price = format_number(order_data['price'])
-        
-        whatsapp_message = f"""
-🎮 طلب جديد من منصة شهد السنيورة
+        # إنشاء رسالة الواتساب فوراً
+        whatsapp_message = f"""السلام عليكم
+أريد طلب:
 
-📱 اللعبة: {order_data['game']}
-🎯 المنصة: {order_data['platform']}
-💎 نوع الحساب: {order_data['account_type']}
+🎮 اللعبة: {game}
+📱 المنصة: {platform}
+💎 نوع الحساب: {account_type}
 💰 السعر: {formatted_price} جنيه
-💳 طريقة الدفع: {order_data['payment_method']}
-⏰ وقت الطلب: {cairo_time}
 
-سيتم التواصل معك خلال 15 دقيقة! 🚀
-"""
+شكراً"""
         
+        # إرجاع بيانات فتح الواتساب فوراً
         return jsonify({
             "status": "success",
             "whatsapp_message": whatsapp_message,
             "phone": WHATSAPP_NUMBER,
-            "order_id": order_id
+            "redirect_to_whatsapp": True
         })
         
     except Exception as e:
-        logger.error(f"خطأ في إرسال الطلب: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)})
+        logger.error(f"خطأ في تحضير رسالة الواتساب: {str(e)}")
+        return jsonify({"status": "error", "message": "حدث خطأ، حاول مرة أخرى"})
 
 
 @app.route('/test_telegram', methods=['POST'])

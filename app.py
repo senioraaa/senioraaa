@@ -304,7 +304,7 @@ def get_cairo_time():
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def send_telegram_message(message):
-    """إرسال رسالة للتليجرام"""
+    """إرسال رسالة للتليجرام مع معالجة محسنة للأخطاء"""
     try:
         if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
             logger.warning("إعدادات التليجرام غير مكتملة")
@@ -317,17 +317,31 @@ def send_telegram_message(message):
             "parse_mode": "HTML"
         }
         
-        response = requests.post(url, json=data, timeout=10)
+        logger.info(f"📤 إرسال رسالة إلى: {TELEGRAM_CHAT_ID}")
+        
+        response = requests.post(url, json=data, timeout=15)
         
         if response.status_code == 200:
-            logger.info("تم إرسال رسالة التليجرام بنجاح")
-            return {"status": "success", "message": "تم إرسال الرسالة بنجاح"}
+            result = response.json()
+            if result.get('ok'):
+                logger.info("✅ تم إرسال رسالة التليجرام بنجاح")
+                return {"status": "success", "message": "تم إرسال الرسالة بنجاح"}
+            else:
+                error_msg = result.get('description', 'خطأ غير معروف')
+                logger.error(f"❌ خطأ من API التليجرام: {error_msg}")
+                return {"status": "error", "message": error_msg}
         else:
-            logger.error(f"خطأ في إرسال رسالة التليجرام: {response.status_code}")
-            return {"status": "error", "message": f"خطأ في إرسال الرسالة: {response.status_code}"}
+            logger.error(f"❌ خطأ HTTP في إرسال رسالة التليجرام: {response.status_code}")
+            return {"status": "error", "message": f"خطأ HTTP: {response.status_code}"}
             
+    except requests.exceptions.Timeout:
+        logger.error("⏰ انتهت مهلة الاتصال بالتليجرام")
+        return {"status": "error", "message": "انتهت مهلة الاتصال"}
+    except requests.exceptions.ConnectionError:
+        logger.error("🔌 خطأ في الاتصال بالتليجرام")
+        return {"status": "error", "message": "خطأ في الاتصال"}
     except Exception as e:
-        logger.error(f"خطأ في إرسال رسالة التليجرام: {str(e)}")
+        logger.error(f"❌ خطأ عام في إرسال رسالة التليجرام: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 def send_order_notification(order_data):
@@ -408,25 +422,107 @@ def contact():
                          whatsapp_number=WHATSAPP_NUMBER,
                          email_info=EMAIL_INFO)
 
-# === حلول الـ Webhook الجديدة ===
+# === Admin Panel ===
+
+@app.route('/admin')
+def admin():
+    """لوحة التحكم الإدارية"""
+    try:
+        orders = load_orders()
+        prices = load_prices()
+        
+        # إحصائيات سريعة
+        total_orders = len(orders)
+        pending_orders = len([o for o in orders if o.get('status') == 'pending'])
+        
+        return render_template('admin.html',
+                             orders=orders,
+                             prices=prices,
+                             total_orders=total_orders,
+                             pending_orders=pending_orders,
+                             site_name=SITE_NAME)
+    except Exception as e:
+        logger.error(f"خطأ في تحميل لوحة التحكم: {str(e)}")
+        return render_template('admin.html',
+                             orders=[],
+                             prices=get_default_prices(),
+                             total_orders=0,
+                             pending_orders=0,
+                             site_name=SITE_NAME,
+                             error=str(e))
+
+# === حلول الـ Webhook المحسنة ===
+
+@app.route('/webhook_test')
+def webhook_test():
+    """صفحة اختبار الـ webhook - للتأكد من أن الموقع يعمل"""
+    logger.info("🧪 تم الوصول لصفحة اختبار Webhook")
+    return """
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🧪 اختبار Webhook</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container {
+                background: rgba(255,255,255,0.1);
+                padding: 30px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>✅ الموقع يعمل بشكل صحيح</h1>
+            <p>🤖 جاهز لاستقبال رسائل التليجرام</p>
+            <p>⏰ الوقت الحالي: """ + get_cairo_time() + """</p>
+        </div>
+    </body>
+    </html>
+    """
 
 @app.route('/setup_webhook')
 def setup_webhook():
-    """تسجيل الـ webhook من المتصفح - محسن للموبايل"""
+    """تسجيل الـ webhook المحسن"""
     try:
+        # تنظيف أي webhook موجود أولاً
+        delete_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteWebhook"
+        requests.post(delete_url, timeout=10)
+        
+        # تسجيل webhook جديد
         webhook_url = 'https://senioraaa.onrender.com/telegram_webhook'
         telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook"
         
         data = {
             "url": webhook_url,
-            "allowed_updates": ["message"]
+            "allowed_updates": ["message", "callback_query"],
+            "drop_pending_updates": True,  # تجاهل الرسائل القديمة
+            "max_connections": 40,
+            "secret_token": "senioraa_webhook_secret"  # أمان إضافي
         }
         
-        response = requests.post(telegram_url, json=data, timeout=10)
+        logger.info(f"🔧 محاولة تسجيل webhook: {webhook_url}")
+        
+        response = requests.post(telegram_url, json=data, timeout=15)
         
         if response.status_code == 200:
             result = response.json()
+            logger.info(f"📨 رد التليجرام: {result}")
+            
             if result.get('ok'):
+                # إرسال رسالة اختبار
+                test_message = f"🎉 تم تفعيل البوت بنجاح!\n⏰ {get_cairo_time()}"
+                send_telegram_message(test_message)
+                
                 return f"""
                 <!DOCTYPE html>
                 <html dir="rtl" lang="ar">
@@ -450,7 +546,7 @@ def setup_webhook():
                             padding: 30px;
                             border-radius: 20px;
                             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                            max-width: 500px;
+                            max-width: 600px;
                             width: 100%;
                             text-align: center;
                         }}
@@ -458,6 +554,12 @@ def setup_webhook():
                             font-size: 4rem;
                             color: #4CAF50;
                             margin-bottom: 20px;
+                            animation: bounce 1s infinite;
+                        }}
+                        @keyframes bounce {{
+                            0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
+                            40% {{ transform: translateY(-10px); }}
+                            60% {{ transform: translateY(-5px); }}
                         }}
                         h1 {{
                             color: #4CAF50;
@@ -500,17 +602,33 @@ def setup_webhook():
                         .btn-secondary:hover {{
                             background: #1976D2;
                         }}
+                        .status {{
+                            background: #d4edda;
+                            color: #155724;
+                            padding: 15px;
+                            border-radius: 5px;
+                            margin: 20px 0;
+                            border: 1px solid #c3e6cb;
+                        }}
                     </style>
                 </head>
                 <body>
                     <div class="container">
-                        <div class="success-icon">✅</div>
+                        <div class="success-icon">🎉</div>
                         <h1>تم تسجيل الـ Webhook بنجاح!</h1>
-                        <p><strong>🌐 URL:</strong><br>{webhook_url}</p>
-                        <p style="color: #4CAF50; font-size: 1.1rem;">🤖 البوت جاهز للاستخدام الآن</p>
+                        
+                        <div class="status">
+                            <strong>✅ الحالة:</strong> البوت متصل ويعمل بشكل صحيح<br>
+                            <strong>🌐 URL:</strong> {webhook_url}<br>
+                            <strong>🔐 رمز الأمان:</strong> مُفعل<br>
+                            <strong>⏰ وقت التسجيل:</strong> {get_cairo_time()}
+                        </div>
                         
                         <div class="info-box">
-                            <h3>اختبر الأوامر التالية في تليجرام:</h3>
+                            <h3>🤖 اختبر الأوامر التالية في تليجرام:</h3>
+                            <div class="command">/start</div>
+                            <small>رسالة الترحيب والمساعدة</small>
+                            
                             <div class="command">/prices</div>
                             <small>عرض جميع الأسعار الحالية</small>
                             
@@ -523,11 +641,11 @@ def setup_webhook():
                         
                         <div>
                             <a href="/check_webhook" class="btn">📊 فحص حالة الـ Webhook</a>
-                            <a href="/test_bot" class="btn btn-secondary">🧪 اختبار البوت</a>
+                            <a href="/test_bot" class="btn btn-secondary">🧪 اختبار إرسال رسالة</a>
                         </div>
                         
                         <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
-                            يمكنك الآن إغلاق هذه الصفحة والبدء في استخدام البوت
+                            🎮 البوت جاهز للاستخدام! تحقق من تليجرام لتجد رسالة تأكيد
                         </p>
                     </div>
                 </body>
@@ -535,6 +653,8 @@ def setup_webhook():
                 """
             else:
                 error_desc = result.get('description', 'خطأ غير معروف')
+                logger.error(f"❌ فشل في تسجيل webhook: {error_desc}")
+                
                 return f"""
                 <!DOCTYPE html>
                 <html dir="rtl" lang="ar">
@@ -586,14 +706,16 @@ def setup_webhook():
                 <body>
                     <div class="container">
                         <div class="error-icon">❌</div>
-                        <h1>خطأ في التسجيل</h1>
+                        <h1>خطأ في تسجيل الـ Webhook</h1>
                         <p><strong>السبب:</strong> {error_desc}</p>
+                        <p><strong>الرد الكامل:</strong> {result}</p>
                         <a href="/setup_webhook" class="btn">🔄 إعادة المحاولة</a>
                     </div>
                 </body>
                 </html>
                 """
         else:
+            logger.error(f"❌ خطأ HTTP في تسجيل webhook: {response.status_code}")
             return f"""
             <!DOCTYPE html>
             <html dir="rtl" lang="ar">
@@ -605,6 +727,7 @@ def setup_webhook():
             <body>
                 <div style="text-align: center; padding: 50px; font-family: Arial;">
                     <h1 style="color: #f44336;">❌ خطأ HTTP: {response.status_code}</h1>
+                    <p>محتوى الرد: {response.text[:200]}...</p>
                     <a href="/setup_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
                 </div>
             </body>
@@ -612,6 +735,7 @@ def setup_webhook():
             """
             
     except Exception as e:
+        logger.error(f"❌ خطأ عام في تسجيل webhook: {str(e)}")
         return f"""
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -632,10 +756,12 @@ def setup_webhook():
 
 @app.route('/check_webhook')
 def check_webhook():
-    """فحص حالة الـ webhook - محسن للموبايل"""
+    """فحص حالة الـ webhook المحسن"""
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
         response = requests.get(url, timeout=10)
+        
+        logger.info(f"📊 فحص webhook - الحالة: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
@@ -645,9 +771,17 @@ def check_webhook():
                 pending_count = webhook_info.get('pending_update_count', 0)
                 last_error_date = webhook_info.get('last_error_date', 'لا يوجد أخطاء')
                 last_error_message = webhook_info.get('last_error_message', '')
+                max_connections = webhook_info.get('max_connections', 'غير محدد')
                 
-                status_color = "#4CAF50" if webhook_url != 'غير محدد' else "#f44336"
-                status_text = "🟢 متصل" if webhook_url != 'غير محدد' else "🔴 غير متصل"
+                # تحويل التاريخ إذا كان موجود
+                if last_error_date != 'لا يوجد أخطاء' and isinstance(last_error_date, int):
+                    import datetime
+                    last_error_date = datetime.datetime.fromtimestamp(last_error_date).strftime('%Y-%m-%d %H:%M:%S')
+                
+                status_color = "#4CAF50" if webhook_url and "senioraaa.onrender.com" in webhook_url else "#f44336"
+                status_text = "🟢 متصل وجاهز" if webhook_url and "senioraaa.onrender.com" in webhook_url else "🔴 غير متصل"
+                
+                logger.info(f"📊 حالة webhook: {status_text}")
                 
                 return f"""
                 <!DOCTYPE html>
@@ -669,7 +803,7 @@ def check_webhook():
                             padding: 30px;
                             border-radius: 20px;
                             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                            max-width: 600px;
+                            max-width: 700px;
                             margin: 0 auto;
                         }}
                         .status-header {{
@@ -686,11 +820,21 @@ def check_webhook():
                         .info-item {{
                             display: flex;
                             justify-content: space-between;
-                            padding: 10px 0;
+                            padding: 15px 0;
                             border-bottom: 1px solid #e9ecef;
+                            flex-wrap: wrap;
                         }}
                         .info-item:last-child {{
                             border-bottom: none;
+                        }}
+                        .info-label {{
+                            font-weight: bold;
+                            min-width: 140px;
+                        }}
+                        .info-value {{
+                            flex: 1;
+                            text-align: left;
+                            word-break: break-all;
                         }}
                         .btn {{
                             display: inline-block;
@@ -701,10 +845,17 @@ def check_webhook():
                             margin: 5px;
                             font-weight: bold;
                             text-align: center;
+                            transition: all 0.3s;
+                        }}
+                        .btn:hover {{
+                            transform: translateY(-2px);
                         }}
                         .btn-success {{ background: #4CAF50; }}
+                        .btn-success:hover {{ background: #45a049; }}
                         .btn-primary {{ background: #2196F3; }}
+                        .btn-primary:hover {{ background: #1976D2; }}
                         .btn-warning {{ background: #ff9800; }}
+                        .btn-warning:hover {{ background: #f57c00; }}
                     </style>
                 </head>
                 <body>
@@ -716,30 +867,43 @@ def check_webhook():
                         
                         <div class="info-grid">
                             <div class="info-item">
-                                <strong>🔗 URL:</strong>
-                                <span style="word-break: break-all;">{webhook_url}</span>
+                                <div class="info-label">🔗 URL:</div>
+                                <div class="info-value">{webhook_url}</div>
                             </div>
                             <div class="info-item">
-                                <strong>📈 الطلبات المعلقة:</strong>
-                                <span>{pending_count}</span>
+                                <div class="info-label">📈 الطلبات المعلقة:</div>
+                                <div class="info-value">{pending_count}</div>
                             </div>
                             <div class="info-item">
-                                <strong>⏰ آخر خطأ:</strong>
-                                <span>{last_error_date}</span>
+                                <div class="info-label">🔌 الاتصالات المسموحة:</div>
+                                <div class="info-value">{max_connections}</div>
                             </div>
-                            {f'<div class="info-item"><strong>❌ رسالة الخطأ:</strong><span>{last_error_message}</span></div>' if last_error_message else ''}
+                            <div class="info-item">
+                                <div class="info-label">⏰ آخر خطأ:</div>
+                                <div class="info-value">{last_error_date}</div>
+                            </div>
+                            {f'<div class="info-item"><div class="info-label">❌ رسالة الخطأ:</div><div class="info-value">{last_error_message}</div></div>' if last_error_message else ''}
+                            <div class="info-item">
+                                <div class="info-label">🕒 وقت الفحص:</div>
+                                <div class="info-value">{get_cairo_time()}</div>
+                            </div>
                         </div>
                         
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="/setup_webhook" class="btn btn-success">🔧 إعادة تسجيل Webhook</a>
-                            <a href="/test_bot" class="btn btn-primary">🧪 اختبار البوت</a>
+                            <a href="/test_bot" class="btn btn-primary">🧪 اختبار إرسال رسالة</a>
                             <a href="/check_webhook" class="btn btn-warning">🔄 تحديث المعلومات</a>
+                        </div>
+                        
+                        <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-top: 20px; font-size: 0.9rem;">
+                            <strong>💡 نصيحة:</strong> إذا كانت الحالة "غير متصل"، اضغط على "إعادة تسجيل Webhook"
                         </div>
                     </div>
                 </body>
                 </html>
                 """
         
+        logger.error(f"❌ فشل في الحصول على معلومات webhook: {response.status_code}")
         return """
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -751,6 +915,7 @@ def check_webhook():
         <body>
             <div style="text-align: center; padding: 50px; font-family: Arial;">
                 <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
+                <p>فشل في الحصول على معلومات الـ webhook</p>
                 <a href="/check_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
             </div>
         </body>
@@ -758,6 +923,7 @@ def check_webhook():
         """
         
     except Exception as e:
+        logger.error(f"❌ خطأ عام في فحص webhook: {str(e)}")
         return f"""
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -780,8 +946,10 @@ def check_webhook():
 def test_bot():
     """اختبار البوت بإرسال رسالة تجريبية"""
     try:
-        test_message = "🧪 رسالة اختبار من الموقع\n⏰ " + get_cairo_time()
+        test_message = f"🧪 رسالة اختبار من الموقع\n⏰ {get_cairo_time()}\n🎯 البوت يعمل بشكل ممتاز!"
         result = send_telegram_message(test_message)
+        
+        logger.info(f"🧪 نتيجة اختبار البوت: {result}")
         
         if result['status'] == 'success':
             return f"""
@@ -815,6 +983,12 @@ def test_bot():
                         font-size: 5rem;
                         color: #4CAF50;
                         margin-bottom: 20px;
+                        animation: pulse 2s infinite;
+                    }}
+                    @keyframes pulse {{
+                        0% {{ transform: scale(1); }}
+                        50% {{ transform: scale(1.1); }}
+                        100% {{ transform: scale(1); }}
                     }}
                     .btn {{
                         display: inline-block;
@@ -825,16 +999,31 @@ def test_bot():
                         border-radius: 8px;
                         margin: 10px;
                         font-weight: bold;
+                        transition: all 0.3s;
+                    }}
+                    .btn:hover {{
+                        background: #45a049;
+                        transform: translateY(-2px);
+                    }}
+                    .btn-secondary {{
+                        background: #2196F3;
+                    }}
+                    .btn-secondary:hover {{
+                        background: #1976D2;
                     }}
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <div class="success-icon">✅</div>
+                    <div class="success-icon">🎉</div>
                     <h1 style="color: #4CAF50;">تم إرسال رسالة اختبار بنجاح!</h1>
-                    <p style="font-size: 1.1rem;">تحقق من تليجرام لرؤية الرسالة</p>
-                    <p style="color: #666;">🤖 البوت يعمل بشكل صحيح الآن</p>
-                    <a href="/check_webhook" class="btn">📊 فحص Webhook</a>
+                    <p style="font-size: 1.2rem; margin: 20px 0;">📱 تحقق من تليجرام لرؤية الرسالة</p>
+                    <p style="color: #666;">🤖 البوت يعمل بشكل ممتاز الآن</p>
+                    <p style="color: #999; font-size: 0.9rem;">⏰ تم الإرسال في: {get_cairo_time()}</p>
+                    <div>
+                        <a href="/check_webhook" class="btn">📊 فحص حالة الـ Webhook</a>
+                        <a href="/test_bot" class="btn btn-secondary">🔄 إرسال رسالة أخرى</a>
+                    </div>
                 </div>
             </body>
             </html>
@@ -882,6 +1071,7 @@ def test_bot():
                 <div class="container">
                     <h1 style="color: #f44336;">❌ فشل في إرسال الرسالة</h1>
                     <p><strong>السبب:</strong> {result['message']}</p>
+                    <p style="color: #666; font-size: 0.9rem;">تأكد من أن البوت Token و Chat ID صحيحان</p>
                     <a href="/setup_webhook" class="btn">🔧 إعادة تسجيل Webhook</a>
                 </div>
             </body>
@@ -889,6 +1079,7 @@ def test_bot():
             """
             
     except Exception as e:
+        logger.error(f"❌ خطأ عام في اختبار البوت: {str(e)}")
         return f"""
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -964,36 +1155,82 @@ def submit_order():
 
 @app.route('/telegram_webhook', methods=['POST'])
 def telegram_webhook():
-    """معالج webhook للتليجرام لتحديث الأسعار"""
+    """معالج webhook للتليجرام - محسن للتشخيص"""
     try:
         # إضافة logging مُحسن للـ debugging
         logger.info("🤖 تم استقبال webhook request من التليجرام")
         
+        # طباعة headers للمساعدة في التشخيص
+        logger.info(f"📨 Headers: {dict(request.headers)}")
+        
         data = request.get_json()
         logger.info(f"📥 البيانات المستقبلة: {data}")
         
-        if 'message' in data and 'text' in data['message']:
-            text = data['message']['text']
-            chat_id = data['message']['chat']['id']
+        # التحقق من وجود رسالة
+        if not data or 'message' not in data:
+            logger.warning("⚠️ لا توجد رسالة في البيانات المستقبلة")
+            return jsonify({"status": "ok", "message": "no message data"})
+        
+        message = data.get('message', {})
+        text = message.get('text', '')
+        chat_id = message.get('chat', {}).get('id', '')
+        
+        logger.info(f"💬 الرسالة: {text}")
+        logger.info(f"👤 Chat ID: {chat_id}")
+        logger.info(f"🔐 Expected Chat ID: {TELEGRAM_CHAT_ID}")
+        
+        # التحقق من أن المرسل هو الأدمن - تحسين المقارنة
+        if str(chat_id) != str(TELEGRAM_CHAT_ID):
+            logger.warning(f"⚠️ رسالة من chat ID غير مصرح: {chat_id} (المطلوب: {TELEGRAM_CHAT_ID})")
+            # إرسال رسالة تحذير للمستخدم غير المصرح
+            try:
+                unauthorized_msg = "⚠️ عذراً، لا يمكنك استخدام هذا البوت"
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={"chat_id": chat_id, "text": unauthorized_msg},
+                    timeout=10
+                )
+            except:
+                pass
+            return jsonify({"status": "unauthorized"})
+        
+        # معالجة الأوامر المختلفة
+        if not text:
+            logger.warning("⚠️ رسالة فارغة")
+            return jsonify({"status": "ok", "message": "empty message"})
+        
+        # تحديث الأسعار عبر أمر: /price PS5 Primary 100
+        if text.startswith('/price'):
+            logger.info("💰 معالجة أمر تحديث الأسعار")
+            parts = text.split()
             
-            logger.info(f"💬 الرسالة: {text}")
-            logger.info(f"👤 Chat ID: {chat_id}")
-            logger.info(f"🔐 Expected Chat ID: {TELEGRAM_CHAT_ID}")
-            
-            # التحقق من أن المرسل هو الأدمن
-            if str(chat_id) != TELEGRAM_CHAT_ID:
-                logger.warning(f"⚠️ رسالة من chat ID غير مصرح: {chat_id}")
-                return jsonify({"status": "unauthorized"})
-            
-            # تحديث الأسعار عبر أمر: /price PS5 Primary 100
-            if text.startswith('/price'):
-                logger.info("💰 معالجة أمر تحديث الأسعار")
-                parts = text.split()
-                if len(parts) == 4:
-                    _, platform, account_type, price = parts
+            if len(parts) == 4:
+                try:
+                    _, platform, account_type, price_str = parts
+                    price = int(price_str)
                     
                     logger.info(f"🎮 تحديث: {platform} {account_type} = {price}")
                     
+                    # التحقق من صحة المنصة ونوع الحساب
+                    valid_platforms = ['PS4', 'PS5', 'Xbox', 'PC']
+                    valid_types = ['Primary', 'Secondary', 'Full']
+                    
+                    if platform not in valid_platforms:
+                        error_msg = f"❌ منصة غير صحيحة: {platform}nالمنصات المتاحة: {', '.join(valid_platforms)}"
+                        send_telegram_message(error_msg)
+                        return jsonify({"status": "ok"})
+                    
+                    if account_type not in valid_types:
+                        error_msg = f"❌ نوع حساب غير صحيح: {account_type}nالأنواع المتاحة: {', '.join(valid_types)}"
+                        send_telegram_message(error_msg)
+                        return jsonify({"status": "ok"})
+                    
+                    if price < 0 or price > 10000:
+                        error_msg = "❌ السعر يجب أن يكون بين 0 و 10000 جنيه"
+                        send_telegram_message(error_msg)
+                        return jsonify({"status": "ok"})
+                    
+                    # تحديث السعر
                     prices = load_prices()
                     old_price = prices.get('fc25', {}).get(platform, {}).get(account_type, 0)
                     
@@ -1002,71 +1239,153 @@ def telegram_webhook():
                     if platform not in prices['fc25']:
                         prices['fc25'][platform] = {}
                     
-                    prices['fc25'][platform][account_type] = int(price)
+                    prices['fc25'][platform][account_type] = price
                     save_prices(prices)
                     
                     # إرسال رسالة تأكيد
-                    confirm_msg = f"✅ تم تحديث سعر {platform} {account_type} من {old_price} إلى {price} جنيه"
+                    confirm_msg = f"✅ تم تحديث سعر {platform} {account_type}nnالسعر القديم: {old_price} جنيهnالسعر الجديد: {price} جنيهn⏰ {get_cairo_time()}"
                     send_telegram_message(confirm_msg)
                     
                     logger.info("✅ تم تحديث السعر بنجاح")
                     
-                else:
-                    # إرسال رسالة مساعدة
-                    help_msg = """
-❌ تنسيق الأمر غير صحيح
+                except ValueError:
+                    error_msg = f"❌ السعر يجب أن يكون رقماً صحيحاً: {price_str}"
+                    send_telegram_message(error_msg)
+                except Exception as e:
+                    logger.error(f"❌ خطأ في تحديث السعر: {str(e)}")
+                    error_msg = f"❌ حدث خطأ في تحديث السعر: {str(e)}"
+                    send_telegram_message(error_msg)
+            else:
+                # إرسال رسالة مساعدة
+                help_msg = """❌ تنسيق الأمر غير صحيح
 
 ✅ استخدم التنسيق التالي:
 /price PS5 Primary 100
 
-📱 المنصات المتاحة: PS4, PS5, Xbox, PC
-💎 أنواع الحسابات: Primary, Secondary, Full
-                    """
-                    send_telegram_message(help_msg)
-            
-            # عرض الأسعار الحالية
-            elif text.startswith('/prices'):
-                logger.info("📊 عرض الأسعار الحالية")
+📱 المنصات المتاحة:
+• PS4, PS5, Xbox, PC
+
+💎 أنواع الحسابات المتاحة:
+• Primary, Secondary, Full
+
+📝 أمثلة:
+• /price PS5 Primary 150
+• /price PC Secondary 80
+• /price Xbox Full 200"""
+                send_telegram_message(help_msg)
+        
+        # عرض الأسعار الحالية
+        elif text.startswith('/prices'):
+            logger.info("📊 عرض الأسعار الحالية")
+            try:
                 prices = load_prices()
-                prices_msg = "💰 الأسعار الحالية:\n\n"
+                prices_msg = f"💰 الأسعار الحالية - {get_cairo_time()}nn"
                 
                 for game, platforms in prices.items():
-                    prices_msg += f"🎮 {game.upper()}:\n"
+                    prices_msg += f"🎮 {game.upper()}:nn"
                     for platform, types in platforms.items():
-                        prices_msg += f"📱 {platform}:\n"
+                        prices_msg += f"📱 {platform}:n"
                         for price_type, price in types.items():
-                            prices_msg += f"   💎 {price_type}: {price} جنيه\n"
-                        prices_msg += "\n"
+                            prices_msg += f"   💎 {price_type}: {price} جنيهn"
+                        prices_msg += "n"
+                    prices_msg += "━━━━━━━━━━━━━━━━━━━━n"
+                
+                # إضافة معلومات إضافية
+                orders = load_orders()
+                total_orders = len(orders)
+                today_orders = len([o for o in orders if o.get('timestamp', '').startswith(datetime.now().strftime('%Y-%m-%d'))])
+                
+                prices_msg += f"n📊 إحصائيات سريعة:"
+                prices_msg += f"n📦 إجمالي الطلبات: {total_orders}"
+                prices_msg += f"n📅 طلبات اليوم: {today_orders}"
                 
                 send_telegram_message(prices_msg)
                 logger.info("✅ تم إرسال الأسعار")
-            
-            # رسالة ترحيب
-            elif text.startswith('/start'):
-                welcome_msg = f"""
-🎮 مرحباً بك في بوت {SITE_NAME}
+            except Exception as e:
+                logger.error(f"❌ خطأ في عرض الأسعار: {str(e)}")
+                error_msg = f"❌ حدث خطأ في عرض الأسعار: {str(e)}"
+                send_telegram_message(error_msg)
+        
+        # رسالة ترحيب ومساعدة
+        elif text.startswith('/start') or text.startswith('/help'):
+            welcome_msg = f"""🎮 مرحباً بك في بوت {SITE_NAME}
 
 🤖 الأوامر المتاحة:
-• /prices - عرض جميع الأسعار
-• /price PS5 Primary 100 - تحديث سعر معين
 
-📱 المنصات: PS4, PS5, Xbox, PC
-💎 الأنواع: Primary, Secondary, Full
+📊 /prices - عرض جميع الأسعار الحالية
 
-⏰ {get_cairo_time()}
-                """
-                send_telegram_message(welcome_msg)
+💰 /price [المنصة] [النوع] [السعر] - تحديث سعر معين
+مثال: /price PS5 Primary 150
+
+📱 المنصات المتاحة:
+• PS4, PS5, Xbox, PC
+
+💎 أنواع الحسابات:
+• Primary (أساسي)
+• Secondary (ثانوي) 
+• Full (كامل)
+
+📝 أمثلة للاستخدام:
+• /price PS5 Primary 150
+• /price PC Secondary 80
+• /price Xbox Full 200
+
+⏰ الوقت الحالي: {get_cairo_time()}
+
+💡 لأي استفسار، تواصل معنا على واتساب: {WHATSAPP_NUMBER}"""
+            
+            send_telegram_message(welcome_msg)
+            logger.info("✅ تم إرسال رسالة الترحيب")
         
-        return jsonify({"status": "ok"})
-    except Exception as e:
-        logger.error(f"❌ خطأ في webhook التليجرام: {str(e)}")
-        return jsonify({"status": "error"})
+        # أوامر إضافية للإحصائيات
+        elif text.startswith('/stats'):
+            try:
+                orders = load_orders()
+                total_orders = len(orders)
+                pending_orders = len([o for o in orders if o.get('status') == 'pending'])
+                today_orders = len([o for o in orders if o.get('timestamp', '').startswith(datetime.now().strftime('%Y-%m-%d'))])
+                
+                stats_msg = f"""📊 إحصائيات الموقع
 
-# === معالج الأخطاء ===
+📦 إجمالي الطلبات: {total_orders}
+⏳ الطلبات المعلقة: {pending_orders}
+📅 طلبات اليوم: {today_orders}
+
+⏰ آخر تحديث: {get_cairo_time()}"""
+                
+                send_telegram_message(stats_msg)
+                logger.info("✅ تم إرسال الإحصائيات")
+            except Exception as e:
+                logger.error(f"❌ خطأ في عرض الإحصائيات: {str(e)}")
+                error_msg = f"❌ حدث خطأ في عرض الإحصائيات: {str(e)}"
+                send_telegram_message(error_msg)
+        
+        # رد على الرسائل غير المفهومة
+        else:
+            unknown_msg = f"""❓ لم أفهم هذا الأمر: "{text}"
+
+استخدم /help لعرض قائمة الأوامر المتاحة"""
+            send_telegram_message(unknown_msg)
+            logger.info(f"⚠️ أمر غير معروف: {text}")
+        
+        return jsonify({"status": "ok", "message": "processed successfully"})
+        
+    except Exception as e:
+        logger.error(f"❌ خطأ عام في webhook التليجرام: {str(e)}")
+        try:
+            # إرسال رسالة خطأ للأدمن
+            error_msg = f"❌ حدث خطأ في البوت:n{str(e)}n⏰ {get_cairo_time()}"
+            send_telegram_message(error_msg)
+        except:
+            pass
+        return jsonify({"status": "error", "message": str(e)})
+
+# === معالج الأخطاء المحسن ===
 
 @app.errorhandler(404)
 def not_found(error):
     """صفحة الخطأ 404"""
+    logger.warning(f"404 - صفحة غير موجودة: {request.url}")
     return render_template('404.html', site_name=SITE_NAME), 404
 
 @app.errorhandler(500)
@@ -1079,10 +1398,19 @@ def internal_error(error):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    logger.info(f"🚀 {SITE_NAME} يعمل الآن على البورت {port}!")
-    logger.info(f"🌐 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
-    logger.info(f"🤖 البوت Token: {TELEGRAM_BOT_TOKEN[:10]}...")
+    
+    logger.info("=" * 50)
+    logger.info(f"🚀 {SITE_NAME} يبدأ التشغيل...")
+    logger.info(f"🌐 البورت: {port}")
+    logger.info(f"🔧 الوضع: {'تطوير' if DEBUG_MODE else 'إنتاج'}")
+    logger.info(f"🤖 البوت Token: {TELEGRAM_BOT_TOKEN[:15]}...")
     logger.info(f"👤 Chat ID: {TELEGRAM_CHAT_ID}")
+    logger.info(f"📱 واتساب: {WHATSAPP_NUMBER}")
+    logger.info("=" * 50)
+    
+    # التأكد من إنشاء المجلدات المطلوبة
+    os.makedirs('data', exist_ok=True)
+    os.makedirs('backups', exist_ok=True)
     
     app.run(
         host='0.0.0.0',

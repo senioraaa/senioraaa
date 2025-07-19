@@ -408,11 +408,11 @@ def contact():
                          whatsapp_number=WHATSAPP_NUMBER,
                          email_info=EMAIL_INFO)
 
-# === حلول الـ Webhook ===
+# === حلول الـ Webhook الجديدة ===
 
 @app.route('/setup_webhook')
 def setup_webhook():
-    """تسجيل الـ webhook من المتصفح"""
+    """تسجيل الـ webhook من المتصفح - محسن للموبايل"""
     try:
         webhook_url = 'https://senioraaa.onrender.com/telegram_webhook'
         telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook"
@@ -428,48 +428,211 @@ def setup_webhook():
             result = response.json()
             if result.get('ok'):
                 return f"""
-                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #4CAF50; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                    <h1 style="color: #4CAF50;">✅ تم تسجيل الـ Webhook بنجاح!</h1>
-                    <p style="font-size: 18px;">🌐 URL: {webhook_url}</p>
-                    <p style="font-size: 18px; color: #333;">🤖 البوت جاهز للاستخدام الآن</p>
-                    <div style="background: #e8f5e8; padding: 15px; margin: 20px 0; border-radius: 5px;">
-                        <h3>اختبر الأوامر التالية في تليجرام:</h3>
-                        <ul style="list-style: none; padding: 0;">
-                            <li style="margin: 10px 0; font-family: monospace; background: white; padding: 8px; border-radius: 3px;">/prices - عرض الأسعار</li>
-                            <li style="margin: 10px 0; font-family: monospace; background: white; padding: 8px; border-radius: 3px;">/price PS5 Primary 150 - تحديث سعر</li>
-                        </ul>
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>✅ نجح التسجيل - {SITE_NAME}</title>
+                    <style>
+                        body {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            margin: 0;
+                            padding: 20px;
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }}
+                        .container {{
+                            background: white;
+                            padding: 30px;
+                            border-radius: 20px;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                            max-width: 500px;
+                            width: 100%;
+                            text-align: center;
+                        }}
+                        .success-icon {{
+                            font-size: 4rem;
+                            color: #4CAF50;
+                            margin-bottom: 20px;
+                        }}
+                        h1 {{
+                            color: #4CAF50;
+                            margin-bottom: 20px;
+                            font-size: 1.8rem;
+                        }}
+                        .info-box {{
+                            background: #e8f5e8;
+                            padding: 20px;
+                            border-radius: 10px;
+                            margin: 20px 0;
+                            border-right: 4px solid #4CAF50;
+                        }}
+                        .command {{
+                            background: #f0f0f0;
+                            padding: 10px;
+                            border-radius: 5px;
+                            font-family: monospace;
+                            margin: 10px 0;
+                            font-size: 0.9rem;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            padding: 12px 25px;
+                            background: #4CAF50;
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            margin: 10px;
+                            font-weight: bold;
+                            transition: all 0.3s;
+                        }}
+                        .btn:hover {{
+                            background: #45a049;
+                            transform: translateY(-2px);
+                        }}
+                        .btn-secondary {{
+                            background: #2196F3;
+                        }}
+                        .btn-secondary:hover {{
+                            background: #1976D2;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="success-icon">✅</div>
+                        <h1>تم تسجيل الـ Webhook بنجاح!</h1>
+                        <p><strong>🌐 URL:</strong><br>{webhook_url}</p>
+                        <p style="color: #4CAF50; font-size: 1.1rem;">🤖 البوت جاهز للاستخدام الآن</p>
+                        
+                        <div class="info-box">
+                            <h3>اختبر الأوامر التالية في تليجرام:</h3>
+                            <div class="command">/prices</div>
+                            <small>عرض جميع الأسعار الحالية</small>
+                            
+                            <div class="command">/price PS5 Primary 150</div>
+                            <small>تحديث سعر معين</small>
+                            
+                            <div class="command">/price PC Secondary 80</div>
+                            <small>مثال آخر لتحديث الأسعار</small>
+                        </div>
+                        
+                        <div>
+                            <a href="/check_webhook" class="btn">📊 فحص حالة الـ Webhook</a>
+                            <a href="/test_bot" class="btn btn-secondary">🧪 اختبار البوت</a>
+                        </div>
+                        
+                        <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
+                            يمكنك الآن إغلاق هذه الصفحة والبدء في استخدام البوت
+                        </p>
                     </div>
-                    <p><a href="/check_webhook" style="color: #4CAF50;">📊 فحص حالة الـ Webhook</a></p>
-                </div>
+                </body>
+                </html>
                 """
             else:
+                error_desc = result.get('description', 'خطأ غير معروف')
                 return f"""
-                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                    <h1 style="color: #f44336;">❌ خطأ في التسجيل</h1>
-                    <p>{result.get('description', 'خطأ غير معروف')}</p>
-                    <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
-                </div>
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>❌ خطأ - {SITE_NAME}</title>
+                    <style>
+                        body {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+                            margin: 0;
+                            padding: 20px;
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }}
+                        .container {{
+                            background: white;
+                            padding: 30px;
+                            border-radius: 20px;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                            max-width: 500px;
+                            width: 100%;
+                            text-align: center;
+                        }}
+                        .error-icon {{
+                            font-size: 4rem;
+                            color: #f44336;
+                            margin-bottom: 20px;
+                        }}
+                        h1 {{
+                            color: #f44336;
+                            margin-bottom: 20px;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            padding: 12px 25px;
+                            background: #f44336;
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            margin: 10px;
+                            font-weight: bold;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">❌</div>
+                        <h1>خطأ في التسجيل</h1>
+                        <p><strong>السبب:</strong> {error_desc}</p>
+                        <a href="/setup_webhook" class="btn">🔄 إعادة المحاولة</a>
+                    </div>
+                </body>
+                </html>
                 """
         else:
             return f"""
-            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                <h1 style="color: #f44336;">❌ خطأ HTTP: {response.status_code}</h1>
-                <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
-            </div>
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>❌ خطأ اتصال - {SITE_NAME}</title>
+            </head>
+            <body>
+                <div style="text-align: center; padding: 50px; font-family: Arial;">
+                    <h1 style="color: #f44336;">❌ خطأ HTTP: {response.status_code}</h1>
+                    <a href="/setup_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
+                </div>
+            </body>
+            </html>
             """
             
     except Exception as e:
         return f"""
-        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-            <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
-            <p>{str(e)}</p>
-            <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
-        </div>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>❌ خطأ - {SITE_NAME}</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial;">
+                <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
+                <p>{str(e)}</p>
+                <a href="/setup_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
+            </div>
+        </body>
+        </html>
         """
 
 @app.route('/check_webhook')
 def check_webhook():
-    """فحص حالة الـ webhook"""
+    """فحص حالة الـ webhook - محسن للموبايل"""
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
         response = requests.get(url, timeout=10)
@@ -487,36 +650,130 @@ def check_webhook():
                 status_text = "🟢 متصل" if webhook_url != 'غير محدد' else "🔴 غير متصل"
                 
                 return f"""
-                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid {status_color}; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                    <h1 style="color: {status_color};">📊 معلومات الـ Webhook</h1>
-                    <div style="text-align: left; background: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                        <p><strong>🔗 URL:</strong> {webhook_url}</p>
-                        <p><strong>📊 الحالة:</strong> {status_text}</p>
-                        <p><strong>📈 الطلبات المعلقة:</strong> {pending_count}</p>
-                        <p><strong>⏰ آخر خطأ:</strong> {last_error_date}</p>
-                        {f'<p><strong>❌ رسالة الخطأ:</strong> {last_error_message}</p>' if last_error_message else ''}
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>📊 حالة Webhook - {SITE_NAME}</title>
+                    <style>
+                        body {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            margin: 0;
+                            padding: 20px;
+                            min-height: 100vh;
+                        }}
+                        .container {{
+                            background: white;
+                            padding: 30px;
+                            border-radius: 20px;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                            max-width: 600px;
+                            margin: 0 auto;
+                        }}
+                        .status-header {{
+                            text-align: center;
+                            color: {status_color};
+                            margin-bottom: 30px;
+                        }}
+                        .info-grid {{
+                            background: #f8f9fa;
+                            padding: 20px;
+                            border-radius: 10px;
+                            margin: 20px 0;
+                        }}
+                        .info-item {{
+                            display: flex;
+                            justify-content: space-between;
+                            padding: 10px 0;
+                            border-bottom: 1px solid #e9ecef;
+                        }}
+                        .info-item:last-child {{
+                            border-bottom: none;
+                        }}
+                        .btn {{
+                            display: inline-block;
+                            padding: 12px 20px;
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            margin: 5px;
+                            font-weight: bold;
+                            text-align: center;
+                        }}
+                        .btn-success {{ background: #4CAF50; }}
+                        .btn-primary {{ background: #2196F3; }}
+                        .btn-warning {{ background: #ff9800; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="status-header">
+                            <h1>📊 معلومات الـ Webhook</h1>
+                            <h2>{status_text}</h2>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>🔗 URL:</strong>
+                                <span style="word-break: break-all;">{webhook_url}</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>📈 الطلبات المعلقة:</strong>
+                                <span>{pending_count}</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>⏰ آخر خطأ:</strong>
+                                <span>{last_error_date}</span>
+                            </div>
+                            {f'<div class="info-item"><strong>❌ رسالة الخطأ:</strong><span>{last_error_message}</span></div>' if last_error_message else ''}
+                        </div>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="/setup_webhook" class="btn btn-success">🔧 إعادة تسجيل Webhook</a>
+                            <a href="/test_bot" class="btn btn-primary">🧪 اختبار البوت</a>
+                            <a href="/check_webhook" class="btn btn-warning">🔄 تحديث المعلومات</a>
+                        </div>
                     </div>
-                    <div style="margin: 20px 0;">
-                        <a href="/setup_webhook" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px;">🔧 إعادة تسجيل Webhook</a>
-                        <a href="/test_bot" style="background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px;">🧪 اختبار البوت</a>
-                    </div>
-                </div>
+                </body>
+                </html>
                 """
         
         return """
-        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-            <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
-            <p><a href="/check_webhook">🔄 إعادة المحاولة</a></p>
-        </div>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>❌ خطأ - """ + SITE_NAME + """</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial;">
+                <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
+                <a href="/check_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
+            </div>
+        </body>
+        </html>
         """
         
     except Exception as e:
         return f"""
-        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-            <h1 style="color: #f44336;">❌ خطأ:</h1>
-            <p>{str(e)}</p>
-            <p><a href="/check_webhook">🔄 إعادة المحاولة</a></p>
-        </div>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>❌ خطأ - {SITE_NAME}</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial;">
+                <h1 style="color: #f44336;">❌ خطأ:</h1>
+                <p>{str(e)}</p>
+                <a href="/check_webhook" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
+            </div>
+        </body>
+        </html>
         """
 
 @app.route('/test_bot')
@@ -527,29 +784,127 @@ def test_bot():
         result = send_telegram_message(test_message)
         
         if result['status'] == 'success':
-            return """
-            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #4CAF50; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                <h1 style="color: #4CAF50;">✅ تم إرسال رسالة اختبار بنجاح!</h1>
-                <p>تحقق من تليجرام لرؤية الرسالة</p>
-                <p><a href="/check_webhook">📊 فحص Webhook</a></p>
-            </div>
+            return f"""
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>✅ نجح الاختبار - {SITE_NAME}</title>
+                <style>
+                    body {{
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                        margin: 0;
+                        padding: 20px;
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }}
+                    .container {{
+                        background: white;
+                        padding: 40px;
+                        border-radius: 20px;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                        max-width: 500px;
+                        width: 100%;
+                        text-align: center;
+                    }}
+                    .success-icon {{
+                        font-size: 5rem;
+                        color: #4CAF50;
+                        margin-bottom: 20px;
+                    }}
+                    .btn {{
+                        display: inline-block;
+                        padding: 15px 30px;
+                        background: #4CAF50;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        margin: 10px;
+                        font-weight: bold;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="success-icon">✅</div>
+                    <h1 style="color: #4CAF50;">تم إرسال رسالة اختبار بنجاح!</h1>
+                    <p style="font-size: 1.1rem;">تحقق من تليجرام لرؤية الرسالة</p>
+                    <p style="color: #666;">🤖 البوت يعمل بشكل صحيح الآن</p>
+                    <a href="/check_webhook" class="btn">📊 فحص Webhook</a>
+                </div>
+            </body>
+            </html>
             """
         else:
             return f"""
-            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-                <h1 style="color: #f44336;">❌ فشل في إرسال الرسالة</h1>
-                <p>{result['message']}</p>
-                <p><a href="/setup_webhook">🔧 إعادة تسجيل Webhook</a></p>
-            </div>
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>❌ فشل الاختبار - {SITE_NAME}</title>
+                <style>
+                    body {{
+                        font-family: Arial;
+                        background: #f44336;
+                        margin: 0;
+                        padding: 20px;
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }}
+                    .container {{
+                        background: white;
+                        padding: 40px;
+                        border-radius: 20px;
+                        max-width: 500px;
+                        width: 100%;
+                        text-align: center;
+                    }}
+                    .btn {{
+                        display: inline-block;
+                        padding: 15px 30px;
+                        background: #f44336;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        margin: 10px;
+                        font-weight: bold;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1 style="color: #f44336;">❌ فشل في إرسال الرسالة</h1>
+                    <p><strong>السبب:</strong> {result['message']}</p>
+                    <a href="/setup_webhook" class="btn">🔧 إعادة تسجيل Webhook</a>
+                </div>
+            </body>
+            </html>
             """
             
     except Exception as e:
         return f"""
-        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
-            <h1 style="color: #f44336;">❌ خطأ:</h1>
-            <p>{str(e)}</p>
-            <p><a href="/test_bot">🔄 إعادة المحاولة</a></p>
-        </div>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>❌ خطأ - {SITE_NAME}</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial;">
+                <h1 style="color: #f44336;">❌ خطأ:</h1>
+                <p>{str(e)}</p>
+                <a href="/test_bot" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">🔄 إعادة المحاولة</a>
+            </div>
+        </body>
+        </html>
         """
 
 # === API Routes ===
@@ -685,6 +1040,22 @@ def telegram_webhook():
                 
                 send_telegram_message(prices_msg)
                 logger.info("✅ تم إرسال الأسعار")
+            
+            # رسالة ترحيب
+            elif text.startswith('/start'):
+                welcome_msg = f"""
+🎮 مرحباً بك في بوت {SITE_NAME}
+
+🤖 الأوامر المتاحة:
+• /prices - عرض جميع الأسعار
+• /price PS5 Primary 100 - تحديث سعر معين
+
+📱 المنصات: PS4, PS5, Xbox, PC
+💎 الأنواع: Primary, Secondary, Full
+
+⏰ {get_cairo_time()}
+                """
+                send_telegram_message(welcome_msg)
         
         return jsonify({"status": "ok"})
     except Exception as e:

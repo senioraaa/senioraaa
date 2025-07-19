@@ -67,6 +67,57 @@ def send_message(chat_id, text, reply_markup=None):
         logger.error(f"خطأ في إرسال الرسالة: {e}")
         return None
 
+def send_inline_keyboard(chat_id, text, keyboard):
+    """إرسال رسالة مع كيبورد inline"""
+    try:
+        reply_markup = {
+            'inline_keyboard': keyboard
+        }
+        return send_message(chat_id, text, reply_markup)
+    except Exception as e:
+        logger.error(f"خطأ في إرسال الكيبورد: {e}")
+        return None
+
+def update_price(platform, account_type, new_price):
+    """تحديث السعر في قاعدة البيانات"""
+    try:
+        if platform.lower() in PRICES_DATA['fc25'] and account_type in PRICES_DATA['fc25'][platform.lower()]:
+            PRICES_DATA['fc25'][platform.lower()][account_type] = int(new_price)
+            logger.info(f"تم تحديث السعر: {platform} {account_type} = {new_price}")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"خطأ في تحديث السعر: {e}")
+        return False
+
+def format_prices_message():
+    """تنسيق رسالة الأسعار الحالية"""
+    try:
+        message = "💰 الأسعار الحالية لـ FC 25:\n\n"
+        
+        platforms = {
+            'ps4': '🎮 PS4',
+            'ps5': '🎮 PS5', 
+            'xbox': '🎮 Xbox',
+            'pc': '💻 PC'
+        }
+        
+        for platform_key, platform_name in platforms.items():
+            if platform_key in PRICES_DATA['fc25']:
+                message += f"{platform_name}:\n"
+                prices = PRICES_DATA['fc25'][platform_key]
+                for account_type, price in prices.items():
+                    message += f"• {account_type}: {price} جنيه\n"
+                message += "\n"
+        
+        message += "💡 لتعديل السعر استخدم:\n/setprice [المنصة] [النوع] [السعر]\n\n"
+        message += "مثال: /setprice ps4 Primary 90"
+        
+        return message
+    except Exception as e:
+        logger.error(f"خطأ في تنسيق رسالة الأسعار: {e}")
+        return "خطأ في عرض الأسعار"
+
 def set_webhook():
     """تعيين الويبهوك"""
     try:
@@ -130,6 +181,9 @@ def process_message(message):
         text = message.get('text', '')
         user_id = message.get('from', {}).get('id')
         
+        # التأكد من صلاحية المدير
+        is_admin = str(user_id) == CHAT_ID
+        
         # رد تلقائي
         if text.lower() == '/start':
             welcome_text = f"""
@@ -147,7 +201,34 @@ def process_message(message):
             send_message(chat_id, welcome_text)
         
         elif text.lower() == '/help':
-            help_text = """
+            if is_admin:
+                help_text = f"""
+📋 الأوامر المتاحة للمدير:
+
+👥 أوامر عامة:
+/start - بداية التفاعل
+/help - هذه المساعدة
+/order - طلب FC 25
+/prices - عرض الأسعار الحالية
+/status - حالة البوت
+/support - الدعم الفني
+
+👨‍💻 أوامر الإدارة:
+/admin - لوحة الإدارة
+/setprice - تعديل الأسعار
+/editprices - تعديل الأسعار بالأزرار
+
+💡 تعديل الأسعار:
+/setprice [المنصة] [النوع] [السعر]
+مثال: /setprice ps4 Primary 90
+
+المنصات المتاحة: ps4, ps5, xbox, pc
+الأنواع المتاحة: Primary, Secondary, Full
+
+🌐 الموقع الكامل: {WEBHOOK_URL}
+                """
+            else:
+                help_text = f"""
 📋 الأوامر المتاحة:
 
 /start - بداية التفاعل
@@ -155,35 +236,92 @@ def process_message(message):
 /prices - عرض الأسعار
 /status - حالة البوت
 /support - الدعم الفني
-/admin - لوحة الإدارة (للمدير فقط)
 
 🌐 الموقع الكامل: {WEBHOOK_URL}
-            """.format(WEBHOOK_URL=WEBHOOK_URL)
+                """
             send_message(chat_id, help_text)
         
         elif text.lower() == '/prices':
-            prices_text = """
-💰 أسعار FC 25 - جميع المنصات:
+            prices_message = format_prices_message()
+            send_message(chat_id, prices_message)
+        
+        elif text.lower().startswith('/setprice'):
+            if not is_admin:
+                send_message(chat_id, "❌ هذا الأمر مخصص للمدير فقط")
+                return True
+            
+            # تحليل الأمر
+            parts = text.split()
+            if len(parts) != 4:
+                send_message(chat_id, """
+❌ صيغة الأمر غير صحيحة!
 
-🎮 PS4/PS5:
-• Primary: 85/90 جنيه
-• Secondary: 70/75 جنيه  
-• Full: 120/125 جنيه
+الصيغة الصحيحة:
+/setprice [المنصة] [النوع] [السعر]
 
-🎮 Xbox:
-• Primary: 85 جنيه
-• Secondary: 70 جنيه
-• Full: 120 جنيه
+أمثلة:
+/setprice ps4 Primary 90
+/setprice ps5 Secondary 80
+/setprice xbox Full 130
 
-💻 PC:
-• Primary: 80 جنيه
-• Secondary: 65 جنيه
-• Full: 115 جنيه
+المنصات: ps4, ps5, xbox, pc
+الأنواع: Primary, Secondary, Full
+                """)
+                return True
+            
+            _, platform, account_type, price_str = parts
+            
+            # التحقق من صحة البيانات
+            valid_platforms = ['ps4', 'ps5', 'xbox', 'pc']
+            valid_account_types = ['Primary', 'Secondary', 'Full']
+            
+            if platform.lower() not in valid_platforms:
+                send_message(chat_id, f"❌ المنصة غير صحيحة. المنصات المتاحة: {', '.join(valid_platforms)}")
+                return True
+            
+            if account_type not in valid_account_types:
+                send_message(chat_id, f"❌ نوع الحساب غير صحيح. الأنواع المتاحة: {', '.join(valid_account_types)}")
+                return True
+            
+            try:
+                new_price = int(price_str)
+                if new_price <= 0:
+                    send_message(chat_id, "❌ السعر يجب أن يكون رقم موجب")
+                    return True
+            except ValueError:
+                send_message(chat_id, "❌ السعر يجب أن يكون رقم صحيح")
+                return True
+            
+            # تحديث السعر
+            if update_price(platform.lower(), account_type, new_price):
+                success_msg = f"""
+✅ تم تحديث السعر بنجاح!
 
-🛒 للطلب: /order
-🌐 الموقع: {WEBHOOK_URL}
-            """.format(WEBHOOK_URL=WEBHOOK_URL)
-            send_message(chat_id, prices_text)
+🎮 المنصة: {platform.upper()}
+📝 النوع: {account_type}
+💰 السعر الجديد: {new_price} جنيه
+
+🔄 تم تحديث الموقع والأسعار تلقائياً
+                """
+                send_message(chat_id, success_msg)
+            else:
+                send_message(chat_id, "❌ حدث خطأ أثناء تحديث السعر")
+        
+        elif text.lower() == '/editprices':
+            if not is_admin:
+                send_message(chat_id, "❌ هذا الأمر مخصص للمدير فقط")
+                return True
+            
+            # إرسال كيبورد تعديل الأسعار
+            keyboard = [
+                [{"text": "🎮 PS4", "callback_data": "edit_ps4"}],
+                [{"text": "🎮 PS5", "callback_data": "edit_ps5"}],
+                [{"text": "🎮 Xbox", "callback_data": "edit_xbox"}],
+                [{"text": "💻 PC", "callback_data": "edit_pc"}],
+                [{"text": "📊 عرض الأسعار الحالية", "callback_data": "show_prices"}]
+            ]
+            
+            send_inline_keyboard(chat_id, "🔧 اختر المنصة لتعديل أسعارها:", keyboard)
         
         elif text.lower() == '/order':
             order_text = f"""
@@ -200,11 +338,25 @@ def process_message(message):
             send_message(chat_id, order_text)
         
         elif text.lower() == '/status':
-            status_text = "✅ البوت والمنصة يعملان بشكل طبيعي"
+            if is_admin:
+                status_text = f"""
+📊 حالة المنصة والبوت:
+
+✅ البوت: يعمل بشكل طبيعي
+✅ المنصة: نشطة
+✅ الويبهوك: متصل
+🌐 الموقع: {WEBHOOK_URL}
+📱 الواتساب: 01094591331
+
+💰 الأسعار الحالية محدثة
+🔧 جاهز لاستقبال الطلبات
+                """
+            else:
+                status_text = "✅ البوت والمنصة يعملان بشكل طبيعي"
             send_message(chat_id, status_text)
         
         elif text.lower() == '/support':
-            support_text = """
+            support_text = f"""
 🆘 الدعم الفني:
 
 📱 واتساب: 01094591331
@@ -212,17 +364,23 @@ def process_message(message):
 ⏰ نعمل 24/7
 
 💬 يمكنك أيضاً كتابة مشكلتك هنا وسيتم الرد عليك
-            """.format(WEBHOOK_URL=WEBHOOK_URL)
+            """
             send_message(chat_id, support_text)
         
         elif text.lower() == '/admin':
-            if str(user_id) == CHAT_ID:
+            if is_admin:
                 admin_text = f"""
 👨‍💻 لوحة الإدارة:
 
 🌐 رابط الإدارة: {WEBHOOK_URL}/admin
 📊 إحصائيات: {WEBHOOK_URL}/stats
-⚙️ إعدادات: {WEBHOOK_URL}/settings
+⚙️ API الأسعار: {WEBHOOK_URL}/api/prices
+
+🔧 أوامر سريعة:
+/prices - عرض الأسعار
+/setprice - تعديل السعر
+/editprices - تعديل بالأزرار
+/status - حالة المنصة
 
 استخدم الروابط أعلاه للوصول لجميع أدوات الإدارة
                 """
@@ -232,7 +390,20 @@ def process_message(message):
         
         else:
             # رد عام
-            reply_text = f"""
+            if is_admin:
+                reply_text = f"""
+📝 مرحباً أيها المدير! تم استلام رسالتك: "{text}"
+
+🔧 أوامر الإدارة:
+• /prices - عرض الأسعار
+• /setprice - تعديل السعر
+• /editprices - تعديل بالأزرار
+• /admin - لوحة الإدارة
+
+📱 للتواصل المباشر: 01094591331
+                """
+            else:
+                reply_text = f"""
 📝 تم استلام رسالتك: "{text}"
 
 🤖 للمساعدة استخدم:
@@ -241,7 +412,7 @@ def process_message(message):
 • /prices - عرض الأسعار
 
 📱 للتواصل المباشر: 01094591331
-            """
+                """
             send_message(chat_id, reply_text)
         
         return True
@@ -255,12 +426,50 @@ def process_callback_query(callback_query):
         data = callback_query.get('data', '')
         chat_id = callback_query.get('message', {}).get('chat', {}).get('id')
         message_id = callback_query.get('message', {}).get('message_id')
+        user_id = callback_query.get('from', {}).get('id')
+        
+        # التأكد من صلاحية المدير
+        is_admin = str(user_id) == CHAT_ID
+        
+        if not is_admin:
+            callback_url = f"{TELEGRAM_API}/answerCallbackQuery"
+            requests.post(callback_url, json={
+                'callback_query_id': callback_query.get('id'),
+                'text': '❌ غير مسموح لك بهذا الإجراء'
+            }, timeout=5)
+            return True
         
         # معالجة البيانات
-        if data == 'order_fc25':
+        if data == 'show_prices':
+            prices_message = format_prices_message()
+            send_message(chat_id, prices_message)
+        
+        elif data.startswith('edit_'):
+            platform = data.replace('edit_', '')
+            platform_names = {
+                'ps4': '🎮 PlayStation 4',
+                'ps5': '🎮 PlayStation 5', 
+                'xbox': '🎮 Xbox Series',
+                'pc': '💻 PC'
+            }
+            
+            if platform in PRICES_DATA['fc25']:
+                current_prices = PRICES_DATA['fc25'][platform]
+                message = f"💰 الأسعار الحالية لـ {platform_names.get(platform, platform.upper())}:\n\n"
+                
+                for account_type, price in current_prices.items():
+                    message += f"• {account_type}: {price} جنيه\n"
+                
+                message += f"\n💡 لتعديل السعر استخدم:\n/setprice {platform} [النوع] [السعر الجديد]\n\n"
+                message += f"مثال: /setprice {platform} Primary 95"
+                
+                send_message(chat_id, message)
+        
+        elif data == 'order_fc25':
             send_message(chat_id, f"🛒 لطلب FC 25، قم بزيارة: {WEBHOOK_URL}")
         elif data == 'view_prices':
-            send_message(chat_id, "💰 لعرض الأسعار الكاملة، استخدم /prices")
+            prices_message = format_prices_message()
+            send_message(chat_id, prices_message)
         elif data == 'contact_support':
             send_message(chat_id, "📱 للدعم الفني: 01094591331")
         
@@ -308,6 +517,36 @@ def home():
 def api_prices():
     """API للأسعار"""
     return jsonify(PRICES_DATA)
+
+@app.route('/api/update_price', methods=['POST'])
+def api_update_price():
+    """API لتحديث الأسعار"""
+    try:
+        data = request.get_json()
+        platform = data.get('platform', '').lower()
+        account_type = data.get('account_type', '')
+        new_price = int(data.get('price', 0))
+        
+        if update_price(platform, account_type, new_price):
+            return jsonify({
+                'success': True,
+                'message': 'تم تحديث السعر بنجاح',
+                'updated_price': {
+                    'platform': platform,
+                    'account_type': account_type,
+                    'price': new_price
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'فشل في تحديث السعر'
+            }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'خطأ: {str(e)}'
+        }), 500
 
 @app.route('/order')
 def order_page():
@@ -386,6 +625,18 @@ def admin():
                 margin: 20px 0;
                 border-radius: 8px;
             }}
+            .prices-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }}
+            .price-platform {{
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                border-left: 4px solid #28a745;
+            }}
             .btn-group {{
                 display: flex;
                 flex-wrap: wrap;
@@ -431,7 +682,7 @@ def admin():
         <div class="container">
             <div class="header">
                 <h1>🎮 لوحة إدارة منصة شهد السنيورة</h1>
-                <p>نظام إدارة شامل لمنصة FC 25</p>
+                <p>نظام إدارة شامل لمنصة FC 25 مع تحديث الأسعار</p>
             </div>
             
             <div class="stats-grid">
@@ -454,10 +705,48 @@ def admin():
             </div>
             
             <div class="info-box">
+                <h3>💰 الأسعار الحالية:</h3>
+                <div class="prices-grid">
+                    <div class="price-platform">
+                        <h4>🎮 PS4</h4>
+                        <p>Primary: {PRICES_DATA['fc25']['ps4']['Primary']} جنيه</p>
+                        <p>Secondary: {PRICES_DATA['fc25']['ps4']['Secondary']} جنيه</p>
+                        <p>Full: {PRICES_DATA['fc25']['ps4']['Full']} جنيه</p>
+                    </div>
+                    <div class="price-platform">
+                        <h4>🎮 PS5</h4>
+                        <p>Primary: {PRICES_DATA['fc25']['ps5']['Primary']} جنيه</p>
+                        <p>Secondary: {PRICES_DATA['fc25']['ps5']['Secondary']} جنيه</p>
+                        <p>Full: {PRICES_DATA['fc25']['ps5']['Full']} جنيه</p>
+                    </div>
+                    <div class="price-platform">
+                        <h4>🎮 Xbox</h4>
+                        <p>Primary: {PRICES_DATA['fc25']['xbox']['Primary']} جنيه</p>
+                        <p>Secondary: {PRICES_DATA['fc25']['xbox']['Secondary']} جنيه</p>
+                        <p>Full: {PRICES_DATA['fc25']['xbox']['Full']} جنيه</p>
+                    </div>
+                    <div class="price-platform">
+                        <h4>💻 PC</h4>
+                        <p>Primary: {PRICES_DATA['fc25']['pc']['Primary']} جنيه</p>
+                        <p>Secondary: {PRICES_DATA['fc25']['pc']['Secondary']} جنيه</p>
+                        <p>Full: {PRICES_DATA['fc25']['pc']['Full']} جنيه</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
                 <h3>🔗 روابط المنصة:</h3>
                 <p><strong>الموقع الرئيسي:</strong> <a href="{WEBHOOK_URL}" target="_blank">{WEBHOOK_URL}</a></p>
                 <p><strong>API الأسعار:</strong> <a href="{WEBHOOK_URL}/api/prices" target="_blank">{WEBHOOK_URL}/api/prices</a></p>
                 <p><strong>Webhook URL:</strong> {WEBHOOK_URL}/webhook/{BOT_TOKEN}</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>📋 أوامر البوت لتحديث الأسعار:</h3>
+                <p><strong>/setprice [المنصة] [النوع] [السعر]</strong></p>
+                <p>مثال: <code>/setprice ps4 Primary 90</code></p>
+                <p><strong>/editprices</strong> - تحديث بالأزرار</p>
+                <p><strong>/prices</strong> - عرض الأسعار الحالية</p>
             </div>
             
             <div class="info-box">
@@ -544,6 +833,11 @@ def test_bot():
 📱 المنصة: نشطة ✅
 
 💎 منصة شهد السنيورة - أرخص أسعار FC 25 في مصر!
+
+💰 نظام تحديث الأسعار نشط:
+/setprice - تعديل السعر
+/editprices - تحديث بالأزرار
+/prices - عرض الأسعار
         """
         result = send_message(CHAT_ID, test_message)
         success = result is not None
@@ -607,6 +901,7 @@ def ping():
         'status': 'alive', 
         'platform': 'شهد السنيورة',
         'service': 'FC 25 Platform',
+        'features': 'Price Management System',
         'timestamp': str(os.getenv('TZ', 'UTC'))
     })
 
@@ -618,9 +913,11 @@ def stats():
         'game': 'EA Sports FC 25',
         'platforms': ['PS4', 'PS5', 'Xbox', 'PC'],
         'account_types': ['Primary', 'Secondary', 'Full'],
+        'current_prices': PRICES_DATA,
         'guarantee': '1 year',
         'delivery': '15 hours max',
         'whatsapp': '01094591331',
+        'features': ['Dynamic Price Management', 'Telegram Integration', 'Admin Controls'],
         'status': 'active'
     })
 

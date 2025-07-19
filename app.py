@@ -155,6 +155,20 @@ def process_callback_query(callback_query):
         logger.error(f"❌ خطأ في معالجة الكولباك: {e}")
         return False
 
+# إعداد الويبهوك عند بدء التشغيل - الطريقة الجديدة
+def setup_webhook():
+    """إعداد الويبهوك عند بدء التطبيق"""
+    logger.info("🚀 بدء إعداد الويبهوك...")
+    success = set_webhook()
+    if success:
+        logger.info("✅ تم إعداد الويبهوك بنجاح!")
+    else:
+        logger.error("❌ فشل في إعداد الويبهوك!")
+
+# استدعاء إعداد الويبهوك مباشرة عند تحميل التطبيق
+with app.app_context():
+    setup_webhook()
+
 @app.route('/')
 def home():
     """الصفحة الرئيسية"""
@@ -361,16 +375,10 @@ def webhook_info():
     info = get_webhook_info()
     return jsonify(info)
 
-# إعداد الويبهوك عند بدء التشغيل
-@app.before_first_request
-def setup_webhook():
-    """إعداد الويبهوك عند بدء التطبيق"""
-    logger.info("🚀 بدء إعداد الويبهوك...")
-    success = set_webhook()
-    if success:
-        logger.info("✅ تم إعداد الويبهوك بنجاح!")
-    else:
-        logger.error("❌ فشل في إعداد الويبهوك!")
+@app.route('/ping')
+def ping():
+    """نقطة فحص للخدمة"""
+    return jsonify({'status': 'alive', 'timestamp': str(os.getenv('TZ', 'UTC'))})
 
 if __name__ == '__main__':
     # للتطوير المحلي فقط

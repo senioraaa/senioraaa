@@ -408,6 +408,150 @@ def contact():
                          whatsapp_number=WHATSAPP_NUMBER,
                          email_info=EMAIL_INFO)
 
+# === حلول الـ Webhook ===
+
+@app.route('/setup_webhook')
+def setup_webhook():
+    """تسجيل الـ webhook من المتصفح"""
+    try:
+        webhook_url = 'https://senioraaa.onrender.com/telegram_webhook'
+        telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook"
+        
+        data = {
+            "url": webhook_url,
+            "allowed_updates": ["message"]
+        }
+        
+        response = requests.post(telegram_url, json=data, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                return f"""
+                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #4CAF50; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                    <h1 style="color: #4CAF50;">✅ تم تسجيل الـ Webhook بنجاح!</h1>
+                    <p style="font-size: 18px;">🌐 URL: {webhook_url}</p>
+                    <p style="font-size: 18px; color: #333;">🤖 البوت جاهز للاستخدام الآن</p>
+                    <div style="background: #e8f5e8; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                        <h3>اختبر الأوامر التالية في تليجرام:</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin: 10px 0; font-family: monospace; background: white; padding: 8px; border-radius: 3px;">/prices - عرض الأسعار</li>
+                            <li style="margin: 10px 0; font-family: monospace; background: white; padding: 8px; border-radius: 3px;">/price PS5 Primary 150 - تحديث سعر</li>
+                        </ul>
+                    </div>
+                    <p><a href="/check_webhook" style="color: #4CAF50;">📊 فحص حالة الـ Webhook</a></p>
+                </div>
+                """
+            else:
+                return f"""
+                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                    <h1 style="color: #f44336;">❌ خطأ في التسجيل</h1>
+                    <p>{result.get('description', 'خطأ غير معروف')}</p>
+                    <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
+                </div>
+                """
+        else:
+            return f"""
+            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                <h1 style="color: #f44336;">❌ خطأ HTTP: {response.status_code}</h1>
+                <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
+            </div>
+            """
+            
+    except Exception as e:
+        return f"""
+        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+            <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
+            <p>{str(e)}</p>
+            <p><a href="/setup_webhook">🔄 إعادة المحاولة</a></p>
+        </div>
+        """
+
+@app.route('/check_webhook')
+def check_webhook():
+    """فحص حالة الـ webhook"""
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                webhook_info = result.get('result', {})
+                webhook_url = webhook_info.get('url', 'غير محدد')
+                pending_count = webhook_info.get('pending_update_count', 0)
+                last_error_date = webhook_info.get('last_error_date', 'لا يوجد أخطاء')
+                last_error_message = webhook_info.get('last_error_message', '')
+                
+                status_color = "#4CAF50" if webhook_url != 'غير محدد' else "#f44336"
+                status_text = "🟢 متصل" if webhook_url != 'غير محدد' else "🔴 غير متصل"
+                
+                return f"""
+                <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid {status_color}; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                    <h1 style="color: {status_color};">📊 معلومات الـ Webhook</h1>
+                    <div style="text-align: left; background: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <p><strong>🔗 URL:</strong> {webhook_url}</p>
+                        <p><strong>📊 الحالة:</strong> {status_text}</p>
+                        <p><strong>📈 الطلبات المعلقة:</strong> {pending_count}</p>
+                        <p><strong>⏰ آخر خطأ:</strong> {last_error_date}</p>
+                        {f'<p><strong>❌ رسالة الخطأ:</strong> {last_error_message}</p>' if last_error_message else ''}
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <a href="/setup_webhook" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px;">🔧 إعادة تسجيل Webhook</a>
+                        <a href="/test_bot" style="background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px;">🧪 اختبار البوت</a>
+                    </div>
+                </div>
+                """
+        
+        return """
+        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+            <h1 style="color: #f44336;">❌ خطأ في الاتصال</h1>
+            <p><a href="/check_webhook">🔄 إعادة المحاولة</a></p>
+        </div>
+        """
+        
+    except Exception as e:
+        return f"""
+        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+            <h1 style="color: #f44336;">❌ خطأ:</h1>
+            <p>{str(e)}</p>
+            <p><a href="/check_webhook">🔄 إعادة المحاولة</a></p>
+        </div>
+        """
+
+@app.route('/test_bot')
+def test_bot():
+    """اختبار البوت بإرسال رسالة تجريبية"""
+    try:
+        test_message = "🧪 رسالة اختبار من الموقع\n⏰ " + get_cairo_time()
+        result = send_telegram_message(test_message)
+        
+        if result['status'] == 'success':
+            return """
+            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #4CAF50; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                <h1 style="color: #4CAF50;">✅ تم إرسال رسالة اختبار بنجاح!</h1>
+                <p>تحقق من تليجرام لرؤية الرسالة</p>
+                <p><a href="/check_webhook">📊 فحص Webhook</a></p>
+            </div>
+            """
+        else:
+            return f"""
+            <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+                <h1 style="color: #f44336;">❌ فشل في إرسال الرسالة</h1>
+                <p>{result['message']}</p>
+                <p><a href="/setup_webhook">🔧 إعادة تسجيل Webhook</a></p>
+            </div>
+            """
+            
+    except Exception as e:
+        return f"""
+        <div style="font-family: Arial; padding: 20px; max-width: 600px; margin: 50px auto; border: 2px solid #f44336; border-radius: 10px; text-align: center; background: #f9f9f9;">
+            <h1 style="color: #f44336;">❌ خطأ:</h1>
+            <p>{str(e)}</p>
+            <p><a href="/test_bot">🔄 إعادة المحاولة</a></p>
+        </div>
+        """
+
 # === API Routes ===
 
 @app.route('/api/get_prices')

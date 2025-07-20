@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senior Gaming Store - أفضل متجر ألعاب رقمية في مصر</title>
+    <title>Senior Gaming Store - أفضل متجر ألعاب رقمية</title>
     
-    <!-- Security Meta Tags -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
@@ -29,7 +28,7 @@
         .main-card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
             overflow: hidden;
             border: none;
             backdrop-filter: blur(10px);
@@ -152,21 +151,10 @@
         }
         
         @media (max-width: 768px) {
-            .header-section {
-                padding: 30px 20px;
-            }
-            
-            .form-section {
-                padding: 20px;
-            }
-            
-            .features-row {
-                flex-direction: column;
-            }
-            
-            .feature-item {
-                margin: 5px 0;
-            }
+            .header-section { padding: 30px 20px; }
+            .form-section { padding: 20px; }
+            .features-row { flex-direction: column; }
+            .feature-item { margin: 5px 0; }
         }
         
         .loading-spinner {
@@ -372,15 +360,11 @@
                 </div>
             `;
             
-            // scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
-            // إزالة تلقائية بعد 7 ثواني
             setTimeout(() => {
                 const alert = alertContainer.querySelector('.alert');
-                if (alert) {
-                    alert.remove();
-                }
+                if (alert) alert.remove();
             }, 7000);
         }
         
@@ -388,7 +372,6 @@
         orderForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // التحقق من صحة البيانات
             if (!this.checkValidity()) {
                 this.classList.add('was-validated');
                 return;
@@ -397,7 +380,6 @@
             const formData = new FormData(this);
             const originalText = submitBtn.innerHTML;
             
-            // تعطيل الزر وإظهار التحميل
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="loading-spinner"></span> جاري إنشاء الطلب...';
             
@@ -405,15 +387,12 @@
                 const response = await fetch('/order', {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok && data.success) {
-                    // تحديث CSRF token
                     document.getElementById('csrfToken').value = data.csrf_token;
                     
                     showAlert(`
@@ -423,7 +402,6 @@
                         <strong>سيتم التواصل معك خلال ${pricesData.settings.delivery_time}</strong>
                     `, 'success');
                     
-                    // إعادة تعيين النموذج
                     this.reset();
                     this.classList.remove('was-validated');
                     gameSelect.dispatchEvent(new Event('change'));
@@ -432,33 +410,19 @@
                 }
             } catch (error) {
                 console.error('Network Error:', error);
-                showAlert('خطأ في الشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.', 'error');
+                showAlert('خطأ في الشبكة. يرجى المحاولة مرة أخرى.', 'error');
             } finally {
-                // استعادة الزر
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
         });
         
-        // منع إرسال النموذج عدة مرات
+        // منع الإرسال المتكرر
         let isSubmitting = false;
         orderForm.addEventListener('submit', function() {
-            if (isSubmitting) {
-                return false;
-            }
+            if (isSubmitting) return false;
             isSubmitting = true;
             setTimeout(() => { isSubmitting = false; }, 3000);
-        });
-        
-        // تحسين تجربة المستخدم
-        document.querySelectorAll('.form-control, .form-select').forEach(element => {
-            element.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
-            });
-            
-            element.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
         });
     </script>
 </body>

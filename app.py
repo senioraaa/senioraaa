@@ -132,7 +132,7 @@ def create_default_prices():
     prices_cache = default_prices
     return default_prices
 
-# الأسعار الافتراضية - لوجوهات محدثة (PS & Xbox فقط)
+# الأسعار الافتراضية - أيقونات Font Awesome محدثة
 def get_default_prices():
     return {
         "games": {
@@ -141,7 +141,9 @@ def get_default_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3300},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
@@ -150,7 +152,9 @@ def get_default_prices():
                     },
                     "PS4": {
                         "name": "PlayStation 4",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3300},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1150},
@@ -164,7 +168,9 @@ def get_default_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
@@ -173,7 +179,9 @@ def get_default_prices():
                     },
                     "PS4": {
                         "name": "PlayStation 4", 
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
@@ -187,7 +195,9 @@ def get_default_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1090},
@@ -196,7 +206,9 @@ def get_default_prices():
                     },
                     "PS4": {
                         "name": "PlayStation 4",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''', 
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''', 
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1250},
@@ -210,7 +222,9 @@ def get_default_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5000},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 300},
@@ -219,7 +233,9 @@ def get_default_prices():
                     },
                     "PS4": {
                         "name": "PlayStation 4",
-                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5000},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 600},
@@ -233,7 +249,9 @@ def get_default_prices():
                 "platforms": {
                     "Xbox": {
                         "name": "Xbox Series X/S & Xbox One",
-                        "icon": '''<i class="fab fa-xbox" style="color: #107C10; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 2850},
@@ -247,7 +265,9 @@ def get_default_prices():
                 "platforms": {
                     "Xbox": {
                         "name": "Xbox Series X/S & Xbox One",
-                        "icon": '''<i class="fab fa-xbox" style="color: #107C10; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 3800},
@@ -302,6 +322,7 @@ def get_default_prices():
             "whatsapp_number": "+201094591331"
         }
     }
+
 
 
 

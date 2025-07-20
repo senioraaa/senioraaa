@@ -29,6 +29,32 @@ last_prices_update = 0
 WHATSAPP_NUMBER = "+201094591331"  # غير الرقم هنا
 BUSINESS_NAME = "Senior Gaming Store"
 
+# إنشاء قاعدة البيانات - تشتغل دايماً
+def ensure_database():
+    try:
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # إنشاء الجدول إذا لم يكن موجود
+        c.execute('''CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY,
+            game_type TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            account_type TEXT NOT NULL,
+            price INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            ip_address TEXT,
+            user_agent TEXT
+        )''')
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"❌ خطأ في قاعدة البيانات: {e}")
+        return False
+
 # Rate Limiting يدوي بسيط وقوي
 def rate_limit(max_requests=5, window=60):
     def decorator(f):
@@ -55,27 +81,6 @@ def rate_limit(max_requests=5, window=60):
         return decorated_function
     return decorator
 
-# إنشاء قاعدة البيانات
-def init_db():
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS orders (
-        id TEXT PRIMARY KEY,
-        game_type TEXT NOT NULL,
-        platform TEXT NOT NULL,
-        account_type TEXT NOT NULL,
-        price INTEGER NOT NULL,
-        status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        ip_address TEXT,
-        user_agent TEXT
-    )''')
-    
-    conn.commit()
-    conn.close()
-    logger.info("✅ تم إعداد قاعدة البيانات")
-
 # تحميل الأسعار من JSON مع Cache
 def load_prices():
     global prices_cache, last_prices_update
@@ -95,12 +100,26 @@ def load_prices():
         return prices_cache
     except Exception as e:
         logger.error(f"❌ خطأ في تحميل الأسعار: {e}")
-        return {}
+        return get_default_prices()
 
 # إنشاء ملف أسعار افتراضي
 def create_default_prices():
     global prices_cache
-    default_prices = {
+    default_prices = get_default_prices()
+    
+    try:
+        with open('prices.json', 'w', encoding='utf-8') as f:
+            json.dump(default_prices, f, ensure_ascii=False, indent=2)
+        logger.info("✅ تم إنشاء ملف الأسعار الافتراضي")
+    except Exception as e:
+        logger.error(f"❌ خطأ في إنشاء ملف الأسعار: {e}")
+    
+    prices_cache = default_prices
+    return default_prices
+
+# الأسعار الافتراضية
+def get_default_prices():
+    return {
         "games": {
             "FC25": {
                 "name": "FIFA FC 25",
@@ -151,12 +170,6 @@ def create_default_prices():
             "whatsapp_number": "+201234567890"
         }
     }
-    
-    with open('prices.json', 'w', encoding='utf-8') as f:
-        json.dump(default_prices, f, ensure_ascii=False, indent=2)
-    
-    prices_cache = default_prices
-    logger.info("✅ تم إنشاء ملف الأسعار الافتراضي")
 
 # Headers أمنية قوية
 @app.after_request
@@ -196,11 +209,16 @@ def validate_csrf_token(token):
 
 # الصفحة الرئيسية
 @app.route('/')
-@rate_limit(max_requests=10, window=60)
+@rate_limit(max_requests=15, window=60)
 def index():
     try:
+        # تأكد من وجود قاعدة البيانات
+        ensure_database()
+        
         prices = load_prices()
         csrf_token = generate_csrf_token()
+        
+        logger.info("✅ تم تحميل الصفحة الرئيسية بنجاح")
         
         return render_template('index.html', 
                              prices=prices, 
@@ -209,17 +227,22 @@ def index():
         logger.error(f"❌ خطأ في الصفحة الرئيسية: {e}")
         abort(500)
 
-# إنشاء رابط واتساب
+# إنشاء رابط واتساب - مُحدث ومُصحح
 @app.route('/whatsapp', methods=['POST'])
-@rate_limit(max_requests=5, window=60)
+@rate_limit(max_requests=8, window=60)
 def create_whatsapp_link():
     client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
     user_agent = request.headers.get('User-Agent', '')
     
     try:
+        # تأكد من وجود قاعدة البيانات
+        if not ensure_database():
+            return jsonify({'error': 'خطأ في النظام - يرجى المحاولة مرة أخرى'}), 500
+        
         # التحقق من CSRF
         csrf_token = request.form.get('csrf_token')
         if not validate_csrf_token(csrf_token):
+            logger.warning(f"🚨 محاولة CSRF من IP: {client_ip}")
             return jsonify({'error': 'رمز الأمان غير صحيح'}), 400
         
         # تنظيف البيانات
@@ -236,6 +259,7 @@ def create_whatsapp_link():
         if (game_type not in prices.get('games', {}) or
             platform not in prices['games'][game_type].get('platforms', {}) or
             account_type not in prices['games'][game_type]['platforms'][platform].get('accounts', {})):
+            logger.warning(f"🚨 اختيار منتج غير صحيح من IP: {client_ip}")
             return jsonify({'error': 'اختيار المنتج غير صحيح'}), 400
         
         # بيانات المنتج
@@ -246,19 +270,26 @@ def create_whatsapp_link():
         currency = prices.get('settings', {}).get('currency', 'جنيه')
         
         # إنشاء ID للطلب
-        order_id = hashlib.md5(f"{time.time()}{client_ip}".encode()).hexdigest()[:8].upper()
+        timestamp = str(int(time.time()))
+        order_id = hashlib.md5(f"{timestamp}{client_ip}{game_type}{platform}".encode()).hexdigest()[:8].upper()
         
         # حفظ الطلب في قاعدة البيانات
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO orders 
-                     (id, game_type, platform, account_type, price, ip_address, user_agent)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                  (order_id, game_type, platform, account_type, price, client_ip, user_agent))
-        conn.commit()
-        conn.close()
+        try:
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute('''INSERT INTO orders 
+                         (id, game_type, platform, account_type, price, ip_address, user_agent)
+                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                      (order_id, game_type, platform, account_type, price, client_ip, user_agent))
+            conn.commit()
+            conn.close()
+        except Exception as db_error:
+            logger.error(f"❌ خطأ في حفظ الطلب: {db_error}")
+            # استمر حتى لو فشل حفظ قاعدة البيانات
         
         # إنشاء رسالة الواتساب
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+        
         message = f"""🎮 *طلب جديد من {BUSINESS_NAME}*
 
 🆔 *رقم الطلب:* {order_id}
@@ -269,7 +300,7 @@ def create_whatsapp_link():
 • نوع الحساب: {account_name}
 • السعر: {price} {currency}
 
-⏰ *وقت الطلب:* {datetime.now().strftime('%Y-%m-%d %H:%M')}
+⏰ *وقت الطلب:* {current_time}
 
 📋 *يرجى تأكيد الطلب وإرسال تفاصيل الدفع*
 
@@ -280,11 +311,12 @@ def create_whatsapp_link():
         
         # رقم الواتساب من الإعدادات
         whatsapp_number = prices.get('settings', {}).get('whatsapp_number', WHATSAPP_NUMBER)
+        clean_number = whatsapp_number.replace('+', '').replace('-', '').replace(' ', '')
         
         # إنشاء رابط الواتساب
-        whatsapp_url = f"https://wa.me/{whatsapp_number.replace('+', '')}?text={encoded_message}"
+        whatsapp_url = f"https://wa.me/{clean_number}?text={encoded_message}"
         
-        logger.info(f"✅ طلب واتساب: {order_id} - {platform} {account_type} - {price} {currency} - IP: {client_ip}")
+        logger.info(f"✅ طلب واتساب ناجح: {order_id} - {platform} {account_type} - {price} {currency} - IP: {client_ip}")
         
         # CSRF token جديد
         new_csrf_token = generate_csrf_token()
@@ -301,7 +333,7 @@ def create_whatsapp_link():
         
     except Exception as e:
         logger.error(f"❌ خطأ في إنشاء رابط الواتساب: {e}")
-        return jsonify({'error': 'حدث خطأ في النظام'}), 500
+        return jsonify({'error': 'حدث خطأ في النظام - يرجى المحاولة مرة أخرى'}), 500
 
 # API للحصول على الأسعار
 @app.route('/api/prices')
@@ -314,10 +346,26 @@ def get_prices():
         logger.error(f"❌ خطأ في API الأسعار: {e}")
         return jsonify({'error': 'خطأ في النظام'}), 500
 
-# Health check
+# Health check مُحسن
 @app.route('/health')
+@app.route('/ping')  # إضافة ping للـ UptimeRobot
 def health_check():
-    return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}, 200
+    try:
+        # فحص قاعدة البيانات
+        db_status = ensure_database()
+        
+        # فحص الأسعار
+        prices = load_prices()
+        
+        return {
+            'status': 'healthy',
+            'database': 'ok' if db_status else 'error',
+            'prices': 'ok' if prices else 'error',
+            'timestamp': datetime.now().isoformat()
+        }, 200
+    except Exception as e:
+        logger.error(f"❌ خطأ في Health Check: {e}")
+        return {'status': 'error', 'message': str(e)}, 500
 
 # Robots.txt
 @app.route('/robots.txt')
@@ -347,10 +395,18 @@ def internal_error(error):
 
 # تشغيل التطبيق
 if __name__ == '__main__':
-    init_db()
+    # تأكد من قاعدة البيانات عند البدء
+    ensure_database()
     load_prices()
+    logger.info("🚀 تم تشغيل التطبيق بنجاح")
+    
     app.run(
         debug=False, 
         host='0.0.0.0', 
         port=int(os.environ.get('PORT', 5000))
     )
+else:
+    # تشغيل تلقائي عند استخدام gunicorn
+    ensure_database()
+    load_prices()
+    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn")

@@ -6,7 +6,10 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, f
 from werkzeug.middleware.proxy_fix import ProxyFix
 import threading
 import time
-from telegram_bot import main as run_telegram_bot
+import asyncio
+from telegram import Update
+from telegram.ext import Application, MessageHandler, filters
+from telegram.ext import CallbackQueryHandler
 
 # إعداد اللوجر
 logging.basicConfig(level=logging.INFO)
@@ -597,7 +600,35 @@ def process_callback_query(callback_query):
         logger.error(f"❌ خطأ في معالجة الكولباك: {e}")
         return False
 
-# إعداد الويبهوك عند بدء التشغيل - الطريقة الجديدة
+# إعداد التطبيق والبوت الجديد
+ptb_app = None
+
+def get_ptb_app():
+    """الحصول على تطبيق البوت مع إعداده"""
+    global ptb_app
+    if ptb_app is None:
+        ptb_app = Application.builder().token(BOT_TOKEN).build()
+        
+        # إضافة معالج للرسائل
+        async def handle_message(update: Update, context):
+            if update.message:
+                message_dict = update.message.to_dict()
+                process_message(message_dict)
+        
+        # إضافة معالج للكولباك
+        async def handle_callback(update: Update, context):
+            if update.callback_query:
+                callback_dict = update.callback_query.to_dict()
+                process_callback_query(callback_dict)
+        
+        ptb_app.add_handler(MessageHandler(filters.ALL, handle_message))
+        ptb_app.add_handler(CallbackQueryHandler(handle_callback))
+        
+        logger.info("✅ تم إعداد البوت بنجاح")
+    
+    return ptb_app
+
+# إعداد الويبهوك عند بدء التشغيل
 def setup_webhook():
     """إعداد الويبهوك عند بدء التطبيق"""
     logger.info("🚀 بدء إعداد الويبهوك...")
@@ -621,10 +652,6 @@ def setup_webhook():
         send_message(CHAT_ID, startup_msg)
     else:
         logger.error("❌ فشل في إعداد الويبهوك!")
-
-# استدعاء إعداد الويبهوك مباشرة عند تحميل التطبيق
-with app.app_context():
-    setup_webhook()
 
 # Routes المنصة الرئيسية
 @app.route('/')
@@ -1038,37 +1065,54 @@ def test_bot():
             'message': f'❌ خطأ في الاختبار: {str(e)}'
         })
 
+# معالج الويبهوك المحدث
 @app.route(f'/webhook/{BOT_TOKEN}', methods=['POST'])
 def webhook_handler():
-    """معالج الويبهوك الرئيسي"""
+    """معالج الويبهوك المحسن مع البوت الجديد"""
     try:
+        logger.info("📨 استلام طلب ويبهوك")
+        
         # التأكد من Content-Type
         if request.content_type != 'application/json':
             logger.warning(f"Content-Type غير صحيح: {request.content_type}")
             return jsonify({'error': 'Invalid Content-Type'}), 400
         
         # الحصول على البيانات
-        update = request.get_json(force=True)
+        update_data = request.get_json(force=True)
         
-        if not update:
+        if not update_data:
             logger.warning("لم يتم استلام بيانات")
             return jsonify({'error': 'No data received'}), 400
         
-        logger.info(f"استلام تحديث: {update}")
+        logger.info(f"📊 استلام تحديث: {update_data}")
         
-        # معالجة الرسائل
-        if 'message' in update:
-            success = process_message(update['message'])
-            if not success:
-                return jsonify({'error': 'Message processing failed'}), 500
+        # الحصول على تطبيق البوت
+        app_instance = get_ptb_app()
         
-        # معالجة الكولباك
-        elif 'callback_query' in update:
-            success = process_callback_query(update['callback_query'])
-            if not success:
-                return jsonify({'error': 'Callback processing failed'}), 500
+        # تحويل البيانات إلى كائن Update
+        update = Update.de_json(update_data, app_instance.bot)
         
-        # رد إيجابي للتليجرام
+        # معالجة التحديث بشكل غير متزامن
+        async def process_update():
+            await app_instance.process_update(update)
+        
+        # تشغيل المعالجة
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # إنشاء مهمة جديدة إذا كان الحلقة تعمل
+                asyncio.create_task(process_update())
+            else:
+                # تشغيل الحلقة إذا لم تكن تعمل
+                loop.run_until_complete(process_update())
+        except RuntimeError:
+            # إنشاء حلقة جديدة إذا لزم الأمر
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(process_update())
+            loop.close()
+        
+        logger.info("✅ تم معالجة التحديث بنجاح")
         return jsonify({'status': 'ok'}), 200
         
     except Exception as e:
@@ -1163,12 +1207,11 @@ def internal_error(error):
         'support': '01094591331'
     }), 500
 
+# تشغيل إعداد الويبهوك عند بدء التطبيق
+with app.app_context():
+    setup_webhook()
+
 if __name__ == '__main__':
-    # تشغيل بوت التليجرام في thread منفصل
-    print("🚀 تشغيل بوت التليجرام...")
-    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-    bot_thread.start()
-    
-    # تشغيل Flask
-    print("🌐 تشغيل Flask...")
+    # تشغيل Flask فقط (لا نحتاج thread منفصل للبوت الآن)
+    print("🌐 تشغيل Flask مع البوت المدمج...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

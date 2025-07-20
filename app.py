@@ -132,47 +132,154 @@ def create_default_prices():
     prices_cache = default_prices
     return default_prices
 
-# الأسعار الافتراضية
+# الأسعار الافتراضية - محدثة من جوجل شيت
 def get_default_prices():
     return {
         "games": {
-            "FC25": {
-                "name": "FIFA FC 25",
+            "FC25_EN_Standard": {
+                "name": "FC 25 - Standard Edition (English) 🇺🇸",
                 "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": "🎮",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3300},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
+                        }
+                    },
                     "PS4": {
                         "name": "PlayStation 4",
                         "icon": "🎮",
                         "accounts": {
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 85},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 70},
-                            "Full": {"name": "Full - حساب كامل", "price": 120}
+                            "Full": {"name": "Full - حساب كامل", "price": 3300},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1150},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
                         }
-                    },
+                    }
+                }
+            },
+            "FC25_EN_Ultimate": {
+                "name": "FC 25 - Ultimate Edition (English) 🇺🇸",
+                "platforms": {
                     "PS5": {
-                        "name": "PlayStation 5", 
+                        "name": "PlayStation 5",
                         "icon": "🎮",
                         "accounts": {
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 90},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 75},
-                            "Full": {"name": "Full - حساب كامل", "price": 125}
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1060}
                         }
                     },
+                    "PS4": {
+                        "name": "PlayStation 4", 
+                        "icon": "🎮",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1050}
+                        }
+                    }
+                }
+            },
+            "FC25_AR_Standard": {
+                "name": "FC 25 - Standard Edition (Arabic) 🇸🇦",
+                "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": "🎮",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1090},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                        }
+                    },
+                    "PS4": {
+                        "name": "PlayStation 4",
+                        "icon": "🎮", 
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1250},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                        }
+                    }
+                }
+            },
+            "FC25_AR_Ultimate": {
+                "name": "FC 25 - Ultimate Edition (Arabic) 🇸🇦",
+                "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": "🎮",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 5000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 300},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 500}
+                        }
+                    },
+                    "PS4": {
+                        "name": "PlayStation 4",
+                        "icon": "🎮",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 5000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 600},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1470}
+                        }
+                    }
+                }
+            },
+            "FC25_XBOX_Standard": {
+                "name": "FC 25 - Xbox Standard Edition 🎮",
+                "platforms": {
                     "Xbox": {
                         "name": "Xbox Series X/S & Xbox One",
                         "icon": "✕",
                         "accounts": {
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 85},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 70},
-                            "Full": {"name": "Full - حساب كامل", "price": 120}
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2850},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2300}
                         }
-                    },
+                    }
+                }
+            },
+            "FC25_XBOX_Ultimate": {
+                "name": "FC 25 - Xbox Ultimate Edition 🎮",
+                "platforms": {
+                    "Xbox": {
+                        "name": "Xbox Series X/S & Xbox One",
+                        "icon": "✕",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 3800},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 3200}
+                        }
+                    }
+                }
+            },
+            "FC25_PC_Standard": {
+                "name": "FC 25 - PC Standard Edition 🖥️",
+                "platforms": {
                     "PC": {
-                        "name": "PC (Steam/Epic Games)",
+                        "name": "PC (EA Desktop)",
                         "icon": "🖥️",
                         "accounts": {
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 80},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 65},
-                            "Full": {"name": "Full - حساب كامل", "price": 115}
+                            "Full": {"name": "Full - حساب كامل", "price": 2700},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1800}
+                        }
+                    }
+                }
+            },
+            "FC25_PC_Ultimate": {
+                "name": "FC 25 - PC Ultimate Edition 🖥️",
+                "platforms": {
+                    "PC": {
+                        "name": "PC (EA Desktop)",
+                        "icon": "🖥️",
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3600},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 3000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2500}
                         }
                     }
                 }
@@ -182,9 +289,10 @@ def get_default_prices():
             "currency": "جنيه مصري",
             "warranty": "1 سنة",
             "delivery_time": "15 ساعة كحد أقصى",
-            "whatsapp_number": "+201234567890"
+            "whatsapp_number": "+201094591331"
         }
     }
+
 
 # Headers أمنية قوية
 @app.after_request

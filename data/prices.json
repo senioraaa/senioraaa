@@ -5,9 +5,9 @@
       "name": "FC 25",
       "platforms": {
         "ps4": {
-          "primary": 85,
-          "secondary": 70,
-          "full": 120
+          "primary": 555,
+          "secondary": 333,
+          "full": 666
         },
         "ps5": {
           "primary": 90,
@@ -15,7 +15,7 @@
           "full": 125
         },
         "xbox": {
-          "primary": 85,
+          "primary": 999,
           "secondary": 70,
           "full": 120
         },

@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, f
 from werkzeug.middleware.proxy_fix import ProxyFix
 import threading
 import time
+from telegram_bot import main as run_telegram_bot
 
 # إعداد اللوجر
 logging.basicConfig(level=logging.INFO)
@@ -1163,5 +1164,11 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
-    # للتطوير المحلي فقط
+    # تشغيل بوت التليجرام في thread منفصل
+    print("🚀 تشغيل بوت التليجرام...")
+    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
+    bot_thread.start()
+    
+    # تشغيل Flask
+    print("🌐 تشغيل Flask...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

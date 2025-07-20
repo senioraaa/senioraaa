@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, abort
+from flask import Flask, render_template, request, jsonify, abort
 import json, os, secrets, time, re, hashlib
 from datetime import datetime, timedelta
 import logging
@@ -9,7 +9,6 @@ import urllib.parse
 # إعداد التطبيق
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 # إعداد الـ Logging للأمان
 logging.basicConfig(
@@ -29,13 +28,22 @@ last_prices_update = 0
 WHATSAPP_NUMBER = "+201094591331"  # غير الرقم هنا
 BUSINESS_NAME = "Senior Gaming Store"
 
-# Rate Limiting يدوي بسيط وقوي
+# Rate Limiting محسن بدون CSRF
 def rate_limit(max_requests=10, window=60):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
             current_time = time.time()
+            
+            # فحص IP محظور
+            if client_ip in blocked_ips:
+                block_time, duration = blocked_ips[client_ip]
+                if current_time - block_time < duration:
+                    logger.warning(f"🚨 IP محظور: {client_ip}")
+                    abort(429)
+                else:
+                    del blocked_ips[client_ip]
             
             # تنظيف الطلبات القديمة
             request_counts[client_ip] = [
@@ -45,7 +53,9 @@ def rate_limit(max_requests=10, window=60):
             
             # فحص عدد الطلبات
             if len(request_counts[client_ip]) >= max_requests:
-                logger.warning(f"🚨 Rate limit exceeded for IP: {client_ip}")
+                # حظر مؤقت
+                blocked_ips[client_ip] = (current_time, 300)  # 5 دقائق
+                logger.warning(f"🚨 Rate limit exceeded - IP blocked: {client_ip}")
                 abort(429)
             
             # إضافة الطلب الحالي
@@ -54,6 +64,37 @@ def rate_limit(max_requests=10, window=60):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+# حماية إضافية من Spam
+def anti_spam_check(ip_address, user_agent):
+    """فحص إضافي ضد الـ spam والـ bots"""
+    current_time = time.time()
+    
+    # فحص User Agent
+    suspicious_agents = ['bot', 'crawler', 'spider', 'scraper']
+    if any(agent in user_agent.lower() for agent in suspicious_agents):
+        logger.warning(f"🚨 Suspicious user agent from IP: {ip_address}")
+        return False
+    
+    # فحص التكرار السريع
+    key = f"{ip_address}_{user_agent}"
+    if key not in failed_attempts:
+        failed_attempts[key] = []
+    
+    # تنظيف المحاولات القديمة
+    failed_attempts[key] = [
+        t for t in failed_attempts[key] 
+        if current_time - t < 60  # آخر دقيقة
+    ]
+    
+    # إذا أكتر من 3 محاولات في دقيقة واحدة
+    if len(failed_attempts[key]) >= 3:
+        blocked_ips[ip_address] = (current_time, 900)  # حظر 15 دقيقة
+        logger.warning(f"🚨 Anti-spam triggered - IP blocked: {ip_address}")
+        return False
+    
+    failed_attempts[key].append(current_time)
+    return True
 
 # تحميل الأسعار من JSON مع Cache
 def load_prices():
@@ -172,44 +213,37 @@ def sanitize_input(text, max_length=100):
     
     return text
 
-# CSRF Protection
-def generate_csrf_token():
-    token = secrets.token_urlsafe(32)
-    session['csrf_token'] = token
-    return token
-
-def validate_csrf_token(token):
-    return token and session.get('csrf_token') == token
-
 # الصفحة الرئيسية
 @app.route('/')
-@rate_limit(max_requests=20, window=60)
+@rate_limit(max_requests=25, window=60)
 def index():
     try:
         prices = load_prices()
-        csrf_token = generate_csrf_token()
         
         logger.info("✅ تم تحميل الصفحة الرئيسية بنجاح")
         
-        return render_template('index.html', 
-                             prices=prices, 
-                             csrf_token=csrf_token)
+        return render_template('index.html', prices=prices)
     except Exception as e:
         logger.error(f"❌ خطأ في الصفحة الرئيسية: {e}")
         abort(500)
 
-# إنشاء رابط واتساب مباشر - بدون حفظ
+# إنشاء رابط واتساب مباشر - بدون CSRF
 @app.route('/whatsapp', methods=['POST'])
-@rate_limit(max_requests=15, window=60)
+@rate_limit(max_requests=8, window=60)
 def create_whatsapp_link():
     client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', '')
     
     try:
-        # التحقق من CSRF
-        csrf_token = request.form.get('csrf_token')
-        if not validate_csrf_token(csrf_token):
-            logger.warning(f"🚨 محاولة CSRF من IP: {client_ip}")
-            return jsonify({'error': 'رمز الأمان غير صحيح'}), 400
+        # فحص Anti-spam
+        if not anti_spam_check(client_ip, user_agent):
+            return jsonify({'error': 'تم تجاوز الحد المسموح - يرجى المحاولة لاحقاً'}), 429
+        
+        # فحص الـ Referer للتأكد من المصدر
+        referer = request.headers.get('Referer', '')
+        if not referer or 'senioraa.onrender.com' not in referer:
+            logger.warning(f"🚨 محاولة وصول مباشر من IP: {client_ip}")
+            return jsonify({'error': 'طلب غير صالح'}), 400
         
         # تنظيف البيانات
         game_type = sanitize_input(request.form.get('game_type'))
@@ -270,17 +304,13 @@ def create_whatsapp_link():
         
         logger.info(f"✅ فتح واتساب: {reference_id} - {platform} {account_type} - {price} {currency} - IP: {client_ip}")
         
-        # CSRF token جديد
-        new_csrf_token = generate_csrf_token()
-        
         return jsonify({
             'success': True,
             'reference_id': reference_id,
             'whatsapp_url': whatsapp_url,
             'price': price,
             'currency': currency,
-            'message': 'سيتم فتح الواتساب الآن...',
-            'csrf_token': new_csrf_token
+            'message': 'سيتم فتح الواتساب الآن...'
         })
         
     except Exception as e:
@@ -289,7 +319,7 @@ def create_whatsapp_link():
 
 # API للحصول على الأسعار
 @app.route('/api/prices')
-@rate_limit(max_requests=10, window=60)
+@rate_limit(max_requests=15, window=60)
 def get_prices():
     try:
         prices = load_prices()
@@ -344,7 +374,7 @@ def internal_error(error):
 # تشغيل التطبيق
 if __name__ == '__main__':
     load_prices()
-    logger.info("🚀 تم تشغيل التطبيق بنجاح - واتساب مباشر")
+    logger.info("🚀 تم تشغيل التطبيق بنجاح - واتساب مباشر (بدون CSRF)")
     
     app.run(
         debug=False, 
@@ -354,4 +384,4 @@ if __name__ == '__main__':
 else:
     # تشغيل تلقائي عند استخدام gunicorn
     load_prices()
-    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - واتساب مباشر")
+    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - واتساب مباشر (بدون CSRF)")

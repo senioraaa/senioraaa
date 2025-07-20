@@ -1,0 +1,41 @@
+{
+  "last_updated": "2025-01-20 12:00:00",
+  "version": "1.0",
+  "games": {
+    "FC25": {
+      "platforms": {
+        "PS4": {
+          "Primary": 85,
+          "Secondary": 70,
+          "Full": 120
+        },
+        "PS5": {
+          "Primary": 90,
+          "Secondary": 75,
+          "Full": 125
+        },
+        "Xbox": {
+          "Primary": 85,
+          "Secondary": 70,
+          "Full": 120
+        },
+        "PC": {
+          "Primary": 80,
+          "Secondary": 65,
+          "Full": 115
+        }
+      }
+    }
+  },
+  "offers": {
+    "discount_percentage": 0,
+    "free_delivery": true,
+    "express_delivery": false
+  },
+  "settings": {
+    "min_phone_length": 10,
+    "max_phone_length": 15,
+    "enable_whatsapp_redirect": true,
+    "backup_enabled": true
+  }
+}

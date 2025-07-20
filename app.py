@@ -21,11 +21,9 @@ logger = logging.getLogger(__name__)
 blocked_ips = {}
 request_counts = defaultdict(list)
 failed_attempts = {}
-prices_cache = {}
-last_prices_update = 0
 
 # إعدادات الواتساب
-WHATSAPP_NUMBER = "+201094591331"  # غير الرقم هنا
+WHATSAPP_NUMBER = "+201094591331"
 BUSINESS_NAME = "Senior Gaming Store"
 
 # Rate Limiting محسن بدون CSRF
@@ -96,44 +94,8 @@ def anti_spam_check(ip_address, user_agent):
     failed_attempts[key].append(current_time)
     return True
 
-# تحميل الأسعار من JSON مع Cache
-def load_prices():
-    global prices_cache, last_prices_update
-    
-    try:
-        if os.path.exists('prices.json'):
-            file_time = os.path.getmtime('prices.json')
-            if file_time > last_prices_update:
-                with open('prices.json', 'r', encoding='utf-8') as f:
-                    prices_cache = json.load(f)
-                last_prices_update = file_time
-                logger.info("🔄 تم تحديث الأسعار من ملف JSON")
-        
-        if not prices_cache:
-            create_default_prices()
-            
-        return prices_cache
-    except Exception as e:
-        logger.error(f"❌ خطأ في تحميل الأسعار: {e}")
-        return get_default_prices()
-
-# إنشاء ملف أسعار افتراضي
-def create_default_prices():
-    global prices_cache
-    default_prices = get_default_prices()
-    
-    try:
-        with open('prices.json', 'w', encoding='utf-8') as f:
-            json.dump(default_prices, f, ensure_ascii=False, indent=2)
-        logger.info("✅ تم إنشاء ملف الأسعار الافتراضي")
-    except Exception as e:
-        logger.error(f"❌ خطأ في إنشاء ملف الأسعار: {e}")
-    
-    prices_cache = default_prices
-    return default_prices
-
-# الأسعار الافتراضية - أيقونات Font Awesome محدثة
-def get_default_prices():
+# الأسعار الثابتة - مدمجة في الكود مباشرة
+def get_prices():
     return {
         "games": {
             "FC25_EN_Standard": {
@@ -323,13 +285,6 @@ def get_default_prices():
         }
     }
 
-
-
-
-
-
-
-
 # Headers أمنية قوية
 @app.after_request
 def security_headers(response):
@@ -337,7 +292,7 @@ def security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://wa.me"
+    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://wa.me"
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     return response
@@ -362,16 +317,14 @@ def sanitize_input(text, max_length=100):
 @rate_limit(max_requests=25, window=60)
 def index():
     try:
-        prices = load_prices()
-        
+        prices = get_prices()
         logger.info("✅ تم تحميل الصفحة الرئيسية بنجاح")
-        
         return render_template('index.html', prices=prices)
     except Exception as e:
         logger.error(f"❌ خطأ في الصفحة الرئيسية: {e}")
         abort(500)
 
-# إنشاء رابط واتساب مباشر - بدون CSRF
+# إنشاء رابط واتساب مباشر
 @app.route('/whatsapp', methods=['POST'])
 @rate_limit(max_requests=8, window=60)
 def create_whatsapp_link():
@@ -383,12 +336,6 @@ def create_whatsapp_link():
         if not anti_spam_check(client_ip, user_agent):
             return jsonify({'error': 'تم تجاوز الحد المسموح - يرجى المحاولة لاحقاً'}), 429
         
-        # فحص الـ Referer للتأكد من المصدر
-        referer = request.headers.get('Referer', '')
-        if not referer or 'senioraa.onrender.com' not in referer:
-            logger.warning(f"🚨 محاولة وصول مباشر من IP: {client_ip}")
-            return jsonify({'error': 'طلب غير صالح'}), 400
-        
         # تنظيف البيانات
         game_type = sanitize_input(request.form.get('game_type'))
         platform = sanitize_input(request.form.get('platform'))
@@ -398,7 +345,7 @@ def create_whatsapp_link():
             return jsonify({'error': 'يرجى اختيار جميع الخيارات أولاً'}), 400
         
         # تحميل الأسعار والتحقق
-        prices = load_prices()
+        prices = get_prices()
         
         if (game_type not in prices.get('games', {}) or
             platform not in prices['games'][game_type].get('platforms', {}) or
@@ -413,7 +360,7 @@ def create_whatsapp_link():
         price = prices['games'][game_type]['platforms'][platform]['accounts'][account_type]['price']
         currency = prices.get('settings', {}).get('currency', 'جنيه')
         
-        # إنشاء ID مرجعي (للتتبع فقط - لا يُحفظ)
+        # إنشاء ID مرجعي
         timestamp = str(int(time.time()))
         reference_id = hashlib.md5(f"{timestamp}{client_ip}{game_type}{platform}".encode()).hexdigest()[:8].upper()
         
@@ -439,7 +386,7 @@ def create_whatsapp_link():
         # ترميز الرسالة للـ URL
         encoded_message = urllib.parse.quote(message)
         
-        # رقم الواتساب من الإعدادات
+        # رقم الواتساب
         whatsapp_number = prices.get('settings', {}).get('whatsapp_number', WHATSAPP_NUMBER)
         clean_number = whatsapp_number.replace('+', '').replace('-', '').replace(' ', '')
         
@@ -464,9 +411,9 @@ def create_whatsapp_link():
 # API للحصول على الأسعار
 @app.route('/api/prices')
 @rate_limit(max_requests=15, window=60)
-def get_prices():
+def get_prices_api():
     try:
-        prices = load_prices()
+        prices = get_prices()
         return jsonify(prices)
     except Exception as e:
         logger.error(f"❌ خطأ في API الأسعار: {e}")
@@ -476,18 +423,7 @@ def get_prices():
 @app.route('/health')
 @app.route('/ping')
 def health_check():
-    try:
-        # فحص الأسعار فقط
-        prices = load_prices()
-        
-        return {
-            'status': 'healthy',
-            'prices': 'ok' if prices else 'error',
-            'timestamp': datetime.now().isoformat()
-        }, 200
-    except Exception as e:
-        logger.error(f"❌ خطأ في Health Check: {e}")
-        return {'status': 'error', 'message': str(e)}, 500
+    return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}, 200
 
 # Robots.txt
 @app.route('/robots.txt')
@@ -504,28 +440,20 @@ def bad_request(error):
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('404.html'), 404
+    return "الصفحة غير موجودة", 404
 
 @app.errorhandler(429)
 def too_many_requests(error):
-    return render_template('429.html'), 429
+    return "تم تجاوز عدد الطلبات المسموحة", 429
 
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"❌ خطأ داخلي: {error}")
-    return render_template('500.html'), 500
+    return f"خطأ داخلي: {error}", 500
 
 # تشغيل التطبيق
 if __name__ == '__main__':
-    load_prices()
-    logger.info("🚀 تم تشغيل التطبيق بنجاح - واتساب مباشر (بدون CSRF)")
-    
-    app.run(
-        debug=False, 
-        host='0.0.0.0', 
-        port=int(os.environ.get('PORT', 5000))
-    )
+    logger.info("🚀 تم تشغيل التطبيق بنجاح - الأسعار مدمجة في الكود")
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 else:
-    # تشغيل تلقائي عند استخدام gunicorn
-    load_prices()
-    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - واتساب مباشر (بدون CSRF)")
+    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - الأسعار مدمجة في الكود")

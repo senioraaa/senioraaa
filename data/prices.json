@@ -1,24 +1,33 @@
 {
-  "fc25": {
-    "ps4": {
-      "primary": 50,
-      "secondary": 30,
-      "full": 80
-    },
-    "ps5": {
-      "primary": 60,
-      "secondary": 40,
-      "full": 100
-    },
-    "xbox": {
-      "primary": 55,
-      "secondary": 35,
-      "full": 90
-    },
-    "pc": {
-      "primary": 45,
-      "secondary": 25,
-      "full": 70
+  "games": [
+    {
+      "id": "fc25",
+      "name": "FC 25",
+      "platforms": {
+        "ps4": {
+          "primary": 85,
+          "secondary": 70,
+          "full": 120
+        },
+        "ps5": {
+          "primary": 90,
+          "secondary": 75,
+          "full": 125
+        },
+        "xbox": {
+          "primary": 85,
+          "secondary": 70,
+          "full": 120
+        },
+        "pc": {
+          "primary": 80,
+          "secondary": 65,
+          "full": 115
+        }
+      }
     }
-  }
+  ],
+  "currency": "EGP",
+  "last_updated": "2025-01-20T10:00:00Z",
+  "notes": "الأسعار شاملة الضمان لمدة سنة كاملة"
 }

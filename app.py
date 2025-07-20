@@ -132,30 +132,108 @@ def create_default_prices():
     prices_cache = default_prices
     return default_prices
 
-# الأسعار الافتراضية - منصتين فقط: PlayStation و Xbox
+# الأسعار الافتراضية - لوجوهات محدثة (PS & Xbox فقط)
 def get_default_prices():
     return {
         "games": {
             "FC25_EN_Standard": {
                 "name": "FC 25 - Standard Edition (English) 🇺🇸",
                 "platforms": {
-                    "PS4_PS5": {
-                        "name": "PlayStation 4/5",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#003087" style="display: block; margin: 0 auto;">
-                            <path d="M15.362 1.4c-1.44-.18-2.88.36-3.6 1.44-.72 1.08-.72 2.34 0 3.42.72 1.08 2.16 1.62 3.6 1.44.9-.18 1.62-.72 2.16-1.44v12.24c0 .54-.36 1.08-.9 1.26l-8.1 2.7c-.9.36-1.98.18-2.7-.36-.72-.54-1.08-1.44-.9-2.34V8.2c0-.54.36-1.08.9-1.26l2.7-.9v-2.7l-3.6 1.26c-1.8.54-3.06 2.16-3.06 4.14v11.88c0 1.8 1.08 3.42 2.7 4.14 1.62.72 3.42.36 4.68-.9l8.1-2.7c1.8-.54 3.06-2.16 3.06-4.14V1.94c-1.26-.18-2.52-.36-3.78-.54z"/>
-                            <path d="M8.722 13.6v2.88c0 .36-.18.72-.54.9-.36.18-.72.18-1.08 0-.36-.18-.54-.54-.54-.9V13.6h2.16z"/>
-                        </svg>''',
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3300},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
                         }
                     },
+                    "PS4": {
+                        "name": "PlayStation 4",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3300},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1150},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
+                        }
+                    }
+                }
+            },
+            "FC25_EN_Ultimate": {
+                "name": "FC 25 - Ultimate Edition (English) 🇺🇸",
+                "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1060}
+                        }
+                    },
+                    "PS4": {
+                        "name": "PlayStation 4", 
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1050}
+                        }
+                    }
+                }
+            },
+            "FC25_AR_Standard": {
+                "name": "FC 25 - Standard Edition (Arabic) 🇸🇦",
+                "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1090},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                        }
+                    },
+                    "PS4": {
+                        "name": "PlayStation 4",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''', 
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1250},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                        }
+                    }
+                }
+            },
+            "FC25_AR_Ultimate": {
+                "name": "FC 25 - Ultimate Edition (Arabic) 🇸🇦",
+                "platforms": {
+                    "PS5": {
+                        "name": "PlayStation 5",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 5000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 300},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 500}
+                        }
+                    },
+                    "PS4": {
+                        "name": "PlayStation 4",
+                        "icon": '''<i class="fab fa-playstation" style="color: #003087; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل", "price": 5000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 600},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1470}
+                        }
+                    }
+                }
+            },
+            "FC25_XBOX_Standard": {
+                "name": "FC 25 - Xbox Standard Edition 🎮",
+                "platforms": {
                     "Xbox": {
-                        "name": "Xbox One/Series",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#107C10" style="display: block; margin: 0 auto;">
-                            <path d="M4.102 21.033C6.211 22.881 8.977 24 12 24c3.026 0 5.789-1.119 7.902-2.967.409-.359.358-.763-.127-.763-.127 0-.254.033-.381.084C17.635 21.12 14.975 21.6 12 21.6c-2.975 0-5.635-.48-7.394-1.246-.127-.051-.254-.084-.381-.084-.484 0-.535.404-.127.763zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.604-.825-.377-1.899.168-2.49.545-.591 1.44-.612 2.007-.047.567.565.544 1.462-.047 2.007-.591.545-1.665.772-2.49.168-.412-.302-.638-.638-.638-.638zm-11.136 0s-.226.336-.638.638c-.825.604-1.899.377-2.49-.168-.591-.545-.612-1.44-.047-2.007.565-.567 1.462-.544 2.007.047.545.591.772 1.665.168 2.49zM12 3.6c2.355 0 4.515.958 6.061 2.504C16.65 7.35 15.075 8.4 12 8.4S7.35 7.35 5.939 6.104C7.485 4.558 9.645 3.6 12 3.6z"/>
-                        </svg>''',
+                        "name": "Xbox Series X/S & Xbox One",
+                        "icon": '''<i class="fab fa-xbox" style="color: #107C10; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 2850},
@@ -164,26 +242,12 @@ def get_default_prices():
                     }
                 }
             },
-            "FC25_EN_Ultimate": {
-                "name": "FC 25 - Ultimate Edition (English) 🇺🇸",
+            "FC25_XBOX_Ultimate": {
+                "name": "FC 25 - Xbox Ultimate Edition 🎮",
                 "platforms": {
-                    "PS4_PS5": {
-                        "name": "PlayStation 4/5",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#003087" style="display: block; margin: 0 auto;">
-                            <path d="M15.362 1.4c-1.44-.18-2.88.36-3.6 1.44-.72 1.08-.72 2.34 0 3.42.72 1.08 2.16 1.62 3.6 1.44.9-.18 1.62-.72 2.16-1.44v12.24c0 .54-.36 1.08-.9 1.26l-8.1 2.7c-.9.36-1.98.18-2.7-.36-.72-.54-1.08-1.44-.9-2.34V8.2c0-.54.36-1.08.9-1.26l2.7-.9v-2.7l-3.6 1.26c-1.8.54-3.06 2.16-3.06 4.14v11.88c0 1.8 1.08 3.42 2.7 4.14 1.62.72 3.42.36 4.68-.9l8.1-2.7c1.8-.54 3.06-2.16 3.06-4.14V1.94c-1.26-.18-2.52-.36-3.78-.54z"/>
-                            <path d="M8.722 13.6v2.88c0 .36-.18.72-.54.9-.36.18-.72.18-1.08 0-.36-.18-.54-.54-.54-.9V13.6h2.16z"/>
-                        </svg>''',
-                        "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1060}
-                        }
-                    },
                     "Xbox": {
-                        "name": "Xbox One/Series",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#107C10" style="display: block; margin: 0 auto;">
-                            <path d="M4.102 21.033C6.211 22.881 8.977 24 12 24c3.026 0 5.789-1.119 7.902-2.967.409-.359.358-.763-.127-.763-.127 0-.254.033-.381.084C17.635 21.12 14.975 21.6 12 21.6c-2.975 0-5.635-.48-7.394-1.246-.127-.051-.254-.084-.381-.084-.484 0-.535.404-.127.763zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.604-.825-.377-1.899.168-2.49.545-.591 1.44-.612 2.007-.047.567.565.544 1.462-.047 2.007-.591.545-1.665.772-2.49.168-.412-.302-.638-.638-.638-.638zm-11.136 0s-.226.336-.638.638c-.825.604-1.899.377-2.49-.168-.591-.545-.612-1.44-.047-2.007.565-.567 1.462-.544 2.007.047.545.591.772 1.665.168 2.49zM12 3.6c2.355 0 4.515.958 6.061 2.504C16.65 7.35 15.075 8.4 12 8.4S7.35 7.35 5.939 6.104C7.485 4.558 9.645 3.6 12 3.6z"/>
-                        </svg>''',
+                        "name": "Xbox Series X/S & Xbox One",
+                        "icon": '''<i class="fab fa-xbox" style="color: #107C10; font-size: 32px; display: block; text-align: center; margin: 8px auto;"></i>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 3800},
@@ -192,58 +256,40 @@ def get_default_prices():
                     }
                 }
             },
-            "FC25_AR_Standard": {
-                "name": "FC 25 - Standard Edition (Arabic) 🇸🇦",
+            "FC25_PC_Standard": {
+                "name": "FC 25 - PC Standard Edition 🖥️",
                 "platforms": {
-                    "PS4_PS5": {
-                        "name": "PlayStation 4/5",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#003087" style="display: block; margin: 0 auto;">
-                            <path d="M15.362 1.4c-1.44-.18-2.88.36-3.6 1.44-.72 1.08-.72 2.34 0 3.42.72 1.08 2.16 1.62 3.6 1.44.9-.18 1.62-.72 2.16-1.44v12.24c0 .54-.36 1.08-.9 1.26l-8.1 2.7c-.9.36-1.98.18-2.7-.36-.72-.54-1.08-1.44-.9-2.34V8.2c0-.54.36-1.08.9-1.26l2.7-.9v-2.7l-3.6 1.26c-1.8.54-3.06 2.16-3.06 4.14v11.88c0 1.8 1.08 3.42 2.7 4.14 1.62.72 3.42.36 4.68-.9l8.1-2.7c1.8-.54 3.06-2.16 3.06-4.14V1.94c-1.26-.18-2.52-.36-3.78-.54z"/>
-                            <path d="M8.722 13.6v2.88c0 .36-.18.72-.54.9-.36.18-.72.18-1.08 0-.36-.18-.54-.54-.54-.9V13.6h2.16z"/>
+                    "PC": {
+                        "name": "PC (EA Desktop)",
+                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#FF8C00" style="display: block; margin: 0 auto;">
+                            <rect x="2" y="4" width="20" height="12" rx="2" fill="#FF8C00"/>
+                            <rect x="4" y="6" width="16" height="8" fill="white"/>
+                            <rect x="8" y="18" width="8" height="2" fill="#FF8C00"/>
+                            <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1090},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
-                        }
-                    },
-                    "Xbox": {
-                        "name": "Xbox One/Series",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#107C10" style="display: block; margin: 0 auto;">
-                            <path d="M4.102 21.033C6.211 22.881 8.977 24 12 24c3.026 0 5.789-1.119 7.902-2.967.409-.359.358-.763-.127-.763-.127 0-.254.033-.381.084C17.635 21.12 14.975 21.6 12 21.6c-2.975 0-5.635-.48-7.394-1.246-.127-.051-.254-.084-.381-.084-.484 0-.535.404-.127.763zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.604-.825-.377-1.899.168-2.49.545-.591 1.44-.612 2.007-.047.567.565.544 1.462-.047 2.007-.591.545-1.665.772-2.49.168-.412-.302-.638-.638-.638-.638zm-11.136 0s-.226.336-.638.638c-.825.604-1.899.377-2.49-.168-.591-.545-.612-1.44-.047-2.007.565-.567 1.462-.544 2.007.047.545.591.772 1.665.168 2.49zM12 3.6c2.355 0 4.515.958 6.061 2.504C16.65 7.35 15.075 8.4 12 8.4S7.35 7.35 5.939 6.104C7.485 4.558 9.645 3.6 12 3.6z"/>
-                        </svg>''',
-                        "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2850},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2300}
+                            "Full": {"name": "Full - حساب كامل", "price": 2700},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1800}
                         }
                     }
                 }
             },
-            "FC25_AR_Ultimate": {
-                "name": "FC 25 - Ultimate Edition (Arabic) 🇸🇦",
+            "FC25_PC_Ultimate": {
+                "name": "FC 25 - PC Ultimate Edition 🖥️",
                 "platforms": {
-                    "PS4_PS5": {
-                        "name": "PlayStation 4/5",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#003087" style="display: block; margin: 0 auto;">
-                            <path d="M15.362 1.4c-1.44-.18-2.88.36-3.6 1.44-.72 1.08-.72 2.34 0 3.42.72 1.08 2.16 1.62 3.6 1.44.9-.18 1.62-.72 2.16-1.44v12.24c0 .54-.36 1.08-.9 1.26l-8.1 2.7c-.9.36-1.98.18-2.7-.36-.72-.54-1.08-1.44-.9-2.34V8.2c0-.54.36-1.08.9-1.26l2.7-.9v-2.7l-3.6 1.26c-1.8.54-3.06 2.16-3.06 4.14v11.88c0 1.8 1.08 3.42 2.7 4.14 1.62.72 3.42.36 4.68-.9l8.1-2.7c1.8-.54 3.06-2.16 3.06-4.14V1.94c-1.26-.18-2.52-.36-3.78-.54z"/>
-                            <path d="M8.722 13.6v2.88c0 .36-.18.72-.54.9-.36.18-.72.18-1.08 0-.36-.18-.54-.54-.54-.9V13.6h2.16z"/>
+                    "PC": {
+                        "name": "PC (EA Desktop)",
+                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#FF8C00" style="display: block; margin: 0 auto;">
+                            <rect x="2" y="4" width="20" height="12" rx="2" fill="#FF8C00"/>
+                            <rect x="4" y="6" width="16" height="8" fill="white"/>
+                            <rect x="8" y="18" width="8" height="2" fill="#FF8C00"/>
+                            <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 5000},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 300},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 500}
-                        }
-                    },
-                    "Xbox": {
-                        "name": "Xbox One/Series",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#107C10" style="display: block; margin: 0 auto;">
-                            <path d="M4.102 21.033C6.211 22.881 8.977 24 12 24c3.026 0 5.789-1.119 7.902-2.967.409-.359.358-.763-.127-.763-.127 0-.254.033-.381.084C17.635 21.12 14.975 21.6 12 21.6c-2.975 0-5.635-.48-7.394-1.246-.127-.051-.254-.084-.381-.084-.484 0-.535.404-.127.763zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.604-.825-.377-1.899.168-2.49.545-.591 1.44-.612 2.007-.047.567.565.544 1.462-.047 2.007-.591.545-1.665.772-2.49.168-.412-.302-.638-.638-.638-.638zm-11.136 0s-.226.336-.638.638c-.825.604-1.899.377-2.49-.168-.591-.545-.612-1.44-.047-2.007.565-.567 1.462-.544 2.007.047.545.591.772 1.665.168 2.49zM12 3.6c2.355 0 4.515.958 6.061 2.504C16.65 7.35 15.075 8.4 12 8.4S7.35 7.35 5.939 6.104C7.485 4.558 9.645 3.6 12 3.6z"/>
-                        </svg>''',
-                        "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 5000},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 600},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1470}
+                            "Full": {"name": "Full - حساب كامل", "price": 3600},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 3000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2500}
                         }
                     }
                 }
@@ -256,6 +302,7 @@ def get_default_prices():
             "whatsapp_number": "+201094591331"
         }
     }
+
 
 
 

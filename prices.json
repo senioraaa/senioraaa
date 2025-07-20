@@ -9,7 +9,7 @@
           "accounts": {
             "Primary": {
               "name": "Primary - تفعيل أساسي",
-              "price": 333
+              "price": 85
             },
             "Secondary": {
               "name": "Secondary - تسجيل دخول مؤقت", 
@@ -17,7 +17,7 @@
             },
             "Full": {
               "name": "Full - حساب كامل",
-              "price": 333
+              "price": 120
             }
           }
         },
@@ -35,7 +35,7 @@
             },
             "Full": {
               "name": "Full - حساب كامل", 
-              "price": 333
+              "price": 125
             }
           }
         },
@@ -63,7 +63,7 @@
           "accounts": {
             "Primary": {
               "name": "Primary - تفعيل أساسي",
-              "price": 444
+              "price": 80
             },
             "Secondary": {
               "name": "Secondary - تسجيل دخول مؤقت",
@@ -81,6 +81,7 @@
   "settings": {
     "currency": "جنيه مصري",
     "warranty": "1 سنة", 
-    "delivery_time": "15 ساعة كحد أقصى"
+    "delivery_time": "15 ساعة كحد أقصى",
+    "whatsapp_number": "+201094591331"
   }
 }

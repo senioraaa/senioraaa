@@ -17,13 +17,14 @@
             --warning-color: #ffc107;
             --danger-color: #dc3545;
             --whatsapp-color: #25D366;
+            --card-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
         
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--primary-gradient);
             min-height: 100vh;
-            padding: 20px 0;
+            padding: 15px 0;
         }
         
         .main-card {
@@ -38,7 +39,7 @@
         .header-section {
             background: var(--primary-gradient);
             color: white;
-            padding: 40px 30px;
+            padding: 30px 20px;
             text-align: center;
             position: relative;
         }
@@ -55,109 +56,155 @@
         }
         
         .features-row {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 30px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
         }
         
         .feature-item {
             background: rgba(255,255,255,0.2);
-            padding: 20px;
+            padding: 20px 15px;
             border-radius: 15px;
-            margin: 10px;
-            flex: 1;
-            min-width: 150px;
             backdrop-filter: blur(5px);
             transition: all 0.3s ease;
+            text-align: center;
         }
         
         .feature-item:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
             background: rgba(255,255,255,0.3);
         }
         
-        .form-section {
-            padding: 40px;
+        .products-section {
+            padding: 30px 20px;
         }
         
-        .form-control, .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 15px 20px;
-            font-size: 16px;
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .product-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
             transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
         
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: var(--whatsapp-color);
+        }
+        
+        .product-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--whatsapp-color);
+        }
+        
+        .product-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .product-platform {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .product-body {
+            padding: 25px 20px;
+        }
+        
+        .account-options {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .account-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .account-option:hover {
+            background: #e9ecef;
+            border-color: var(--whatsapp-color);
+        }
+        
+        .account-option.selected {
+            background: rgba(37, 211, 102, 0.1);
+            border-color: var(--whatsapp-color);
+        }
+        
+        .account-info {
+            flex: 1;
+        }
+        
+        .account-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        
+        .account-description {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .account-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--whatsapp-color);
+            margin-left: 15px;
         }
         
         .btn-whatsapp {
             background: linear-gradient(45deg, var(--whatsapp-color), #128C7E);
             border: none;
-            border-radius: 20px;
-            padding: 22px 60px;
-            font-size: 22px;
+            border-radius: 15px;
+            padding: 15px 25px;
+            font-size: 16px;
             font-weight: bold;
             color: white;
             transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
             text-decoration: none;
-            display: inline-block;
+            display: block;
+            text-align: center;
+            width: 100%;
         }
         
         .btn-whatsapp:hover {
-            transform: translateY(-4px) scale(1.03);
-            box-shadow: 0 15px 35px rgba(37, 211, 102, 0.6);
             background: linear-gradient(45deg, #128C7E, var(--whatsapp-color));
             color: white;
+            transform: translateY(-2px);
         }
         
         .btn-whatsapp:disabled {
-            opacity: 0.7;
-            transform: none;
+            opacity: 0.5;
             pointer-events: none;
         }
         
-        .btn-whatsapp:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.6s;
-        }
-        
-        .btn-whatsapp:hover:before {
-            left: 100%;
-        }
-        
-        .price-display {
-            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-            border: 3px dashed #dee2e6;
-            border-radius: 20px;
-            padding: 35px;
-            text-align: center;
-            margin: 35px 0;
-            transition: all 0.4s ease;
-        }
-        
-        .price-display.has-price {
-            border-color: var(--whatsapp-color);
-            background: linear-gradient(45deg, #d1f2eb, #a3e4d7);
-            animation: pulse-green 2s infinite;
-        }
-        
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        .whatsapp-icon {
+            font-size: 18px;
+            margin-left: 8px;
         }
         
         .alert-custom {
@@ -165,6 +212,11 @@
             border: none;
             padding: 20px;
             margin-bottom: 30px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
         }
         
         .security-badge {
@@ -173,53 +225,19 @@
             left: 20px;
             background: var(--success-color);
             color: white;
-            padding: 12px 18px;
-            border-radius: 30px;
-            font-size: 14px;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 12px;
             z-index: 1000;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .whatsapp-icon {
-            font-size: 26px;
-            margin-left: 12px;
-            animation: bounce 1.5s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-6px); }
-            60% { transform: translateY(-4px); }
-        }
-        
-        @media (max-width: 768px) {
-            .header-section { padding: 30px 20px; }
-            .form-section { padding: 20px; }
-            .features-row { flex-direction: column; }
-            .feature-item { margin: 5px 0; }
-            .btn-whatsapp { padding: 20px 45px; font-size: 20px; }
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 22px;
-            height: 22px;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
         
         .requirements-box {
             background: rgba(255, 193, 7, 0.1);
             border: 2px solid var(--warning-color);
             border-radius: 15px;
-            padding: 25px;
-            margin-top: 35px;
+            padding: 20px;
+            margin-top: 30px;
         }
         
         .requirements-box h5 {
@@ -231,24 +249,25 @@
         .requirements-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         
         .requirements-list li {
-            padding: 6px 0;
+            padding: 5px 0;
             color: #856404;
-            font-size: 15px;
+            font-size: 14px;
         }
         
         .requirements-list li:before {
             content: "⚠️";
-            margin-left: 10px;
+            margin-left: 8px;
         }
         
         .instant-contact {
             background: rgba(37, 211, 102, 0.1);
             border: 2px solid var(--whatsapp-color);
             border-radius: 15px;
-            padding: 25px;
+            padding: 20px;
             margin-top: 20px;
             text-align: center;
         }
@@ -262,82 +281,167 @@
         .instant-contact p {
             color: #128C7E;
             margin: 0;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .product-card {
+                margin: 0 5px;
+            }
+            
+            .header-section {
+                padding: 25px 15px;
+            }
+            
+            .products-section {
+                padding: 20px 15px;
+            }
+            
+            .features-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .feature-item {
+                padding: 15px 10px;
+            }
+            
+            .alert-custom {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 0 0 20px 0;
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .product-body {
+                padding: 20px 15px;
+            }
+            
+            .account-option {
+                padding: 12px;
+            }
+            
+            .btn-whatsapp {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-xl-10 col-lg-12">
+            <div class="col-xl-10 col-lg-11 col-md-12">
                 <div class="card main-card">
                     <!-- Header Section -->
                     <div class="header-section">
-                        <h1 class="display-5 fw-bold mb-3">🎮 Senior Gaming Store</h1>
+                        <h1 class="display-6 fw-bold mb-3">🎮 Senior Gaming Store</h1>
                         <p class="lead mb-0">احصل على FC 25 بأرخص الأسعار في مصر</p>
-                        <p class="mb-0">منصتك الأولى لشراء حسابات الألعاب الرقمية بأفضل الأسعار</p>
+                        <p class="mb-0">منصتك الأولى لشراء حسابات الألعاب الرقمية</p>
                         
                         <div class="features-row">
                             <div class="feature-item">
-                                <h5>🛡️ ضمان {{ prices.settings.warranty or '1 سنة' }}</h5>
+                                <h6>🛡️ ضمان {{ prices.settings.warranty or '1 سنة' }}</h6>
                                 <small>مع عدم المخالفة</small>
                             </div>
                             <div class="feature-item">
-                                <h5>⚡ تسليم سريع</h5>
+                                <h6>⚡ تسليم سريع</h6>
                                 <small>{{ prices.settings.delivery_time or 'خلال 24 ساعة' }}</small>
                             </div>
                             <div class="feature-item">
-                                <h5>📱 تواصل مباشر</h5>
+                                <h6>📱 تواصل مباشر</h6>
                                 <small>عبر الواتساب فوراً</small>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Form Section -->
-                    <div class="form-section">
+                    <!-- Products Section -->
+                    <div class="products-section">
                         <div id="alertContainer"></div>
                         
-                        <form id="orderForm" novalidate>
-                            <div class="row g-4">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">🎮 اختر اللعبة:</label>
-                                    <select class="form-select" name="game_type" required>
-                                        {% for game_id, game in prices.games.items() %}
-                                        <option value="{{ game_id }}">{{ game.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">🎯 اختر المنصة:</label>
-                                    <select class="form-select" name="platform" required>
-                                        <option value="">-- اختر المنصة --</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">⚙️ نوع الحساب:</label>
-                                    <select class="form-select" name="account_type" required>
-                                        <option value="">-- اختر نوع الحساب --</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="price-display" id="priceDisplay">
-                                <h4 class="mb-0">اختر المنصة ونوع الحساب لعرض السعر</h4>
-                            </div>
-                            
-                            <div class="text-center">
-                                <a href="#" class="btn btn-whatsapp btn-lg px-5" id="submitBtn">
-                                    <span class="whatsapp-icon">📱</span>
-                                    استفسر الآن عبر الواتساب
-                                </a>
-                            </div>
-                        </form>
+                        <div class="text-center mb-4">
+                            <h2 class="fw-bold text-primary">🎯 اختر المنتج المطلوب</h2>
+                            <p class="text-muted">اضغط على نوع الحساب واستفسر مباشرة عبر الواتساب</p>
+                        </div>
+                        
+                        <div class="products-grid">
+                            {% for game_id, game in prices.games.items() %}
+                                {% for platform_id, platform in game.platforms.items() %}
+                                    <div class="product-card">
+                                        <div class="product-header">
+                                            <div class="product-title">{{ game.name }}</div>
+                                            <div class="product-platform">{{ platform.icon }} {{ platform.name }}</div>
+                                        </div>
+                                        
+                                        <div class="product-body">
+                                            <div class="account-options">
+                                                {% for account_id, account in platform.accounts.items() %}
+                                                    <div class="account-option" 
+                                                         data-game="{{ game_id }}" 
+                                                         data-platform="{{ platform_id }}" 
+                                                         data-account="{{ account_id }}"
+                                                         data-price="{{ account.price }}"
+                                                         data-currency="{{ prices.settings.currency }}">
+                                                        <div class="account-info">
+                                                            <div class="account-name">{{ account.name }}</div>
+                                                            <div class="account-description">
+                                                                {% if account_id == 'Full' %}
+                                                                    حساب كامل - اللعبة ملكك تماماً
+                                                                {% elif account_id == 'Primary' %}
+                                                                    فعله كأساسي والعب من حسابك
+                                                                {% elif account_id == 'Secondary' %}
+                                                                    تسجيل دخول مؤقت - ممنوع تفعيل
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="account-price">{{ account.price }} {{ prices.settings.currency[:4] }}</div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <button class="btn-whatsapp product-btn" 
+                                                    data-game="{{ game_id }}" 
+                                                    data-platform="{{ platform_id }}">
+                                                <span class="whatsapp-icon">📱</span>
+                                                اختر نوع الحساب واستفسر
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
                         
                         <!-- صندوق التواصل المباشر -->
                         <div class="instant-contact">
-                            <h5>📞 تواصل مباشر</h5>
-                            <p>سيتم فتح الواتساب مباشرة مع رسالة جاهزة تحتوي على تفاصيل المنتج المطلوب</p>
+                            <h5>📞 كيفية الطلب</h5>
+                            <p>اضغط على نوع الحساب المطلوب ثم اضغط على زر الواتساب - سيتم فتح رسالة جاهزة مع تفاصيل المنتج</p>
                         </div>
                         
                         <!-- شروط الاستخدام -->
@@ -358,7 +462,7 @@
     </div>
     
     <div class="security-badge">
-        🔒 محمي ضد الهجمات + Rate Limiting
+        🔒 محمي + Rate Limiting
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -366,101 +470,101 @@
         // بيانات الأسعار
         const pricesData = {{ prices|tojson|safe }};
         
+        // متغيرات الاختيار
+        let selectedGame = '';
+        let selectedPlatform = '';
+        let selectedAccount = '';
+        let selectedPrice = 0;
+        let selectedCurrency = '';
+        
         // عناصر النموذج
-        const gameSelect = document.querySelector('select[name="game_type"]');
-        const platformSelect = document.querySelector('select[name="platform"]');
-        const accountSelect = document.querySelector('select[name="account_type"]');
-        const priceDisplay = document.getElementById('priceDisplay');
-        const orderForm = document.getElementById('orderForm');
-        const submitBtn = document.getElementById('submitBtn');
         const alertContainer = document.getElementById('alertContainer');
+        const accountOptions = document.querySelectorAll('.account-option');
+        const productBtns = document.querySelectorAll('.product-btn');
         
-        // تحديث المنصات عند اختيار اللعبة
-        gameSelect.addEventListener('change', function() {
-            const selectedGame = this.value;
-            platformSelect.innerHTML = '<option value="">-- اختر المنصة --</option>';
-            accountSelect.innerHTML = '<option value="">-- اختر نوع الحساب --</option>';
-            
-            if (selectedGame && pricesData.games[selectedGame]) {
-                const platforms = pricesData.games[selectedGame].platforms;
-                for (const [platformId, platform] of Object.entries(platforms)) {
-                    platformSelect.innerHTML += `<option value="${platformId}">${platform.icon} ${platform.name}</option>`;
+        // إضافة مستمعي الأحداث لخيارات الحساب
+        accountOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // إزالة التحديد من جميع الخيارات في نفس البطاقة
+                const card = this.closest('.product-card');
+                card.querySelectorAll('.account-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // تحديد الخيار الحالي
+                this.classList.add('selected');
+                
+                // حفظ بيانات الاختيار
+                selectedGame = this.dataset.game;
+                selectedPlatform = this.dataset.platform;
+                selectedAccount = this.dataset.account;
+                selectedPrice = this.dataset.price;
+                selectedCurrency = this.dataset.currency;
+                
+                // تحديث زر الواتساب
+                const btn = card.querySelector('.product-btn');
+                btn.innerHTML = `<span class="whatsapp-icon">📱</span>استفسر الآن - ${selectedPrice} ${selectedCurrency.substring(0, 4)}`;
+                btn.disabled = false;
+            });
+        });
+        
+        // إضافة مستمعي الأحداث لأزرار الواتساب
+        productBtns.forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                const card = this.closest('.product-card');
+                const selectedOption = card.querySelector('.account-option.selected');
+                
+                if (!selectedOption) {
+                    showAlert('يرجى اختيار نوع الحساب أولاً', 'error');
+                    return;
                 }
-            }
-            
-            updatePrice();
-            updateWhatsAppButton();
-        });
-        
-        // تحديث أنواع الحسابات عند اختيار المنصة
-        platformSelect.addEventListener('change', function() {
-            const selectedGame = gameSelect.value;
-            const selectedPlatform = this.value;
-            accountSelect.innerHTML = '<option value="">-- اختر نوع الحساب --</option>';
-            
-            if (selectedGame && selectedPlatform && 
-                pricesData.games[selectedGame] && 
-                pricesData.games[selectedGame].platforms[selectedPlatform]) {
                 
-                const accounts = pricesData.games[selectedGame].platforms[selectedPlatform].accounts;
-                for (const [accountId, account] of Object.entries(accounts)) {
-                    accountSelect.innerHTML += `<option value="${accountId}">${account.name}</option>`;
+                // إنشاء FormData
+                const formData = new FormData();
+                formData.append('game_type', selectedOption.dataset.game);
+                formData.append('platform', selectedOption.dataset.platform);
+                formData.append('account_type', selectedOption.dataset.account);
+                
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="loading-spinner"></span> جاري التحضير...';
+                
+                try {
+                    const response = await fetch('/whatsapp', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        showAlert(`
+                            ✅ تم تحضير الاستفسار بنجاح!<br>
+                            <strong>رقم المرجع:</strong> ${data.reference_id}<br>
+                            <strong>السعر:</strong> ${data.price} ${data.currency}<br>
+                            <strong>سيتم فتح الواتساب الآن...</strong>
+                        `, 'success');
+                        
+                        // فتح الواتساب فوراً
+                        setTimeout(() => {
+                            window.open(data.whatsapp_url, '_blank');
+                        }, 500);
+                        
+                    } else {
+                        showAlert(data.error || 'حدث خطأ غير متوقع', 'error');
+                    }
+                } catch (error) {
+                    console.error('Network Error:', error);
+                    showAlert('خطأ في الشبكة. يرجى المحاولة مرة أخرى.', 'error');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = originalText;
                 }
-            }
-            
-            updatePrice();
-            updateWhatsAppButton();
+            });
         });
-        
-        // تحديث السعر
-        accountSelect.addEventListener('change', function() {
-            updatePrice();
-            updateWhatsAppButton();
-        });
-        
-        function updatePrice() {
-            const game = gameSelect.value;
-            const platform = platformSelect.value;
-            const account = accountSelect.value;
-            
-            if (game && platform && account && 
-                pricesData.games[game] && 
-                pricesData.games[game].platforms[platform] && 
-                pricesData.games[game].platforms[platform].accounts[account]) {
-                
-                const price = pricesData.games[game].platforms[platform].accounts[account].price;
-                const currency = pricesData.settings.currency || 'جنيه';
-                
-                priceDisplay.innerHTML = `
-                    <h2 class="text-success fw-bold mb-2">💰 ${price} ${currency}</h2>
-                    <p class="mb-1 text-muted">السعر شامل الضمان والدعم الفني</p>
-                    <small class="text-success fw-bold">✅ جاهز للاستفسار عبر الواتساب</small>
-                `;
-                priceDisplay.classList.add('has-price');
-            } else {
-                priceDisplay.innerHTML = '<h4 class="mb-0">اختر المنصة ونوع الحساب لعرض السعر</h4>';
-                priceDisplay.classList.remove('has-price');
-            }
-        }
-        
-        function updateWhatsAppButton() {
-            const game = gameSelect.value;
-            const platform = platformSelect.value;
-            const account = accountSelect.value;
-            
-            if (game && platform && account) {
-                submitBtn.style.opacity = '1';
-                submitBtn.style.pointerEvents = 'auto';
-                submitBtn.innerHTML = '<span class="whatsapp-icon">📱</span>استفسر الآن عبر الواتساب';
-            } else {
-                submitBtn.style.opacity = '0.5';
-                submitBtn.style.pointerEvents = 'none';
-                submitBtn.innerHTML = '<span class="whatsapp-icon">📱</span>اختر المنتج أولاً';
-            }
-        }
-        
-        // تهيئة أولية
-        gameSelect.dispatchEvent(new Event('change'));
         
         // دالة إظهار الرسائل
         function showAlert(message, type = 'success') {
@@ -474,87 +578,23 @@
                 </div>
             `;
             
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
+            // إزالة الرسالة بعد 5 ثوان
             setTimeout(() => {
                 const alert = alertContainer.querySelector('.alert');
                 if (alert) alert.remove();
-            }, 4000);
+            }, 5000);
         }
         
-        // فتح الواتساب مباشرة - بدون CSRF
-        submitBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            
-            // التحقق من اختيار جميع الخيارات
-            const game = gameSelect.value;
-            const platform = platformSelect.value;
-            const account = accountSelect.value;
-            
-            if (!game || !platform || !account) {
-                showAlert('يرجى اختيار جميع الخيارات أولاً', 'error');
-                return;
-            }
-            
-            const formData = new FormData(orderForm);
-            const originalText = this.innerHTML;
-            
-            this.style.pointerEvents = 'none';
-            this.innerHTML = '<span class="loading-spinner"></span> جاري التحضير...';
-            
-            try {
-                const response = await fetch('/whatsapp', {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        // تأثيرات إضافية للموبايل
+        document.addEventListener('DOMContentLoaded', function() {
+            // تأثير الاهتزاز للموبايل عند الضغط
+            if ('vibrate' in navigator) {
+                document.querySelectorAll('.account-option, .btn-whatsapp').forEach(element => {
+                    element.addEventListener('touchstart', function() {
+                        navigator.vibrate(50);
+                    });
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok && data.success) {
-                    showAlert(`
-                        ✅ تم تحضير الاستفسار بنجاح!<br>
-                        <strong>رقم المرجع:</strong> ${data.reference_id}<br>
-                        <strong>السعر:</strong> ${data.price} ${data.currency}<br>
-                        <strong>سيتم فتح الواتساب الآن...</strong>
-                    `, 'success');
-                    
-                    // فتح الواتساب فوراً
-                    setTimeout(() => {
-                        window.open(data.whatsapp_url, '_blank');
-                    }, 500);
-                    
-                } else {
-                    showAlert(data.error || 'حدث خطأ غير متوقع', 'error');
-                }
-            } catch (error) {
-                console.error('Network Error:', error);
-                showAlert('خطأ في الشبكة. يرجى المحاولة مرة أخرى.', 'error');
-            } finally {
-                this.style.pointerEvents = 'auto';
-                this.innerHTML = originalText;
             }
-        });
-        
-        // تأثيرات بصرية محسنة
-        submitBtn.addEventListener('mouseenter', function() {
-            if (this.style.pointerEvents !== 'none') {
-                this.style.transform = 'translateY(-4px) scale(1.03)';
-            }
-        });
-        
-        submitBtn.addEventListener('mouseleave', function() {
-            if (this.style.pointerEvents !== 'none') {
-                this.style.transform = 'translateY(0) scale(1)';
-            }
-        });
-        
-        // منع الإرسال المتكرر
-        let isProcessing = false;
-        submitBtn.addEventListener('click', function() {
-            if (isProcessing) return false;
-            isProcessing = true;
-            setTimeout(() => { isProcessing = false; }, 2000);
         });
     </script>
 </body>

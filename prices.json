@@ -9,7 +9,7 @@
           "accounts": {
             "Primary": {
               "name": "Primary - تفعيل أساسي",
-              "price": 85
+              "price": 333
             },
             "Secondary": {
               "name": "Secondary - تسجيل دخول مؤقت", 
@@ -17,7 +17,7 @@
             },
             "Full": {
               "name": "Full - حساب كامل",
-              "price": 120
+              "price": 333
             }
           }
         },
@@ -35,7 +35,7 @@
             },
             "Full": {
               "name": "Full - حساب كامل", 
-              "price": 125
+              "price": 333
             }
           }
         },
@@ -63,7 +63,7 @@
           "accounts": {
             "Primary": {
               "name": "Primary - تفعيل أساسي",
-              "price": 80
+              "price": 444
             },
             "Secondary": {
               "name": "Secondary - تسجيل دخول مؤقت",

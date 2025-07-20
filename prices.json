@@ -1,41 +1,99 @@
 {
-  "last_updated": "2025-01-20 12:00:00",
-  "version": "1.0",
   "games": {
     "FC25": {
+      "name": "FIFA FC 25",
       "platforms": {
         "PS4": {
-          "Primary": 85,
-          "Secondary": 70,
-          "Full": 120
+          "name": "PlayStation 4",
+          "icon": "🎮",
+          "accounts": {
+            "Primary": {
+              "name": "Primary - تفعيل أساسي",
+              "price": 85,
+              "description": "تفعيل الحساب كأساسي والعب من حسابك الشخصي"
+            },
+            "Secondary": {
+              "name": "Secondary - تسجيل دخول مؤقت",
+              "price": 70,
+              "description": "تسجيل دخول مؤقت وتحميل اللعبة"
+            },
+            "Full": {
+              "name": "Full - حساب كامل",
+              "price": 120,
+              "description": "حساب كامل قابل للتعديل"
+            }
+          }
         },
         "PS5": {
-          "Primary": 90,
-          "Secondary": 75,
-          "Full": 125
+          "name": "PlayStation 5",
+          "icon": "🎮",
+          "accounts": {
+            "Primary": {
+              "name": "Primary - تفعيل أساسي",
+              "price": 90,
+              "description": "تفعيل الحساب كأساسي والعب من حسابك الشخصي"
+            },
+            "Secondary": {
+              "name": "Secondary - تسجيل دخول مؤقت",
+              "price": 75,
+              "description": "تسجيل دخول مؤقت وتحميل اللعبة"
+            },
+            "Full": {
+              "name": "Full - حساب كامل",
+              "price": 125,
+              "description": "حساب كامل قابل للتعديل"
+            }
+          }
         },
         "Xbox": {
-          "Primary": 85,
-          "Secondary": 70,
-          "Full": 120
+          "name": "Xbox Series X/S & Xbox One",
+          "icon": "✕",
+          "accounts": {
+            "Primary": {
+              "name": "Primary - تفعيل أساسي",
+              "price": 85,
+              "description": "تفعيل الحساب كأساسي والعب من حسابك الشخصي"
+            },
+            "Secondary": {
+              "name": "Secondary - تسجيل دخول مؤقت",
+              "price": 70,
+              "description": "تسجيل دخول مؤقت وتحميل اللعبة"
+            },
+            "Full": {
+              "name": "Full - حساب كامل",
+              "price": 120,
+              "description": "حساب كامل قابل للتعديل"
+            }
+          }
         },
         "PC": {
-          "Primary": 80,
-          "Secondary": 65,
-          "Full": 115
+          "name": "PC (Steam/Epic Games)",
+          "icon": "🖥️",
+          "accounts": {
+            "Primary": {
+              "name": "Primary - تفعيل أساسي",
+              "price": 80,
+              "description": "تفعيل الحساب كأساسي والعب من حسابك الشخصي"
+            },
+            "Secondary": {
+              "name": "Secondary - تسجيل دخول مؤقت",
+              "price": 65,
+              "description": "تسجيل دخول مؤقت وتحميل اللعبة"
+            },
+            "Full": {
+              "name": "Full - حساب كامل",
+              "price": 115,
+              "description": "حساب كامل قابل للتعديل"
+            }
+          }
         }
       }
     }
   },
-  "offers": {
-    "discount_percentage": 0,
-    "free_delivery": true,
-    "express_delivery": false
-  },
   "settings": {
-    "min_phone_length": 10,
-    "max_phone_length": 15,
-    "enable_whatsapp_redirect": true,
-    "backup_enabled": true
+    "currency": "جنيه مصري",
+    "warranty": "1 سنة",
+    "delivery_time": "15 ساعة كحد أقصى",
+    "support_phone": "+201234567890"
   }
 }

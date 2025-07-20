@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import logging
 from functools import wraps
 from collections import defaultdict
+import urllib.parse
 
 # إعداد التطبيق
 app = Flask(__name__)
@@ -23,6 +24,10 @@ request_counts = defaultdict(list)
 failed_attempts = {}
 prices_cache = {}
 last_prices_update = 0
+
+# إعدادات الواتساب
+WHATSAPP_NUMBER = "+201234567890"  # غير الرقم هنا
+BUSINESS_NAME = "Senior Gaming Store"
 
 # Rate Limiting يدوي بسيط وقوي
 def rate_limit(max_requests=5, window=60):
@@ -61,7 +66,6 @@ def init_db():
         platform TEXT NOT NULL,
         account_type TEXT NOT NULL,
         price INTEGER NOT NULL,
-        customer_phone TEXT NOT NULL,
         status TEXT DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         ip_address TEXT,
@@ -143,7 +147,8 @@ def create_default_prices():
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",
-            "delivery_time": "15 ساعة كحد أقصى"
+            "delivery_time": "15 ساعة كحد أقصى",
+            "whatsapp_number": "+201234567890"
         }
     }
     
@@ -160,48 +165,13 @@ def security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"
+    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://wa.me"
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     return response
 
-# حماية قوية من Brute Force
-def security_check(ip_address):
-    current_time = time.time()
-    
-    if ip_address in blocked_ips:
-        block_time, duration = blocked_ips[ip_address]
-        if current_time - block_time < duration:
-            return False
-        else:
-            del blocked_ips[ip_address]
-    
-    return True
-
-def log_suspicious_activity(ip_address, activity):
-    current_time = time.time()
-    
-    if ip_address not in failed_attempts:
-        failed_attempts[ip_address] = []
-    
-    failed_attempts[ip_address].append(current_time)
-    
-    # تنظيف المحاولات القديمة
-    failed_attempts[ip_address] = [
-        t for t in failed_attempts[ip_address] 
-        if current_time - t < 300
-    ]
-    
-    # حظر إذا تجاوز 5 محاولات في 5 دقائق
-    if len(failed_attempts[ip_address]) >= 5:
-        blocked_ips[ip_address] = (current_time, 1800)  # حظر 30 دقيقة
-        logger.warning(f"🚨 تم حظر IP {ip_address} بسبب: {activity}")
-        return True
-    
-    return False
-
 # تنظيف المدخلات
-def sanitize_input(text, max_length=100, allow_numbers_only=False):
+def sanitize_input(text, max_length=100):
     if not text:
         return None
     
@@ -210,13 +180,8 @@ def sanitize_input(text, max_length=100, allow_numbers_only=False):
     if len(text) > max_length:
         return None
     
-    if allow_numbers_only:
-        text = re.sub(r'[^\d+]', '', text)
-        if not re.match(r'^[\d+]{10,15}$', text):
-            return None
-    else:
-        text = re.sub(r'[<>"\';\\&]', '', text)
-        text = re.sub(r'(script|javascript|vbscript|onload|onerror)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'[<>"\';\\&]', '', text)
+    text = re.sub(r'(script|javascript|vbscript|onload|onerror)', '', text, flags=re.IGNORECASE)
     
     return text
 
@@ -244,6 +209,100 @@ def index():
         logger.error(f"❌ خطأ في الصفحة الرئيسية: {e}")
         abort(500)
 
+# إنشاء رابط واتساب
+@app.route('/whatsapp', methods=['POST'])
+@rate_limit(max_requests=5, window=60)
+def create_whatsapp_link():
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', '')
+    
+    try:
+        # التحقق من CSRF
+        csrf_token = request.form.get('csrf_token')
+        if not validate_csrf_token(csrf_token):
+            return jsonify({'error': 'رمز الأمان غير صحيح'}), 400
+        
+        # تنظيف البيانات
+        game_type = sanitize_input(request.form.get('game_type'))
+        platform = sanitize_input(request.form.get('platform'))
+        account_type = sanitize_input(request.form.get('account_type'))
+        
+        if not all([game_type, platform, account_type]):
+            return jsonify({'error': 'يرجى اختيار جميع الخيارات أولاً'}), 400
+        
+        # تحميل الأسعار والتحقق
+        prices = load_prices()
+        
+        if (game_type not in prices.get('games', {}) or
+            platform not in prices['games'][game_type].get('platforms', {}) or
+            account_type not in prices['games'][game_type]['platforms'][platform].get('accounts', {})):
+            return jsonify({'error': 'اختيار المنتج غير صحيح'}), 400
+        
+        # بيانات المنتج
+        game_name = prices['games'][game_type]['name']
+        platform_name = prices['games'][game_type]['platforms'][platform]['name']
+        account_name = prices['games'][game_type]['platforms'][platform]['accounts'][account_type]['name']
+        price = prices['games'][game_type]['platforms'][platform]['accounts'][account_type]['price']
+        currency = prices.get('settings', {}).get('currency', 'جنيه')
+        
+        # إنشاء ID للطلب
+        order_id = hashlib.md5(f"{time.time()}{client_ip}".encode()).hexdigest()[:8].upper()
+        
+        # حفظ الطلب في قاعدة البيانات
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO orders 
+                     (id, game_type, platform, account_type, price, ip_address, user_agent)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                  (order_id, game_type, platform, account_type, price, client_ip, user_agent))
+        conn.commit()
+        conn.close()
+        
+        # إنشاء رسالة الواتساب
+        message = f"""🎮 *طلب جديد من {BUSINESS_NAME}*
+
+🆔 *رقم الطلب:* {order_id}
+
+🎯 *تفاصيل الطلب:*
+• اللعبة: {game_name}
+• المنصة: {platform_name}
+• نوع الحساب: {account_name}
+• السعر: {price} {currency}
+
+⏰ *وقت الطلب:* {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+📋 *يرجى تأكيد الطلب وإرسال تفاصيل الدفع*
+
+شكراً لاختيارك {BUSINESS_NAME} 🌟"""
+        
+        # ترميز الرسالة للـ URL
+        encoded_message = urllib.parse.quote(message)
+        
+        # رقم الواتساب من الإعدادات
+        whatsapp_number = prices.get('settings', {}).get('whatsapp_number', WHATSAPP_NUMBER)
+        
+        # إنشاء رابط الواتساب
+        whatsapp_url = f"https://wa.me/{whatsapp_number.replace('+', '')}?text={encoded_message}"
+        
+        logger.info(f"✅ طلب واتساب: {order_id} - {platform} {account_type} - {price} {currency} - IP: {client_ip}")
+        
+        # CSRF token جديد
+        new_csrf_token = generate_csrf_token()
+        
+        return jsonify({
+            'success': True,
+            'order_id': order_id,
+            'whatsapp_url': whatsapp_url,
+            'price': price,
+            'currency': currency,
+            'message': 'سيتم فتح الواتساب الآن...',
+            'csrf_token': new_csrf_token
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ خطأ في إنشاء رابط الواتساب: {e}")
+        return jsonify({'error': 'حدث خطأ في النظام'}), 500
+
 # API للحصول على الأسعار
 @app.route('/api/prices')
 @rate_limit(max_requests=10, window=60)
@@ -254,87 +313,6 @@ def get_prices():
     except Exception as e:
         logger.error(f"❌ خطأ في API الأسعار: {e}")
         return jsonify({'error': 'خطأ في النظام'}), 500
-
-# معالج الطلبات
-@app.route('/order', methods=['POST'])
-@rate_limit(max_requests=3, window=60)
-def create_order():
-    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-    user_agent = request.headers.get('User-Agent', '')
-    
-    if not security_check(client_ip):
-        logger.warning(f"🚨 محاولة وصول من IP محظور: {client_ip}")
-        abort(429)
-    
-    try:
-        # التحقق من CSRF
-        csrf_token = request.form.get('csrf_token')
-        if not validate_csrf_token(csrf_token):
-            log_suspicious_activity(client_ip, 'Invalid CSRF Token')
-            return jsonify({'error': 'رمز الأمان غير صحيح'}), 400
-        
-        # تنظيف البيانات
-        game_type = sanitize_input(request.form.get('game_type'))
-        platform = sanitize_input(request.form.get('platform'))
-        account_type = sanitize_input(request.form.get('account_type'))
-        phone = sanitize_input(request.form.get('phone'), 20, allow_numbers_only=True)
-        
-        if not all([game_type, platform, account_type, phone]):
-            log_suspicious_activity(client_ip, 'Incomplete Data')
-            return jsonify({'error': 'جميع البيانات مطلوبة'}), 400
-        
-        # تحميل الأسعار والتحقق
-        prices = load_prices()
-        
-        if (game_type not in prices.get('games', {}) or
-            platform not in prices['games'][game_type].get('platforms', {}) or
-            account_type not in prices['games'][game_type]['platforms'][platform].get('accounts', {})):
-            log_suspicious_activity(client_ip, 'Invalid Product Selection')
-            return jsonify({'error': 'اختيار المنتج غير صحيح'}), 400
-        
-        # الحصول على السعر
-        price = prices['games'][game_type]['platforms'][platform]['accounts'][account_type]['price']
-        
-        # إنشاء ID فريد
-        order_id = hashlib.md5(f"{time.time()}{client_ip}{phone}".encode()).hexdigest()[:8].upper()
-        
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-        
-        # فحص تكرار الرقم (منع الـ Spam)
-        c.execute('''SELECT COUNT(*) FROM orders 
-                     WHERE customer_phone = ? AND created_at > datetime('now', '-1 hour')''', (phone,))
-        
-        if c.fetchone()[0] >= 3:
-            conn.close()
-            log_suspicious_activity(client_ip, 'Phone Number Spam')
-            return jsonify({'error': 'تم تجاوز الحد المسموح للطلبات لهذا الرقم'}), 429
-        
-        # حفظ الطلب
-        c.execute('''INSERT INTO orders 
-                     (id, game_type, platform, account_type, price, customer_phone, ip_address, user_agent)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                  (order_id, game_type, platform, account_type, price, phone, client_ip, user_agent))
-        conn.commit()
-        conn.close()
-        
-        logger.info(f"✅ طلب جديد: {order_id} - {platform} {account_type} - {price} ج - {phone}")
-        
-        # CSRF token جديد
-        new_csrf_token = generate_csrf_token()
-        
-        return jsonify({
-            'success': True,
-            'order_id': order_id,
-            'price': price,
-            'currency': prices.get('settings', {}).get('currency', 'جنيه'),
-            'message': 'تم إنشاء طلبك بنجاح!',
-            'csrf_token': new_csrf_token
-        })
-        
-    except Exception as e:
-        logger.error(f"❌ خطأ في إنشاء الطلب: {e}")
-        return jsonify({'error': 'حدث خطأ في النظام'}), 500
 
 # Health check
 @app.route('/health')
@@ -347,7 +325,6 @@ def robots():
     return '''User-agent: *
 Disallow: /admin/
 Disallow: /api/
-Disallow: /order
 Crawl-delay: 10''', 200, {'Content-Type': 'text/plain'}
 
 # معالجات الأخطاء

@@ -397,7 +397,8 @@
                                     <div class="product-card">
                                         <div class="product-header">
                                             <div class="product-title">{{ game.name }}</div>
-                                            <div class="product-platform">{{ platform.icon }} {{ platform.name }}</div>
+                                            <div class="product-platform">{{ platform.icon|safe }} {{ platform.name }}</div>
+
                                         </div>
                                         
                                         <div class="product-body">

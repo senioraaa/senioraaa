@@ -3,107 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصفحة غير موجودة - منصة شهد السنيورة</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>404 - الصفحة غير موجودة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .error-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-        }
-        
-        .error-container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 3rem;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .error-code {
-            font-size: 8rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-        }
-        
-        .error-message {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        
-        .error-description {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-        
-        .error-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .error-btn {
-            padding: 12px 24px;
-            border: 2px solid white;
-            background: transparent;
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            transition: all 0.3s;
-            font-size: 1.1rem;
-        }
-        
-        .error-btn:hover {
-            background: white;
-            color: #667eea;
-        }
-        
-        .error-btn.primary {
-            background: white;
-            color: #667eea;
-        }
-        
-        .error-btn.primary:hover {
-            background: transparent;
-            color: white;
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
         }
     </style>
 </head>
 <body>
-    <div class="error-page">
-        <div class="error-container">
-            <div class="error-code">404</div>
-            <div class="error-message">🎮 الصفحة غير موجودة</div>
-            <div class="error-description">
-                عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.<br>
-                ربما تكون قد كتبت الرابط خطأ أو انتهت صلاحيته.
-            </div>
-            <div class="error-actions">
-                <a href="{{ url_for('index') }}" class="error-btn primary">
-                    🏠 العودة للرئيسية
-                </a>
-                <a href="{{ url_for('contact') }}" class="error-btn">
-                    📞 تواصل معنا
-                </a>
-                <a href="{{ url_for('faq') }}" class="error-btn">
-                    ❓ الأسئلة الشائعة
-                </a>
-            </div>
-        </div>
+    <div class="container text-center text-white">
+        <h1 class="display-1 fw-bold">404</h1>
+        <h2 class="mb-4">🔍 الصفحة غير موجودة</h2>
+        <p class="lead mb-4">عذراً، الصفحة التي تبحث عنها غير متوفرة</p>
+        <a href="/" class="btn btn-light btn-lg">🏠 العودة للرئيسية</a>
     </div>
-    
-    <script>
-        // إعادة توجيه تلقائي بعد 10 ثوانٍ
-        setTimeout(() => {
-            window.location.href = '{{ url_for("index") }}';
-        }, 10000);
-    </script>
 </body>
 </html>

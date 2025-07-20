@@ -1,23 +1,14 @@
 from flask import Flask, render_template, request, jsonify, session, abort
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 import json, os, sqlite3, uuid, secrets, time, re, hashlib
 from datetime import datetime, timedelta
 import logging
 from functools import wraps
+from collections import defaultdict
 
 # إعداد التطبيق
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
-
-# الحماية من Rate Limiting
-limiter = Limiter(
-    app,
-    key_func=get_remote_address,
-    default_limits=["100 per hour", "20 per minute"],
-    storage_uri="memory://"
-)
 
 # إعداد الـ Logging للأمان
 logging.basicConfig(
@@ -26,11 +17,38 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# متغيرات الحماية
+# متغيرات الحماية العامة
 blocked_ips = {}
+request_counts = defaultdict(list)
 failed_attempts = {}
 prices_cache = {}
 last_prices_update = 0
+
+# Rate Limiting يدوي بسيط وقوي
+def rate_limit(max_requests=5, window=60):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            current_time = time.time()
+            
+            # تنظيف الطلبات القديمة
+            request_counts[client_ip] = [
+                req_time for req_time in request_counts[client_ip]
+                if current_time - req_time < window
+            ]
+            
+            # فحص عدد الطلبات
+            if len(request_counts[client_ip]) >= max_requests:
+                logger.warning(f"🚨 Rate limit exceeded for IP: {client_ip}")
+                abort(429)
+            
+            # إضافة الطلب الحالي
+            request_counts[client_ip].append(current_time)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 # إنشاء قاعدة البيانات
 def init_db():
@@ -59,7 +77,6 @@ def load_prices():
     global prices_cache, last_prices_update
     
     try:
-        # فحص إذا كان الملف اتغير
         if os.path.exists('prices.json'):
             file_time = os.path.getmtime('prices.json')
             if file_time > last_prices_update:
@@ -69,7 +86,6 @@ def load_prices():
                 logger.info("🔄 تم تحديث الأسعار من ملف JSON")
         
         if not prices_cache:
-            # إنشاء ملف أسعار افتراضي إذا لم يكن موجود
             create_default_prices()
             
         return prices_cache
@@ -95,12 +111,30 @@ def create_default_prices():
                         }
                     },
                     "PS5": {
-                        "name": "PlayStation 5",
+                        "name": "PlayStation 5", 
                         "icon": "🎮",
                         "accounts": {
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 90},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 75},
                             "Full": {"name": "Full - حساب كامل", "price": 125}
+                        }
+                    },
+                    "Xbox": {
+                        "name": "Xbox Series X/S & Xbox One",
+                        "icon": "✕",
+                        "accounts": {
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 85},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 70},
+                            "Full": {"name": "Full - حساب كامل", "price": 120}
+                        }
+                    },
+                    "PC": {
+                        "name": "PC (Steam/Epic Games)",
+                        "icon": "🖥️",
+                        "accounts": {
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 80},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 65},
+                            "Full": {"name": "Full - حساب كامل", "price": 115}
                         }
                     }
                 }
@@ -126,7 +160,7 @@ def security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"
+    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     return response
@@ -135,7 +169,6 @@ def security_headers(response):
 def security_check(ip_address):
     current_time = time.time()
     
-    # فحص IP محظور
     if ip_address in blocked_ips:
         block_time, duration = blocked_ips[ip_address]
         if current_time - block_time < duration:
@@ -154,17 +187,20 @@ def log_suspicious_activity(ip_address, activity):
     failed_attempts[ip_address].append(current_time)
     
     # تنظيف المحاولات القديمة
-    failed_attempts[ip_address] = [t for t in failed_attempts[ip_address] if current_time - t < 300]
+    failed_attempts[ip_address] = [
+        t for t in failed_attempts[ip_address] 
+        if current_time - t < 300
+    ]
     
     # حظر إذا تجاوز 5 محاولات في 5 دقائق
     if len(failed_attempts[ip_address]) >= 5:
-        blocked_ips[ip_address] = (current_time, 1800)  # حظر لمدة 30 دقيقة
-        logger.warning(f"🚨 تم حظر IP {ip_address} لمدة 30 دقيقة بسبب النشاط المشبوه: {activity}")
+        blocked_ips[ip_address] = (current_time, 1800)  # حظر 30 دقيقة
+        logger.warning(f"🚨 تم حظر IP {ip_address} بسبب: {activity}")
         return True
     
     return False
 
-# تنظيف قوي للمدخلات
+# تنظيف المدخلات
 def sanitize_input(text, max_length=100, allow_numbers_only=False):
     if not text:
         return None
@@ -175,18 +211,16 @@ def sanitize_input(text, max_length=100, allow_numbers_only=False):
         return None
     
     if allow_numbers_only:
-        # للأرقام فقط (أرقام الهاتف)
         text = re.sub(r'[^\d+]', '', text)
         if not re.match(r'^[\d+]{10,15}$', text):
             return None
     else:
-        # إزالة HTML tags والرموز الخطيرة
         text = re.sub(r'[<>"\';\\&]', '', text)
         text = re.sub(r'(script|javascript|vbscript|onload|onerror)', '', text, flags=re.IGNORECASE)
     
     return text
 
-# CSRF Protection بسيط وقوي
+# CSRF Protection
 def generate_csrf_token():
     token = secrets.token_urlsafe(32)
     session['csrf_token'] = token
@@ -197,6 +231,7 @@ def validate_csrf_token(token):
 
 # الصفحة الرئيسية
 @app.route('/')
+@rate_limit(max_requests=10, window=60)
 def index():
     try:
         prices = load_prices()
@@ -211,7 +246,7 @@ def index():
 
 # API للحصول على الأسعار
 @app.route('/api/prices')
-@limiter.limit("10 per minute")
+@rate_limit(max_requests=10, window=60)
 def get_prices():
     try:
         prices = load_prices()
@@ -220,14 +255,13 @@ def get_prices():
         logger.error(f"❌ خطأ في API الأسعار: {e}")
         return jsonify({'error': 'خطأ في النظام'}), 500
 
-# معالج الطلبات - محمي بقوة
+# معالج الطلبات
 @app.route('/order', methods=['POST'])
-@limiter.limit("3 per minute")
+@rate_limit(max_requests=3, window=60)
 def create_order():
     client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
     user_agent = request.headers.get('User-Agent', '')
     
-    # فحص أمني أولي
     if not security_check(client_ip):
         logger.warning(f"🚨 محاولة وصول من IP محظور: {client_ip}")
         abort(429)
@@ -239,18 +273,17 @@ def create_order():
             log_suspicious_activity(client_ip, 'Invalid CSRF Token')
             return jsonify({'error': 'رمز الأمان غير صحيح'}), 400
         
-        # تنظيف البيانات بشكل صارم
+        # تنظيف البيانات
         game_type = sanitize_input(request.form.get('game_type'))
         platform = sanitize_input(request.form.get('platform'))
         account_type = sanitize_input(request.form.get('account_type'))
         phone = sanitize_input(request.form.get('phone'), 20, allow_numbers_only=True)
         
-        # التحقق من اكتمال البيانات
         if not all([game_type, platform, account_type, phone]):
             log_suspicious_activity(client_ip, 'Incomplete Data')
             return jsonify({'error': 'جميع البيانات مطلوبة'}), 400
         
-        # تحميل الأسعار والتحقق من صحة الطلب
+        # تحميل الأسعار والتحقق
         prices = load_prices()
         
         if (game_type not in prices.get('games', {}) or
@@ -262,13 +295,13 @@ def create_order():
         # الحصول على السعر
         price = prices['games'][game_type]['platforms'][platform]['accounts'][account_type]['price']
         
-        # إنشاء الطلب
+        # إنشاء ID فريد
         order_id = hashlib.md5(f"{time.time()}{client_ip}{phone}".encode()).hexdigest()[:8].upper()
         
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
         
-        # فحص عدم تكرار رقم الهاتف في آخر ساعة (منع الـ Spam)
+        # فحص تكرار الرقم (منع الـ Spam)
         c.execute('''SELECT COUNT(*) FROM orders 
                      WHERE customer_phone = ? AND created_at > datetime('now', '-1 hour')''', (phone,))
         
@@ -285,10 +318,9 @@ def create_order():
         conn.commit()
         conn.close()
         
-        # تسجيل الطلب الناجح
-        logger.info(f"✅ طلب جديد: {order_id} - {platform} {account_type} - {price} ج - {phone} - IP: {client_ip}")
+        logger.info(f"✅ طلب جديد: {order_id} - {platform} {account_type} - {price} ج - {phone}")
         
-        # إنشاء token جديد للأمان
+        # CSRF token جديد
         new_csrf_token = generate_csrf_token()
         
         return jsonify({
@@ -301,24 +333,24 @@ def create_order():
         })
         
     except Exception as e:
-        logger.error(f"❌ خطأ في إنشاء الطلب: {e} - IP: {client_ip}")
+        logger.error(f"❌ خطأ في إنشاء الطلب: {e}")
         return jsonify({'error': 'حدث خطأ في النظام'}), 500
 
-# Health check للـ Render
+# Health check
 @app.route('/health')
 def health_check():
     return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}, 200
 
-# Robots.txt للحماية
+# Robots.txt
 @app.route('/robots.txt')
 def robots():
     return '''User-agent: *
 Disallow: /admin/
 Disallow: /api/
 Disallow: /order
-Crawl-delay: 10'''
+Crawl-delay: 10''', 200, {'Content-Type': 'text/plain'}
 
-# معالجات الأخطاء الأمنية
+# معالجات الأخطاء
 @app.errorhandler(400)
 def bad_request(error):
     return jsonify({'error': 'طلب غير صحيح'}), 400
@@ -338,13 +370,8 @@ def internal_error(error):
 
 # تشغيل التطبيق
 if __name__ == '__main__':
-    # إعداد قاعدة البيانات
     init_db()
-    
-    # تحميل الأسعار
     load_prices()
-    
-    # تشغيل التطبيق
     app.run(
         debug=False, 
         host='0.0.0.0', 

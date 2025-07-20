@@ -1,350 +1,313 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_wtf.csrf import CSRFProtect
-import json
-import os
+from werkzeug.security import check_password_hash, generate_password_hash
+import hashlib, time, os, re, sqlite3, uuid, secrets
+from datetime import datetime, timedelta
 import logging
-import time
-import re
-from datetime import datetime
 
-# إنشاء التطبيق
+# إعداد التطبيق
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
-# 🔐 الإعدادات الأمنية
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32))
-app.config['WTF_CSRF_TIME_LIMIT'] = 3600
-
-# 🛡️ حماية CSRF
-csrf = CSRFProtect(app)
-
-# 🚫 Rate Limiting
+# الحماية الأمنية (بدون CSRF مؤقتاً)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["100 per hour", "20 per minute"],
+    default_limits=["200 per hour", "50 per minute"],
     storage_uri="memory://"
 )
 
-# 📝 تسجيل الأحداث
-logging.basicConfig(level=logging.INFO)
+# إعداد الـ Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-# 🛡️ Headers أمنية
+# متغيرات عامة
+failed_attempts = {}
+blocked_ips = {}
+
+# إنشاء قاعدة البيانات
+def init_db():
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    
+    # جدول الطلبات
+    c.execute('''CREATE TABLE IF NOT EXISTS orders (
+        id TEXT PRIMARY KEY,
+        game_type TEXT NOT NULL,
+        platform TEXT NOT NULL,
+        account_type TEXT NOT NULL,
+        price INTEGER NOT NULL,
+        customer_phone TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT
+    )''')
+    
+    # جدول المستخدمين
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'admin',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    # إضافة مستخدم افتراضي
+    admin_hash = generate_password_hash('admin123')
+    c.execute('INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)',
+              ('admin', admin_hash, 'admin'))
+    
+    conn.commit()
+    conn.close()
+
+# Headers أمنية
 @app.after_request
 def security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     return response
 
-# 📄 تنظيف المدخلات
+# حماية من الـ Brute Force
+def check_brute_force(ip):
+    current_time = time.time()
+    
+    if ip in blocked_ips:
+        block_time, block_duration = blocked_ips[ip]
+        if current_time - block_time < block_duration:
+            return False
+        else:
+            del blocked_ips[ip]
+    
+    if ip in failed_attempts:
+        attempts, last_attempt = failed_attempts[ip]
+        if current_time - last_attempt < 300:
+            if attempts >= 5:
+                blocked_ips[ip] = (current_time, 1800)
+                logger.warning(f"IP {ip} blocked due to too many failed attempts")
+                return False
+    return True
+
+def log_failed_attempt(ip):
+    current_time = time.time()
+    if ip in failed_attempts:
+        attempts, _ = failed_attempts[ip]
+        failed_attempts[ip] = (attempts + 1, current_time)
+    else:
+        failed_attempts[ip] = (1, current_time)
+
+# تنظيف المدخلات
 def sanitize_input(text, max_length=100):
-    """تنظيف وتحقق من صحة المدخلات"""
-    if not text or not isinstance(text, str):
+    if not text or len(text) > max_length:
         return None
-    
-    if len(text) > max_length:
-        return None
-    
-    # إزالة الأحرف الخطرة
-    text = re.sub(r'[<>"\';]', '', text)
+    text = re.sub(r'[<>"\';\\]', '', str(text))
     return text.strip()
 
-# 📊 تحميل الأسعار من JSON
-def load_prices():
-    """تحميل الأسعار من ملف JSON"""
-    try:
-        with open('data/prices.json', 'r', encoding='utf-8') as f:
-            prices_data = json.load(f)
-        return prices_data
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        logger.error(f"خطأ في تحميل ملف الأسعار: {e}")
-        return get_default_prices()
+def validate_phone(phone):
+    phone = re.sub(r'[^\d+]', '', phone)
+    if len(phone) >= 10 and len(phone) <= 15:
+        return phone
+    return None
 
-def get_default_prices():
-    """الأسعار الافتراضية في حالة عدم وجود ملف"""
-    return {
-        "games": [
-            {
-                "id": "fc25",
-                "name": "FC 25",
-                "platforms": {
-                    "ps4": {
-                        "primary": 85,
-                        "secondary": 70,
-                        "full": 120
-                    },
-                    "ps5": {
-                        "primary": 90,
-                        "secondary": 75,
-                        "full": 125
-                    },
-                    "xbox": {
-                        "primary": 85,
-                        "secondary": 70,
-                        "full": 120
-                    },
-                    "pc": {
-                        "primary": 80,
-                        "secondary": 65,
-                        "full": 115
-                    }
-                }
-            }
-        ],
-        "last_updated": "2025-01-20T10:00:00Z"
-    }
+# Simple CSRF protection
+def generate_csrf_token():
+    return secrets.token_hex(32)
 
-# 💾 حفظ الطلبات
-def save_order(order):
-    """حفظ الطلب في ملف JSON"""
-    try:
-        # قراءة الطلبات الموجودة
-        try:
-            with open('orders.json', 'r', encoding='utf-8') as f:
-                orders = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            orders = []
-        
-        # إضافة الطلب الجديد
-        orders.append(order)
-        
-        # حفظ البيانات المحدثة
-        with open('orders.json', 'w', encoding='utf-8') as f:
-            json.dump(orders, f, ensure_ascii=False, indent=2)
-            
-    except Exception as e:
-        logger.error(f"خطأ في حفظ الطلب: {e}")
-        raise
+def validate_csrf_token(token):
+    return token and len(token) == 64
 
-# 🏠 الصفحة الرئيسية
+# الصفحة الرئيسية
 @app.route('/')
 def index():
-    try:
-        prices_data = load_prices()
-        return render_template('index.html', prices=prices_data)
-    except Exception as e:
-        logger.error(f"خطأ في الصفحة الرئيسية: {e}")
-        return render_template('index.html', prices=get_default_prices())
+    csrf_token = generate_csrf_token()
+    session['csrf_token'] = csrf_token
+    return render_template('index.html', csrf_token=csrf_token)
 
-# 🎮 صفحة FC25
-@app.route('/fc25')
-def fc25():
-    try:
-        prices_data = load_prices()
-        fc25_game = next((game for game in prices_data['games'] if game['id'] == 'fc25'), None)
-        return render_template('fc25.html', game=fc25_game, prices=prices_data)
-    except Exception as e:
-        logger.error(f"خطأ في صفحة FC25: {e}")
-        return render_template('fc25.html', game=None, prices=get_default_prices())
-
-# 📞 صفحة التواصل
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-# ❓ صفحة الأسئلة الشائعة
-@app.route('/faq')
-def faq():
-    return render_template('faq.html')
-
-# 📋 صفحة الشروط والأحكام
-@app.route('/terms')
-def terms():
-    return render_template('terms.html')
-
-# 🔧 API للحصول على الأسعار
-@app.route('/api/prices')
-@limiter.limit("30 per minute")
-def api_prices():
-    try:
-        prices_data = load_prices()
-        return jsonify({
-            'success': True,
-            'data': prices_data
-        })
-    except Exception as e:
-        logger.error(f"خطأ في API الأسعار: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'خطأ في تحميل الأسعار'
-        }), 500
-
-# 🔧 API للحصول على أسعار لعبة معينة
-@app.route('/api/prices/<game_id>')
-@limiter.limit("30 per minute")
-def api_game_prices(game_id):
-    try:
-        prices_data = load_prices()
-        game = next((g for g in prices_data['games'] if g['id'] == game_id), None)
-        
-        if game:
-            return jsonify({
-                'success': True,
-                'data': game
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'اللعبة غير موجودة'
-            }), 404
-            
-    except Exception as e:
-        logger.error(f"خطأ في API أسعار اللعبة: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'خطأ في تحميل أسعار اللعبة'
-        }), 500
-
-# 📦 إنشاء طلب جديد
+# معالج الطلبات الجديدة
 @app.route('/order', methods=['POST'])
 @limiter.limit("5 per minute")
 def create_order():
     try:
-        # تنظيف المدخلات
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', ''))
+        
+        # Simple CSRF check
+        token = request.form.get('csrf_token')
+        if not validate_csrf_token(token) or token != session.get('csrf_token'):
+            return jsonify({'error': 'Invalid security token'}), 400
+        
+        # تنظيف البيانات
         game_type = sanitize_input(request.form.get('game_type'))
         platform = sanitize_input(request.form.get('platform'))
         account_type = sanitize_input(request.form.get('account_type'))
-        customer_name = sanitize_input(request.form.get('customer_name'))
-        customer_phone = sanitize_input(request.form.get('customer_phone'))
-        customer_notes = sanitize_input(request.form.get('customer_notes', ''), 500)
+        phone = validate_phone(request.form.get('phone', ''))
         
-        # التحقق من صحة البيانات
-        if not all([game_type, platform, account_type, customer_name, customer_phone]):
-            return jsonify({
-                'success': False,
-                'error': 'جميع البيانات مطلوبة'
-            }), 400
-        
-        # التحقق من صحة رقم الهاتف
-        phone_pattern = r'^\+?[0-9]{10,15}$'
-        if not re.match(phone_pattern, customer_phone.replace(' ', '').replace('-', '')):
-            return jsonify({
-                'success': False,
-                'error': 'رقم الهاتف غير صحيح'
-            }), 400
+        if not all([game_type, platform, account_type, phone]):
+            logger.warning(f"Invalid order data from IP: {client_ip}")
+            return jsonify({'error': 'بيانات غير صحيحة'}), 400
         
         # حساب السعر
-        prices_data = load_prices()
-        game = next((g for g in prices_data['games'] if g['id'] == game_type), None)
-        
-        if not game or platform not in game['platforms'] or account_type not in game['platforms'][platform]:
-            return jsonify({
-                'success': False,
-                'error': 'بيانات غير صحيحة'
-            }), 400
-        
-        price = game['platforms'][platform][account_type]
-        
-        # إنشاء الطلب
-        order = {
-            'id': int(time.time() * 1000),  # ID فريد
-            'game_type': game_type,
-            'game_name': game['name'],
-            'platform': platform,
-            'account_type': account_type,
-            'price': price,
-            'customer_name': customer_name,
-            'customer_phone': customer_phone,
-            'customer_notes': customer_notes,
-            'status': 'pending',
-            'created_at': datetime.now().isoformat(),
-            'ip_address': request.environ.get('HTTP_X_FORWARDED_FOR', 
-                                            request.environ.get('REMOTE_ADDR'))
+        prices = {
+            ('FC25', 'PS4', 'Primary'): 85,
+            ('FC25', 'PS4', 'Secondary'): 70,
+            ('FC25', 'PS4', 'Full'): 120,
+            ('FC25', 'PS5', 'Primary'): 90,
+            ('FC25', 'PS5', 'Secondary'): 75,
+            ('FC25', 'PS5', 'Full'): 125,
+            ('FC25', 'Xbox', 'Primary'): 85,
+            ('FC25', 'Xbox', 'Secondary'): 70,
+            ('FC25', 'Xbox', 'Full'): 120,
+            ('FC25', 'PC', 'Primary'): 80,
+            ('FC25', 'PC', 'Secondary'): 65,
+            ('FC25', 'PC', 'Full'): 115,
         }
         
-        # حفظ الطلب
-        save_order(order)
+        price = prices.get((game_type, platform, account_type))
+        if not price:
+            return jsonify({'error': 'نوع غير مدعوم'}), 400
         
-        # تسجيل العملية
-        logger.info(f"طلب جديد تم إنشاؤه - ID: {order['id']}, العميل: {customer_name}")
+        # إنشاء الطلب
+        order_id = str(uuid.uuid4())[:8]
+        
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO orders 
+                     (id, game_type, platform, account_type, price, customer_phone, ip_address)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                  (order_id, game_type, platform, account_type, price, phone, client_ip))
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"New order created: {order_id} from IP: {client_ip}")
+        
+        # Generate new CSRF token
+        new_token = generate_csrf_token()
+        session['csrf_token'] = new_token
         
         return jsonify({
             'success': True,
-            'message': 'تم إنشاء الطلب بنجاح! سيتم التواصل معك قريباً',
-            'order_id': order['id'],
-            'whatsapp_message': f"طلب جديد رقم: {order['id']}\nاللعبة: {game['name']}\nالمنصة: {platform}\nنوع الحساب: {account_type}\nالسعر: {price} جنيه\nالعميل: {customer_name}\nالهاتف: {customer_phone}"
+            'order_id': order_id,
+            'price': price,
+            'message': 'تم إنشاء الطلب بنجاح!',
+            'csrf_token': new_token
         })
         
     except Exception as e:
-        logger.error(f"خطأ في إنشاء الطلب: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'حدث خطأ في النظام'
-        }), 500
+        logger.error(f"Error creating order: {str(e)}")
+        return jsonify({'error': 'حدث خطأ في النظام'}), 500
 
-# 🚨 مصيدة أمنية للـ admin (بدون وجود admin حقيقي)
+# صفحة تسجيل الدخول للمدير
+@app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+def admin_login():
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', ''))
+    
+    if not check_brute_force(client_ip):
+        logger.warning(f"Blocked login attempt from IP: {client_ip}")
+        abort(429)
+    
+    if request.method == 'POST':
+        username = sanitize_input(request.form.get('username'))
+        password = request.form.get('password', '')
+        
+        if not username or not password:
+            log_failed_attempt(client_ip)
+            flash('البيانات غير مكتملة', 'error')
+            return render_template('login.html')
+        
+        # التحقق من المستخدم
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute('SELECT password_hash, role FROM users WHERE username = ?', (username,))
+        user = c.fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user[0], password):
+            session.permanent = True
+            session['logged_in'] = True
+            session['username'] = username
+            session['role'] = user[1]
+            logger.info(f"Successful login: {username} from IP: {client_ip}")
+            return redirect(url_for('admin_dashboard'))
+        else:
+            log_failed_attempt(client_ip)
+            logger.warning(f"Failed login attempt for {username} from IP: {client_ip}")
+            flash('بيانات خاطئة', 'error')
+    
+    return render_template('login.html')
+
+# لوحة تحكم المدير
 @app.route('/admin')
-@app.route('/admin/<path:path>')
-def admin_security_trap(path=None):
-    """مصيدة أمنية للمتطفلين - لا يوجد admin حقيقي"""
-    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', 
-                                   request.environ.get('REMOTE_ADDR'))
-    user_agent = request.headers.get('User-Agent', 'Unknown')
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not session.get('logged_in'):
+        return redirect(url_for('admin_login'))
     
-    # تسجيل تفصيلي للمحاولة المشبوهة
-    logger.warning(
-        f"🚨 محاولة دخول مشبوهة للـ admin - "
-        f"IP: {client_ip}, "
-        f"Path: /admin{('/' + path) if path else ''}, "
-        f"User-Agent: {user_agent[:100]}, "
-        f"Time: {datetime.now()}"
-    )
+    # جلب الطلبات
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute('''SELECT id, game_type, platform, account_type, price, 
+                        customer_phone, status, created_at, ip_address 
+                 FROM orders ORDER BY created_at DESC LIMIT 50''')
+    orders = c.fetchall()
+    conn.close()
     
-    # إعادة 404 طبيعية
-    abort(404)
+    return render_template('admin.html', orders=orders)
 
-# ❌ معالجة الأخطاء 404
+# تحديث حالة الطلب
+@app.route('/admin/update_order/<order_id>', methods=['POST'])
+def update_order(order_id):
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    new_status = sanitize_input(request.form.get('status'))
+    if new_status not in ['pending', 'completed', 'cancelled']:
+        return jsonify({'error': 'Invalid status'}), 400
+    
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute('UPDATE orders SET status = ? WHERE id = ?', (new_status, order_id))
+    conn.commit()
+    conn.close()
+    
+    logger.info(f"Order {order_id} status updated to {new_status} by {session['username']}")
+    return jsonify({'success': True})
+
+# تسجيل الخروج
+@app.route('/admin/logout')
+def admin_logout():
+    username = session.get('username')
+    session.clear()
+    logger.info(f"User {username} logged out")
+    flash('تم تسجيل الخروج بنجاح', 'success')
+    return redirect(url_for('admin_login'))
+
+# Health check for Render
+@app.route('/health')
+def health_check():
+    return {'status': 'healthy'}, 200
+
+# معالج الأخطاء
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
 
-# ❌ معالجة الأخطاء 500
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"خطأ داخلي في الخادم: {error}")
-    return render_template('500.html'), 500
-
-# ❌ معالجة أخطاء Rate Limiting
 @app.errorhandler(429)
 def ratelimit_handler(e):
-    return jsonify({
-        'success': False,
-        'error': 'تم تجاوز الحد المسموح من الطلبات'
-    }), 429
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', ''))
+    logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+    return render_template('ratelimit.html'), 429
 
-# 🔄 تحديث الأسعار تلقائياً (من ملف JSON فقط)
-def update_prices_from_file():
-    """تحديث الأسعار من ملف JSON عند تشغيل التطبيق"""
-    try:
-        # فحص وجود ملف الأسعار
-        if os.path.exists('data/prices.json'):
-            with open('data/prices.json', 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            logger.info(f"تم تحميل الأسعار من الملف - آخر تحديث: {data.get('last_updated', 'غير محدد')}")
-        else:
-            # إنشاء ملف الأسعار الافتراضي
-            os.makedirs('data', exist_ok=True)
-            default_prices = get_default_prices()
-            default_prices['last_updated'] = datetime.now().isoformat()
-            
-            with open('data/prices.json', 'w', encoding='utf-8') as f:
-                json.dump(default_prices, f, ensure_ascii=False, indent=2)
-            
-            logger.info("تم إنشاء ملف أسعار افتراضي")
-            
-    except Exception as e:
-        logger.error(f"خطأ في تحديث الأسعار: {e}")
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
 
+# تشغيل التطبيق
 if __name__ == '__main__':
-    # تحديث الأسعار عند بدء التطبيق
-    update_prices_from_file()
-    
-    # تشغيل التطبيق
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    init_db()
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

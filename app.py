@@ -47,6 +47,28 @@ def load_prices():
             "ps5_secondary": 120
         }
 
+# تنسيق الأسعار للـ template
+def format_prices_for_template(prices):
+    """تحويل الأسعار للشكل المطلوب في الـ template"""
+    try:
+        platforms = {
+            'ps4': {
+                'primary': prices.get('ps4_primary', 100),
+                'secondary': prices.get('ps4_secondary', 80)
+            },
+            'ps5': {
+                'primary': prices.get('ps5_primary', 150),
+                'secondary': prices.get('ps5_secondary', 120)
+            }
+        }
+        return platforms
+    except Exception as e:
+        logger.error(f"❌ خطأ في تنسيق الأسعار: {e}")
+        return {
+            'ps4': {'primary': 100, 'secondary': 80},
+            'ps5': {'primary': 150, 'secondary': 120}
+        }
+
 # حفظ الأسعار
 def save_prices(prices):
     try:
@@ -200,22 +222,50 @@ def process_telegram_command(message):
 # Routes
 @app.route('/')
 def home():
-    prices = load_prices()
-    return render_template('index.html', prices=prices)
+    try:
+        prices = load_prices()
+        # 🚨 التصحيح: تحويل الأسعار للشكل المطلوب
+        platforms = format_prices_for_template(prices)
+        return render_template('index.html', platforms=platforms, prices=prices)
+    except Exception as e:
+        logger.error(f"❌ خطأ في الصفحة الرئيسية: {e}")
+        # في حالة الخطأ، إرسال بيانات افتراضية
+        default_platforms = {
+            'ps4': {'primary': 100, 'secondary': 80},
+            'ps5': {'primary': 150, 'secondary': 120}
+        }
+        default_prices = {
+            "ps4_primary": 100,
+            "ps4_secondary": 80,
+            "ps5_primary": 150,
+            "ps5_secondary": 120
+        }
+        return render_template('index.html', platforms=default_platforms, prices=default_prices)
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html')
+    try:
+        return render_template('admin.html')
+    except Exception as e:
+        logger.error(f"❌ خطأ في صفحة الأدمن: {e}")
+        return f"خطأ في تحميل صفحة الإدارة: {e}", 500
 
 @app.route('/api/prices')
 def get_prices():
-    prices = load_prices()
-    return jsonify(prices)
+    try:
+        prices = load_prices()
+        return jsonify(prices)
+    except Exception as e:
+        logger.error(f"❌ خطأ في API الأسعار: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/prices', methods=['POST'])
 def update_prices():
     try:
         data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "لا توجد بيانات"}), 400
+            
         if save_prices(data):
             return jsonify({"success": True, "message": "تم تحديث الأسعار بنجاح"})
         else:
@@ -247,6 +297,16 @@ def telegram_webhook():
         logger.error(f"❌ خطأ في webhook: {e}")
         logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
+# معالجة الأخطاء العامة
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "الصفحة غير موجودة"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"❌ خطأ داخلي: {error}")
+    return jsonify({"error": "خطأ داخلي في الخادم"}), 500
 
 # إعداد الـ webhook عند بدء التطبيق
 def setup_webhook():

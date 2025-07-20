@@ -26,7 +26,7 @@ prices_cache = {}
 last_prices_update = 0
 
 # إعدادات الواتساب
-WHATSAPP_NUMBER = "+201234567890"  # غير الرقم هنا
+WHATSAPP_NUMBER = "+201094591331"  # غير الرقم هنا
 BUSINESS_NAME = "Senior Gaming Store"
 
 # Rate Limiting يدوي بسيط وقوي

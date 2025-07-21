@@ -24,7 +24,7 @@ failed_attempts = {}
 
 # إعدادات الواتساب
 WHATSAPP_NUMBER = "+201094591331"
-BUSINESS_NAME = "Senior Gaming Store"
+BUSINESS_NAME = "شهد السنيورة"
 
 # دالة تنسيق الأرقام بالفاصلة العشرية
 def format_number(number):
@@ -103,7 +103,7 @@ def anti_spam_check(ip_address, user_agent):
 def get_prices():
     return {
         "games": {
-            "FC25_EN_Standard": {
+            "FC26_EN_Standard": {
                 "name": "Standard Edition (English) 🇺🇸",
                 "platforms": {
                     "PS5": {
@@ -130,7 +130,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_EN_Ultimate": {
+            "FC26_EN_Ultimate": {
                 "name": "Ultimate Edition (English) 🇺🇸",
                 "platforms": {
                     "PS5": {
@@ -157,7 +157,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_AR_Standard": {
+            "FC26_AR_Standard": {
                 "name": "Standard Edition (Arabic) 🇸🇦",
                 "platforms": {
                     "PS5": {
@@ -184,7 +184,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_AR_Ultimate": {
+            "FC26_AR_Ultimate": {
                 "name": "Ultimate Edition (Arabic) 🇸🇦",
                 "platforms": {
                     "PS5": {
@@ -211,7 +211,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_XBOX_Standard": {
+            "FC26_XBOX_Standard": {
                 "name": "Xbox Standard Edition 🎮",
                 "platforms": {
                     "Xbox": {
@@ -227,7 +227,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_XBOX_Ultimate": {
+            "FC26_XBOX_Ultimate": {
                 "name": "Xbox Ultimate Edition 🎮",
                 "platforms": {
                     "Xbox": {
@@ -243,7 +243,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_PC_Standard": {
+            "FC26_PC_Standard": {
                 "name": "PC Standard Edition 🖥️",
                 "platforms": {
                     "PC": {
@@ -262,7 +262,7 @@ def get_prices():
                     }
                 }
             },
-            "FC25_PC_Ultimate": {
+            "FC26_PC_Ultimate": {
                 "name": "PC Ultimate Edition 🖥️",
                 "platforms": {
                     "PC": {

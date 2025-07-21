@@ -236,7 +236,7 @@ def get_prices():
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": },
+                            "Full": {"name": "Full - حساب كامل", "price": 10},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 00}
                         }

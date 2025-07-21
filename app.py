@@ -26,6 +26,11 @@ failed_attempts = {}
 WHATSAPP_NUMBER = "+201094591331"
 BUSINESS_NAME = "Senior Gaming Store"
 
+# دالة تنسيق الأرقام بالفاصلة العشرية
+def format_number(number):
+    """تنسيق الأرقام بالفاصلة العشرية"""
+    return f"{int(number):,}"
+
 # Rate Limiting محسن بدون CSRF
 def rate_limit(max_requests=10, window=60):
     def decorator(f):
@@ -231,9 +236,9 @@ def get_prices():
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 3800},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 3200}
+                            "Full": {"name": "Full - حساب كامل", "price": },
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 00}
                         }
                     }
                 }
@@ -364,9 +369,7 @@ def create_whatsapp_link():
         timestamp = str(int(time.time()))
         reference_id = hashlib.md5(f"{timestamp}{client_ip}{game_type}{platform}".encode()).hexdigest()[:8].upper()
         
-        # إنشاء رسالة الواتساب
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-        
+        # إنشاء رسالة الواتساب - بدون وقت الاستفسار
         message = f"""🎮 *استفسار من {BUSINESS_NAME}*
 
 🆔 *المرجع:* {reference_id}
@@ -375,9 +378,7 @@ def create_whatsapp_link():
 • اللعبة: {game_name}
 • المنصة: {platform_name}
 • نوع الحساب: {account_name}
-• السعر: {price} {currency}
-
-⏰ *وقت الاستفسار:* {current_time}
+• السعر: {format_number(price)} {currency}
 
 👋 *السلام عليكم، أريد الاستفسار عن هذا المنتج*
 
@@ -393,13 +394,13 @@ def create_whatsapp_link():
         # إنشاء رابط الواتساب
         whatsapp_url = f"https://wa.me/{clean_number}?text={encoded_message}"
         
-        logger.info(f"✅ فتح واتساب: {reference_id} - {platform} {account_type} - {price} {currency} - IP: {client_ip}")
+        logger.info(f"✅ فتح واتساب: {reference_id} - {platform} {account_type} - {format_number(price)} {currency} - IP: {client_ip}")
         
         return jsonify({
             'success': True,
             'reference_id': reference_id,
             'whatsapp_url': whatsapp_url,
-            'price': price,
+            'price': format_number(price),
             'currency': currency,
             'message': 'سيتم فتح الواتساب الآن...'
         })
@@ -451,9 +452,14 @@ def internal_error(error):
     logger.error(f"❌ خطأ داخلي: {error}")
     return f"خطأ داخلي: {error}", 500
 
+# إضافة filter للـ Jinja2 لتنسيق الأرقام
+@app.template_filter('format_number')
+def format_number_filter(number):
+    return format_number(number)
+
 # تشغيل التطبيق
 if __name__ == '__main__':
-    logger.info("🚀 تم تشغيل التطبيق بنجاح - الأسعار مدمجة في الكود")
+    logger.info("🚀 تم تشغيل التطبيق بنجاح - الأسعار مدمجة في الكود مع فاصلة عشرية")
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 else:
-    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - الأسعار مدمجة في الكود")
+    logger.info("🚀 تم تشغيل التطبيق عبر gunicorn - الأسعار مدمجة في الكود مع فاصلة عشرية")

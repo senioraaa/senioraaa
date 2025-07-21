@@ -510,7 +510,8 @@
                                                                 {% endif %}
                                                             </div>
                                                         </div>
-                                                        <div class="account-price">{{ account.price }} {{ prices.settings.currency[:4] }}</div>
+                                                        <div class="account-price">{{ account.price|format_number }} {{ prices.settings.currency[:4] }}</div>
+
                                                     </div>
                                                 {% endfor %}
                                             </div>

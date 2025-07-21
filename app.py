@@ -104,7 +104,7 @@ def get_prices():
     return {
         "games": {
             "FC25_EN_Standard": {
-                "name": "FC 25 - Standard Edition (English) 🇺🇸",
+                "name": "Standard Edition (English) 🇺🇸",
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",

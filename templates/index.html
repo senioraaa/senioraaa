@@ -82,12 +82,21 @@
             padding: 30px 20px;
         }
         
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 كروت بدل auto-fit */
+    gap: 30px; /* مساحة أكبر */
+    margin-top: 30px;
+    max-width: 1200px; /* عرض محدود للـ PC */
+    margin: 30px auto 0; /* توسيط */
+}
+
+/* إضافة زوم للكروت */
+.product-card:hover {
+    transform: translateY(-5px) scale(1.02); /* زوم خفيف */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+
         
         .product-card {
             background: #fff;

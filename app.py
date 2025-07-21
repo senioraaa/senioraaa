@@ -107,7 +107,7 @@ def get_prices():
                 "name": "Standard Edition (English) 🇺🇸",
                 "platforms": {
                     "PS5": {
-                        "name": "PlayStation 5",
+                        "name": "PlayStation PS, 5",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
@@ -118,7 +118,7 @@ def get_prices():
                         }
                     },
                     "PS4": {
-                        "name": "PlayStation 4",
+                        "name": "PlayStation PS,4",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
@@ -131,10 +131,10 @@ def get_prices():
                 }
             },
             "FC25_EN_Ultimate": {
-                "name": "FC 25 - Ultimate Edition (English) 🇺🇸",
+                "name": "Ultimate Edition (English) 🇺🇸",
                 "platforms": {
                     "PS5": {
-                        "name": "PlayStation 5",
+                        "name": "PlayStation PS 5",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
@@ -145,7 +145,7 @@ def get_prices():
                         }
                     },
                     "PS4": {
-                        "name": "PlayStation 4", 
+                        "name": "PlayStation PS/4", 
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
@@ -158,10 +158,10 @@ def get_prices():
                 }
             },
             "FC25_AR_Standard": {
-                "name": "FC 25 - Standard Edition (Arabic) 🇸🇦",
+                "name": "Standard Edition (Arabic) 🇸🇦",
                 "platforms": {
                     "PS5": {
-                        "name": "PlayStation 5",
+                        "name": "PlayStation PS/ 5",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
@@ -172,7 +172,7 @@ def get_prices():
                         }
                     },
                     "PS4": {
-                        "name": "PlayStation 4",
+                        "name": "PlayStation PS 4",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''', 
@@ -185,7 +185,7 @@ def get_prices():
                 }
             },
             "FC25_AR_Ultimate": {
-                "name": "FC 25 - Ultimate Edition (Arabic) 🇸🇦",
+                "name": "Ultimate Edition (Arabic) 🇸🇦",
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation 5",

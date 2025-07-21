@@ -57,6 +57,27 @@
             border-radius: 20px 20px 0 0;
         }
         
+        .brand-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .fc26-logo {
+            animation: logoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                filter: drop-shadow(0 0 5px rgba(233, 30, 99, 0.5));
+            }
+            to {
+                filter: drop-shadow(0 0 15px rgba(233, 30, 99, 0.8));
+            }
+        }
+        
         .features-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -82,21 +103,14 @@
             padding: 30px 20px;
         }
         
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 كروت بدل auto-fit */
-    gap: 30px; /* مساحة أكبر */
-    margin-top: 30px;
-    max-width: 1200px; /* عرض محدود للـ PC */
-    margin: 30px auto 0; /* توسيط */
-}
-
-/* إضافة زوم للكروت */
-.product-card:hover {
-    transform: translateY(-5px) scale(1.02); /* زوم خفيف */
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-}
-
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+            max-width: 1200px;
+            margin: 30px auto 0;
+        }
         
         .product-card {
             background: #fff;
@@ -108,8 +122,8 @@
         }
         
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
         }
         
         .product-header {
@@ -406,6 +420,16 @@
                 margin: 0 0 20px 0;
                 max-width: 100%;
             }
+            
+            .brand-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .fc26-logo svg {
+                width: 50px !important;
+                height: 33px !important;
+            }
         }
         
         @media (max-width: 480px) {
@@ -450,7 +474,30 @@
                 <div class="card main-card">
                     <!-- Header Section -->
                     <div class="header-section">
-                        <h1 class="display-6 fw-bold mb-3">🎮 شهد السنيورة</h1>
+                        <div class="brand-container">
+                            <div class="fc26-logo">
+                                <svg width="60" height="40" viewBox="0 0 200 100" style="vertical-align: middle;">
+                                    <defs>
+                                        <linearGradient id="fc26Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#e91e63;stop-opacity:1" />
+                                            <stop offset="50%" style="stop-color:#9c27b0;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#673ab7;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <rect x="0" y="0" width="200" height="100" fill="url(#fc26Gradient)" rx="10"/>
+                                    <circle cx="25" cy="50" r="18" fill="white"/>
+                                    <text x="25" y="56" font-family="Arial Black" font-size="14" font-weight="900" 
+                                          text-anchor="middle" fill="#e91e63">EA</text>
+                                    <text x="25" y="75" font-family="Arial" font-size="8" font-weight="bold" 
+                                          text-anchor="middle" fill="white">SPORTS</text>
+                                    <text x="120" y="40" font-family="Arial Black" font-size="28" font-weight="900" 
+                                          fill="white">FC</text>
+                                    <text x="165" y="70" font-family="Arial Black" font-size="35" font-weight="900" 
+                                          fill="white">26</text>
+                                </svg>
+                            </div>
+                            <h1 class="display-6 fw-bold mb-3" style="display: inline-block;">شهد السنيورة</h1>
+                        </div>
                         <p class="lead mb-0">احصل على FC 26 بأرخص الأسعار في مصر</p>
                         <p class="mb-0">منصتك الأولى لشراء حسابات الألعاب الرقمية</p>
                         

@@ -220,9 +220,9 @@ def get_prices():
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2850},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2300}
+                            "Full": {"name": "Full - حساب كامل", "price": 0},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 0}
                         }
                     }
                 }
@@ -236,9 +236,9 @@ def get_prices():
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 10},
+                            "Full": {"name": "Full - حساب كامل", "price": 0},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 00}
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 0}
                         }
                     }
                 }
@@ -256,8 +256,7 @@ def get_prices():
                         </svg>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 2700},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1800}
+                           
                         }
                     }
                 }
@@ -275,8 +274,7 @@ def get_prices():
                         </svg>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 3000},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2500}
+                           
                         }
                     }
                 }

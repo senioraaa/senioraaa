@@ -389,6 +389,162 @@
             font-size: 14px;
         }
 
+        /* إضافة أقسام جديدة */
+        .comparison-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .comparison-section h3 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .comparison-table th {
+            background: var(--primary-gradient);
+            color: white;
+            font-weight: bold;
+        }
+
+        .comparison-table .feature-cell {
+            text-align: right;
+            font-weight: bold;
+            background: #f8f9fa;
+        }
+
+        .check-icon {
+            color: var(--success-color);
+            font-size: 18px;
+        }
+
+        .cross-icon {
+            color: var(--danger-color);
+            font-size: 18px;
+        }
+
+        .price-highlight {
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        .terms-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .terms-section h3 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .terms-column h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary-gradient);
+            padding-bottom: 10px;
+        }
+
+        .terms-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .terms-list li {
+            padding: 8px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .terms-list li.warning {
+            color: #856404;
+        }
+
+        .terms-list li.success {
+            color: var(--success-color);
+        }
+
+        .terms-list li.danger {
+            color: var(--danger-color);
+        }
+
+        .terms-list li .icon {
+            margin-top: 2px;
+            font-size: 16px;
+        }
+
+        .footer-section {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: white;
+            padding: 40px 20px 20px;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-content h4 {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .footer-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .footer-copyright {
+            border-top: 1px solid #666;
+            padding-top: 20px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
         /* ألوان مختلفة لكل نوع لعبة */
         
         /* ألوان زرقاء للألعاب الإنجليزية */
@@ -537,6 +693,16 @@
                 font-size: 40px;
                 letter-spacing: 3px;
             }
+
+            .terms-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .comparison-section,
+            .terms-section {
+                padding: 20px 15px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -575,6 +741,12 @@
                 font-size: 32px;
                 letter-spacing: 2px;
             }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px 4px;
+                font-size: 12px;
+            }
         }
         
         .loading-spinner {
@@ -609,17 +781,21 @@
                             </div>
                             <h1 class="display-6 fw-bold mb-0" style="display: inline-block;">شهد السنيورة</h1>
                         </div>
-                        <p class="lead mb-0">احصل على FC 26 بأرخص الأسعار في مصر</p>
-                        <p class="mb-0">منصتك الأولى لشراء حسابات الألعاب الرقمية</p>
+                        <p class="lead mb-0">احصل على FC 25 بأرخص الأسعار في مصر</p>
+                        <p class="mb-0">منصتك الأولى لشراء حسابات الألعاب الرقمية بأفضل الأسعار وأسرع الطرق</p>
                         
                         <div class="features-row">
                             <div class="feature-item">
-                                <h6>🛡️ ضمان {{ prices.settings.warranty or '1 سنة' }}</h6>
+                                <h6>🛡️ ضمان 1 سنة</h6>
                                 <small>مع عدم المخالفة</small>
                             </div>
                             <div class="feature-item">
                                 <h6>⚡ تسليم سريع</h6>
-                                <small>{{ prices.settings.delivery_time or 'خلال 24 ساعة' }}</small>
+                                <small>خلال 15 ساعة</small>
+                            </div>
+                            <div class="feature-item">
+                                <h6>🎮 جميع المنصات</h6>
+                                <small>PlayStation, Xbox, PC</small>
                             </div>
                             <div class="feature-item">
                                 <h6>
@@ -702,6 +878,140 @@
                             {% endfor %}
                         </div>
                         
+                        <!-- مقارنة أنواع الحسابات -->
+                        <div class="comparison-section">
+                            <h3>⚖️ مقارنة أنواع الحسابات</h3>
+                            <div class="comparison-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>الميزة</th>
+                                            <th>Primary</th>
+                                            <th>Secondary</th>
+                                            <th>Full</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="feature-cell">تفعيل الحساب كأساسي</td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                            <td><i class="fas fa-times cross-icon"></i></td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="feature-cell">اللعب من حسابك الشخصي</td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="feature-cell">الألعاب متاحة لكل المستخدمين</td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                            <td><i class="fas fa-times cross-icon"></i></td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="feature-cell">إمكانية تعديل البيانات</td>
+                                            <td><i class="fas fa-times cross-icon"></i></td>
+                                            <td><i class="fas fa-times cross-icon"></i></td>
+                                            <td><i class="fas fa-check check-icon"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="feature-cell">مدة الضمان</td>
+                                            <td>1 سنة</td>
+                                            <td>1 سنة</td>
+                                            <td>1 سنة</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="feature-cell">السعر</td>
+                                            <td class="price-highlight">أرخص</td>
+                                            <td class="price-highlight">متوسط</td>
+                                            <td class="price-highlight">أغلى</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- الشروط والأحكام -->
+                        <div class="terms-section">
+                            <h3>📋 الشروط والأحكام</h3>
+                            
+                            <div class="terms-grid">
+                                <div class="terms-column">
+                                    <h4>⚠️ شروط الاستخدام:</h4>
+                                    <ul class="terms-list">
+                                        <li class="warning">
+                                            <span class="icon">🔒</span>
+                                            <span>ممنوع تماماً تغيير كلمة المرور</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🔒</span>
+                                            <span>ممنوع تغيير اسم المستخدم</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🔒</span>
+                                            <span>ممنوع تغيير الإيميل</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🔒</span>
+                                            <span>ممنوع إضافة رقم هاتف أو إيميل استرجاع</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🔒</span>
+                                            <span>ممنوع مشاركة الحساب مع الآخرين</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🎮</span>
+                                            <span>الحساب الأساسي: فعله كأساسي والعب من حسابك الشخصي</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🎮</span>
+                                            <span>الحساب الثانوي: ممنوع تفعيله كأساسي نهائياً</span>
+                                        </li>
+                                        <li class="warning">
+                                            <span class="icon">🎮</span>
+                                            <span>PS4 مخصص للـ PS4 فقط و PS5 مخصص للـ PS5 فقط</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="terms-column">
+                                    <h4>🛡️ الضمان والدعم:</h4>
+                                    <ul class="terms-list">
+                                        <li class="success">
+                                            <span class="icon">✅</span>
+                                            <span>ضمان 1 سنة مع عدم مخالفة الشروط</span>
+                                        </li>
+                                        <li class="success">
+                                            <span class="icon">✅</span>
+                                            <span>استبدال فوري في حالة المشاكل</span>
+                                        </li>
+                                        <li class="success">
+                                            <span class="icon">✅</span>
+                                            <span>تسليم خلال 15 ساعة كحد أقصى</span>
+                                        </li>
+                                        <li class="success">
+                                            <span class="icon">✅</span>
+                                            <span>دعم فني مجاني عبر الواتساب</span>
+                                        </li>
+                                        <li class="danger">
+                                            <span class="icon">⚠️</span>
+                                            <span>المخالفة الأولى: تحذير</span>
+                                        </li>
+                                        <li class="danger">
+                                            <span class="icon">⚠️</span>
+                                            <span>المخالفة الثانية: سحب الحساب نهائياً</span>
+                                        </li>
+                                        <li class="danger">
+                                            <span class="icon">❌</span>
+                                            <span>لا استرداد في حالة المخالفة</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- صندوق التواصل المباشر -->
                         <div class="instant-contact">
                             <h5>
@@ -713,19 +1023,26 @@
                             <p>اضغط على نوع الحساب المطلوب ثم اضغط على زر الواتساب - سيتم فتح رسالة جاهزة مع تفاصيل المنتج</p>
                         </div>
                         
-                        <!-- شروط الاستخدام -->
+                        <!-- شروط الاستخدام المهمة -->
                         <div class="requirements-box">
-                            <h5>📋 شروط الاستخدام المهمة:</h5>
-                            <ul class="requirements-list">
-                                <li>ممنوع تماماً تغيير كلمة المرور أو الإيميل</li>
-                                <li>ممنوع مشاركة الحساب مع أشخاص آخرين</li>
-                                <li>الحساب الأساسي: فعله كأساسي والعب من حسابك</li>
-                                <li>الحساب الثانوي: ممنوع تفعيله كأساسي نهائياً</li>
-                                <li>ضمان 1 سنة مع عدم مخالفة الشروط</li>
-                            </ul>
+                            <h5>• تحديثات مستمرة</h5>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer-section">
+        <div class="footer-content">
+            <h4>🇪🇬 أرخص أسعار الألعاب الرقمية في مصر</h4>
+            <p>منصتك الأولى لشراء حسابات الألعاب الرقمية</p>
+            <p>بأفضل الأسعار وأسرع الطرق</p>
+            
+            <div class="footer-copyright">
+                <p>© 2024 منصة شهد السنيورة. جميع الحقوق محفوظة.</p>
+                <p>أرخص أسعار الألعاب الرقمية في مصر 🇪🇬</p>
             </div>
         </div>
     </div>

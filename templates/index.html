@@ -11,6 +11,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -66,9 +67,51 @@
             margin-bottom: 15px;
         }
 
-        .fc26-logo {
+        .ea-sports-logo {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            font-family: 'Inter', Arial, sans-serif;
             animation: logoGlow 3s ease-in-out infinite alternate;
             filter: drop-shadow(0 2px 8px rgba(255,255,255,0.3));
+        }
+
+        .ea-circle {
+            width: 80px;
+            height: 80px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .ea-text {
+            font-size: 20px;
+            font-weight: 900;
+            color: #000000;
+            letter-spacing: 1px;
+            line-height: 1;
+            margin-bottom: -3px;
+        }
+
+        .sports-text {
+            font-size: 9px;
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .fc26-text {
+            font-size: 64px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 6px;
+            text-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+            line-height: 1;
         }
 
         @keyframes logoGlow {
@@ -78,6 +121,16 @@
             to {
                 filter: drop-shadow(0 4px 12px rgba(255,255,255,0.6));
             }
+        }
+
+        .ea-sports-logo:hover .ea-circle {
+            transform: scale(1.05);
+            transition: transform 0.3s ease;
+        }
+
+        .ea-sports-logo:hover .fc26-text {
+            color: #00d4ff;
+            transition: color 0.3s ease;
         }
         
         .features-row {
@@ -428,9 +481,27 @@
                 gap: 10px;
             }
             
-            .fc26-logo svg {
-                width: 200px !important;
-                height: 60px !important;
+            .ea-sports-logo {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .ea-circle {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .ea-text {
+                font-size: 16px;
+            }
+            
+            .sports-text {
+                font-size: 7px;
+            }
+            
+            .fc26-text {
+                font-size: 40px;
+                letter-spacing: 3px;
             }
         }
         
@@ -453,9 +524,22 @@
                 font-size: 15px;
             }
             
-            .fc26-logo svg {
-                width: 180px !important;
-                height: 50px !important;
+            .ea-circle {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .ea-text {
+                font-size: 14px;
+            }
+            
+            .sports-text {
+                font-size: 6px;
+            }
+            
+            .fc26-text {
+                font-size: 32px;
+                letter-spacing: 2px;
             }
         }
         
@@ -482,29 +566,13 @@
                     <!-- Header Section -->
                     <div class="header-section">
                         <div class="brand-container">
-<div class="fc26-logo">
-    <svg width="380" height="90" viewBox="0 0 520 120" style="vertical-align: middle;">
-        <!-- EA SPORTS Circle - مطابق للصورة -->
-        <circle cx="60" cy="60" r="45" fill="white" stroke="none"/>
-        
-        <!-- EA Text - بنفس نسب الصورة -->
-        <text x="60" y="50" font-family="Arial Black, Arial" font-size="24" font-weight="900" 
-              text-anchor="middle" fill="black" letter-spacing="1px">EA</text>
-        
-        <!-- SPORTS Text - أسفل EA مباشرة -->
-        <text x="60" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" 
-              text-anchor="middle" fill="black" letter-spacing="2px">SPORTS</text>
-        
-        <!-- FC26 Text - مسافة مناسبة ونسبة صحيحة -->
-        <text x="290" y="85" font-family="Arial Black, Arial" font-size="72" font-weight="900" 
-              fill="white" letter-spacing="4px">FC26</text>
-    </svg>
-</div>
-
-
-
-
-
+                            <div class="ea-sports-logo">
+                                <div class="ea-circle">
+                                    <div class="ea-text">EA</div>
+                                    <div class="sports-text">SPORTS</div>
+                                </div>
+                                <div class="fc26-text">FC26</div>
+                            </div>
                             <h1 class="display-6 fw-bold mb-0" style="display: inline-block;">شهد السنيورة</h1>
                         </div>
                         <p class="lead mb-0">احصل على FC 26 بأرخص الأسعار في مصر</p>

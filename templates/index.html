@@ -188,13 +188,38 @@
             border-radius: 20px;
             box-shadow: var(--card-shadow);
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             border: 2px solid transparent;
         }
         
         .product-card:hover {
             transform: translateY(-5px) scale(1.02);
             box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        /* تأثير البلور على الكروت الأخرى عند الاختيار */
+        .products-grid.has-active-card .product-card:not(.active-card) {
+            opacity: 0.3;
+            filter: blur(2px);
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .products-grid.has-active-card .product-card.active-card {
+            opacity: 1;
+            filter: none;
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* تأثير العودة للحالة الطبيعية */
+        .products-grid:not(.has-active-card) .product-card {
+            opacity: 1;
+            filter: none;
+            transform: none;
+            pointer-events: all;
         }
         
         .product-header {
@@ -514,6 +539,14 @@
                 font-size: 40px;
                 letter-spacing: 3px;
             }
+
+            /* تعطيل تأثير البلور على الموبايل */
+            .products-grid.has-active-card .product-card:not(.active-card) {
+                opacity: 1;
+                filter: none;
+                transform: none;
+                pointer-events: all;
+            }
         }
         
         @media (max-width: 480px) {
@@ -567,6 +600,34 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* زر إلغاء التحديد */
+        .reset-selection {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .reset-selection:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+
+        .reset-selection.show {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -619,7 +680,7 @@
                             <p class="text-muted">اضغط على نوع الحساب و اطلب الان مباشرة عبر الواتساب</p>
                         </div>
                         
-                        <div class="products-grid">
+                        <div class="products-grid" id="productsGrid">
                             {% for game_id, game in prices.games.items() %}
                                 {% for platform_id, platform in game.platforms.items() %}
                                     {% if 'EN' in game_id %}
@@ -711,6 +772,11 @@
         🔒
     </div>
 
+    <!-- زر إلغاء التحديد -->
+    <div class="reset-selection" id="resetSelection">
+        ✕
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // بيانات الأسعار
@@ -727,18 +793,24 @@
         const alertContainer = document.getElementById('alertContainer');
         const accountOptions = document.querySelectorAll('.account-option');
         const productBtns = document.querySelectorAll('.product-btn');
+        const productsGrid = document.getElementById('productsGrid');
+        const resetButton = document.getElementById('resetSelection');
         
         // إضافة مستمعي الأحداث لخيارات الحساب
         accountOptions.forEach(option => {
             option.addEventListener('click', function() {
-                // إزالة التحديد من جميع الخيارات في نفس البطاقة
                 const card = this.closest('.product-card');
+                
+                // إزالة التحديد من جميع الخيارات في نفس البطاقة
                 card.querySelectorAll('.account-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
                 
                 // تحديد الخيار الحالي
                 this.classList.add('selected');
+                
+                // تطبيق تأثير البلور
+                activateGlassEffect(card);
                 
                 // حفظ بيانات الاختيار
                 selectedGame = this.dataset.game;
@@ -758,6 +830,50 @@
                 btn.disabled = false;
             });
         });
+
+        // دالة تطبيق تأثير البلور
+        function activateGlassEffect(activeCard) {
+            // إضافة كلاس للكونتينر العام
+            productsGrid.classList.add('has-active-card');
+            
+            // إزالة الكلاس من جميع الكروت
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.classList.remove('active-card');
+            });
+            
+            // إضافة الكلاس للكارت المختار
+            activeCard.classList.add('active-card');
+            
+            // إظهار زر الإلغاء
+            resetButton.classList.add('show');
+        }
+
+        // دالة إلغاء التأثير
+        function resetGlassEffect() {
+            productsGrid.classList.remove('has-active-card');
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.classList.remove('active-card');
+            });
+            resetButton.classList.remove('show');
+            
+            // إعادة ضبط الأزرار
+            document.querySelectorAll('.product-btn').forEach(btn => {
+                btn.innerHTML = `
+                    <svg class="whatsapp-logo-svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
+                    </svg>
+                    اختر نوع الحساب و اطلب الان 
+                `;
+            });
+            
+            // إزالة جميع الاختيارات
+            document.querySelectorAll('.account-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        }
+
+        // زر إلغاء التحديد
+        resetButton.addEventListener('click', resetGlassEffect);
         
         // إضافة مستمعي الأحداث لأزرار الواتساب
         productBtns.forEach(btn => {

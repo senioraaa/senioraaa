@@ -780,6 +780,109 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+                /* تنسيق قسم الملحوظات المهمة */
+        .important-notes-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .important-notes-section h3 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .note-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .updates-note {
+            border-color: #007bff;
+        }
+
+        .rewards-note {
+            border-color: #ffc107;
+        }
+
+        .note-header h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .note-content {
+            color: #666;
+        }
+
+        .screenshot-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .note-screenshot {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #007bff;
+        }
+
+        .rewards-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .reward-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 10px;
+            border: 1px solid #ffc107;
+        }
+
+        .reward-item .icon {
+            font-size: 20px;
+        }
+
+        .reward-item span:last-child {
+            font-weight: bold;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .important-notes-section {
+                padding: 20px 15px;
+            }
+            
+            .note-card {
+                padding: 15px;
+            }
+            
+            .note-screenshot {
+                max-height: 200px;
+                object-fit: contain;
+            }
+        }
+    </style>
+
     </style>
 </head>
 <body>

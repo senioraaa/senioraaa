@@ -255,7 +255,7 @@ def get_prices():
                             <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0000}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0000}
                         }
                     }
                 }
@@ -272,7 +272,7 @@ def get_prices():
                             <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0000}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0000}
                         }
                     }
                 }
@@ -283,8 +283,8 @@ def get_prices():
                 "platforms": {
                     "Steam": {
                         "name": "PC (STEAM)",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
-                            <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
+                            <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: linear-gradient(45deg, rgba(255, 0, 0, 0.9), rgba(255, 51, 51, 0.9)); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 1600}

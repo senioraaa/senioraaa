@@ -641,25 +641,29 @@
             color: var(--whatsapp-color);
         }
 
-        /* ألوان بنفسجية للـ Steam */
+/* ألوان حمراء نيون للـ Steam */
 .product-card[data-game-type="steam"] {
-    border-color: #6A1B9A;
+    border-color: #ff0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
 }
 .product-card[data-game-type="steam"] .product-header {
-    border-bottom: 3px solid #6A1B9A;
+    border-bottom: 3px solid #ff0000;
+    background: linear-gradient(135deg, #2a0505 0%, #1a0a0a 100%);
 }
 .product-card[data-game-type="steam"] .account-option:hover {
-    border-color: #6A1B9A;
-    box-shadow: 0 2px 8px rgba(106, 27, 154, 0.1);
+    border-color: #ff0000;
+    box-shadow: 0 2px 15px rgba(255, 0, 0, 0.3);
 }
 .product-card[data-game-type="steam"] .account-option.selected {
-    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-    border-color: #6A1B9A;
-    box-shadow: 0 4px 12px rgba(106, 27, 154, 0.2);
+    background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+    border-color: #ff0000;
+    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.4);
     transform: translateY(-2px);
 }
 .product-card[data-game-type="steam"] .account-price {
-    color: #6A1B9A;
+    color: #ff0000;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
 }
 
         

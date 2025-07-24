@@ -641,7 +641,7 @@
             color: var(--whatsapp-color);
         }
 
-/* ألوان حمراء نيون للـ Steam مع hover effects */
+/* ألوان حمراء نيون للـ Steam بدون PC icon */
 .product-card[data-game-type="steam"] {
     border-color: #ff0000;
     box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
@@ -670,14 +670,12 @@
     font-weight: bold;
     text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
 }
-/* تأثير hover للشعار نفسه */
-.product-card[data-game-type="steam"]:hover .fas.fa-desktop {
-    color: #ff3333 !important;
-}
+/* تأثير hover للـ Steam logo */
 .product-card[data-game-type="steam"]:hover .fab.fa-steam-symbol {
-    transform: translate(-50%, -50%) scale(1.1) rotate(10deg) !important;
-    box-shadow: 0 0 25px rgba(255, 0, 0, 0.9) !important;
+    transform: scale(1.1) rotate(10deg) !important;
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.9) !important;
 }
+
 
         
         @media (max-width: 768px) {

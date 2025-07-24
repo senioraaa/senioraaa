@@ -640,6 +640,28 @@
         .product-card[data-game-type="pc"] .account-price {
             color: var(--whatsapp-color);
         }
+
+        /* ألوان بنفسجية للـ Steam */
+.product-card[data-game-type="steam"] {
+    border-color: #6A1B9A;
+}
+.product-card[data-game-type="steam"] .product-header {
+    border-bottom: 3px solid #6A1B9A;
+}
+.product-card[data-game-type="steam"] .account-option:hover {
+    border-color: #6A1B9A;
+    box-shadow: 0 2px 8px rgba(106, 27, 154, 0.1);
+}
+.product-card[data-game-type="steam"] .account-option.selected {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    border-color: #6A1B9A;
+    box-shadow: 0 4px 12px rgba(106, 27, 154, 0.2);
+    transform: translateY(-2px);
+}
+.product-card[data-game-type="steam"] .account-price {
+    color: #6A1B9A;
+}
+
         
         @media (max-width: 768px) {
             .products-grid {
@@ -949,7 +971,10 @@
                                     {% elif 'XBOX' in game_id %}
                                         <div class="product-card" data-game-type="xbox">
                                     {% elif 'PC' in game_id %}
-                                        <div class="product-card" data-game-type="pc">
+    <div class="product-card" data-game-type="pc">
+{% elif 'STEAM' in game_id %}
+    <div class="product-card" data-game-type="steam">
+
                                     {% else %}
                                         <div class="product-card">
                                     {% endif %}

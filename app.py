@@ -284,10 +284,7 @@ def get_prices():
                     "Steam": {
                         "name": "PC (STEAM)",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
-                            <div style="position: relative; width: 50px; height: 50px; display: inline-block;">
-                                <i class="fas fa-desktop" style="font-size: 40px; color: #cc0000; text-shadow: 0 0 10px rgba(204, 0, 0, 0.5); position: absolute; top: 0; left: 0; transition: color 0.3s ease;"></i>
-                                <i class="fab fa-steam-symbol" style="font-size: 20px; color: #ff0000; background-color: rgba(0, 0, 0, 0.8); padding: 4px; border-radius: 50%; border: 2px solid #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.3s ease, box-shadow 0.3s ease;"></i>
-                            </div>
+                            <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 1600}
@@ -300,12 +297,9 @@ def get_prices():
                 "platforms": {
                     "Steam": {
                         "name": "PC (STEAM)",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
-                            <div style="position: relative; width: 50px; height: 50px; display: inline-block;">
-                                <i class="fas fa-desktop" style="font-size: 40px; color: #aa0000; text-shadow: 0 0 10px rgba(170, 0, 0, 0.7); position: absolute; top: 0; left: 0; transition: color 0.3s ease;"></i>
-                                <i class="fab fa-steam-symbol" style="font-size: 20px; color: #ff0000; background: linear-gradient(45deg, #ff0000, #ff3333); padding: 4px; border-radius: 50%; border: 2px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.3s ease, box-shadow 0.3s ease;"></i>
-                                <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 8px; padding: 1px 3px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);">ULT</div>
-                            </div>
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
+                            <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: linear-gradient(45deg, rgba(255, 0, 0, 0.9), rgba(255, 51, 51, 0.9)); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 2850}

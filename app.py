@@ -255,8 +255,7 @@ def get_prices():
                             <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0000},
-                           
+                            "Full": {"name": "Full - حساب كامل", "price": 0000}
                         }
                     }
                 }
@@ -273,15 +272,13 @@ def get_prices():
                             <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0000},
-                           
+                            "Full": {"name": "Full - حساب كامل", "price": 0000}
                         }
                     }
                 }
-            }
-        },
-
-                    "FC26_STEAM_Standard": {
+            },
+            # هنا نضيف الـ Steam games بعد الـ PC مباشرة
+            "FC26_STEAM_Standard": {
                 "name": "Steam Standard Edition 🖥️",
                 "platforms": {
                     "Steam": {
@@ -345,9 +342,8 @@ def get_prices():
                         }
                     }
                 }
-            },
-
-        
+            }
+        },
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",
@@ -356,6 +352,7 @@ def get_prices():
         }
     }
 
+                       
 # Headers أمنية قوية
 @app.after_request
 def security_headers(response):

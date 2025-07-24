@@ -305,9 +305,7 @@ def get_prices():
                         }
                     }
                 }
-            }
-
-
+            }, 
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",

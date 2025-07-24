@@ -641,10 +641,15 @@
             color: var(--whatsapp-color);
         }
 
-/* ألوان حمراء نيون للـ Steam */
+/* ألوان حمراء نيون للـ Steam مع hover effects */
 .product-card[data-game-type="steam"] {
     border-color: #ff0000;
     box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+.product-card[data-game-type="steam"]:hover {
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+    transform: translateY(-5px);
 }
 .product-card[data-game-type="steam"] .product-header {
     border-bottom: 3px solid #ff0000;
@@ -664,6 +669,14 @@
     color: #ff0000;
     font-weight: bold;
     text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+}
+/* تأثير hover للشعار نفسه */
+.product-card[data-game-type="steam"]:hover .fas.fa-desktop {
+    color: #ff3333 !important;
+}
+.product-card[data-game-type="steam"]:hover .fab.fa-steam-symbol {
+    transform: translate(-50%, -50%) scale(1.1) rotate(10deg) !important;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.9) !important;
 }
 
         

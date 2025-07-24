@@ -284,30 +284,10 @@ def get_prices():
                     "Steam": {
                         "name": "PC (STEAM)",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
-                            <svg width="40" height="40" viewBox="0 0 24 24" style="display: block; margin: 0 auto;">
-                                <defs>
-                                    <linearGradient id="redNeonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1" />
-                                        <stop offset="30%" style="stop-color:#ff3333;stop-opacity:1" />
-                                        <stop offset="70%" style="stop-color:#ff6666;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#ff0040;stop-opacity:1" />
-                                    </linearGradient>
-                                    <filter id="redGlow">
-                                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                                        <feMerge> 
-                                            <feMergeNode in="coloredBlur"/>
-                                            <feMergeNode in="SourceGraphic"/>
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-                                <circle cx="12" cy="12" r="10" fill="url(#redNeonGradient)" stroke="#ff0000" stroke-width="2" filter="url(#redGlow)"/>
-                                <circle cx="8.5" cy="9" r="3" fill="white" opacity="0.95"/>
-                                <circle cx="16" cy="15" r="2.5" fill="white" opacity="0.95"/>
-                                <circle cx="16" cy="15" r="1.2" fill="url(#redNeonGradient)"/>
-                                <path d="M8.5 12 L14 16.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                                <text x="12" y="4" font-family="Arial" font-size="5" fill="white" text-anchor="middle" font-weight="bold">STEAM</text>
-                                <text x="12" y="22" font-family="Arial" font-size="3" fill="#ff0000" text-anchor="middle" font-weight="bold">PC</text>
-                            </svg>
+                            <div style="position: relative; width: 50px; height: 50px; display: inline-block;">
+                                <i class="fas fa-desktop" style="font-size: 40px; color: #cc0000; text-shadow: 0 0 10px rgba(204, 0, 0, 0.5); position: absolute; top: 0; left: 0; transition: color 0.3s ease;"></i>
+                                <i class="fab fa-steam-symbol" style="font-size: 20px; color: #ff0000; background-color: rgba(0, 0, 0, 0.8); padding: 4px; border-radius: 50%; border: 2px solid #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.3s ease, box-shadow 0.3s ease;"></i>
+                            </div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 1600}
@@ -321,30 +301,11 @@ def get_prices():
                     "Steam": {
                         "name": "PC (STEAM)",
                         "icon": '''<div style="text-align: center; margin: 8px auto;">
-                            <svg width="40" height="40" viewBox="0 0 24 24" style="display: block; margin: 0 auto;">
-                                <defs>
-                                    <linearGradient id="redNeonUltimateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1" />
-                                        <stop offset="30%" style="stop-color:#ff3333;stop-opacity:1" />
-                                        <stop offset="70%" style="stop-color:#ff6666;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#ff0040;stop-opacity:1" />
-                                    </linearGradient>
-                                    <filter id="redGlowUltimate">
-                                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                                        <feMerge> 
-                                            <feMergeNode in="coloredBlur"/>
-                                            <feMergeNode in="SourceGraphic"/>
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-                                <circle cx="12" cy="12" r="10" fill="url(#redNeonUltimateGradient)" stroke="#ff0000" stroke-width="2" filter="url(#redGlowUltimate)"/>
-                                <circle cx="8.5" cy="9" r="3" fill="white" opacity="0.95"/>
-                                <circle cx="16" cy="15" r="2.5" fill="white" opacity="0.95"/>
-                                <circle cx="16" cy="15" r="1.2" fill="url(#redNeonUltimateGradient)"/>
-                                <path d="M8.5 12 L14 16.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                                <text x="12" y="4" font-family="Arial" font-size="5" fill="white" text-anchor="middle" font-weight="bold">STEAM</text>
-                                <text x="12" y="22" font-family="Arial" font-size="4" fill="#ff0000" text-anchor="middle" font-weight="bold">ULTIMATE</text>
-                            </svg>
+                            <div style="position: relative; width: 50px; height: 50px; display: inline-block;">
+                                <i class="fas fa-desktop" style="font-size: 40px; color: #aa0000; text-shadow: 0 0 10px rgba(170, 0, 0, 0.7); position: absolute; top: 0; left: 0; transition: color 0.3s ease;"></i>
+                                <i class="fab fa-steam-symbol" style="font-size: 20px; color: #ff0000; background: linear-gradient(45deg, #ff0000, #ff3333); padding: 4px; border-radius: 50%; border: 2px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.3s ease, box-shadow 0.3s ease;"></i>
+                                <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 8px; padding: 1px 3px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);">ULT</div>
+                            </div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 2850}

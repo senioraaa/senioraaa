@@ -280,6 +280,74 @@ def get_prices():
                 }
             }
         },
+
+                    "FC26_STEAM_Standard": {
+                "name": "Steam Standard Edition 🖥️",
+                "platforms": {
+                    "Steam": {
+                        "name": "PC (STEAM)",
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" style="display: block; margin: 0 auto;">
+                                <defs>
+                                    <linearGradient id="steamGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#6A1B9A;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#8E24AA;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#9C27B0;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="10" fill="url(#steamGradient)" stroke="#4A148C" stroke-width="2"/>
+                                <circle cx="8.5" cy="9" r="3" fill="white" opacity="0.9"/>
+                                <circle cx="16" cy="15" r="2.5" fill="white" opacity="0.9"/>
+                                <circle cx="16" cy="15" r="1.2" fill="url(#steamGradient)"/>
+                                <path d="M8.5 12 L14 16.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                <text x="12" y="4" font-family="Arial" font-size="6" fill="white" text-anchor="middle" font-weight="bold">STEAM</text>
+                            </svg>
+                        </div>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 1600}
+                        }
+                    }
+                }
+            },
+            "FC26_STEAM_Ultimate": {
+                "name": "Steam Ultimate Edition 🖥️",
+                "platforms": {
+                    "Steam": {
+                        "name": "PC (STEAM)",
+                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" style="display: block; margin: 0 auto;">
+                                <defs>
+                                    <linearGradient id="steamUltimateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#6A1B9A;stop-opacity:1" />
+                                        <stop offset="30%" style="stop-color:#8E24AA;stop-opacity:1" />
+                                        <stop offset="70%" style="stop-color:#9C27B0;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#E91E63;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="glowUltimate">
+                                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                        <feMerge> 
+                                            <feMergeNode in="coloredBlur"/>
+                                            <feMergeNode in="SourceGraphic"/>
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <circle cx="12" cy="12" r="10" fill="url(#steamUltimateGradient)" stroke="#4A148C" stroke-width="2" filter="url(#glowUltimate)"/>
+                                <circle cx="8.5" cy="9" r="3" fill="white" opacity="0.95"/>
+                                <circle cx="16" cy="15" r="2.5" fill="white" opacity="0.95"/>
+                                <circle cx="16" cy="15" r="1.2" fill="url(#steamUltimateGradient)"/>
+                                <path d="M8.5 12 L14 16.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                                <text x="12" y="4" font-family="Arial" font-size="5" fill="white" text-anchor="middle" font-weight="bold">STEAM</text>
+                                <text x="12" y="22" font-family="Arial" font-size="4" fill="#FFD700" text-anchor="middle" font-weight="bold">ULTIMATE</text>
+                            </svg>
+                        </div>''',
+                        "accounts": {
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 2850}
+                        }
+                    }
+                }
+            },
+
+        
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",

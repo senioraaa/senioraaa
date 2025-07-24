@@ -135,8 +135,9 @@ def get_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation PS/5",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4900},
@@ -146,8 +147,9 @@ def get_prices():
                     },
                     "PS4": {
                         "name": "PlayStation PS/4", 
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4900},
@@ -189,8 +191,9 @@ def get_prices():
                 "platforms": {
                     "PS5": {
                         "name": "PlayStation PS/5",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #7b1fa2; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(123, 31, 162, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5200},
@@ -200,8 +203,9 @@ def get_prices():
                     },
                     "PS4": {
                         "name": "PlayStation PS/4",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #7b1fa2; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(123, 31, 162, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5200},
@@ -232,8 +236,9 @@ def get_prices():
                 "platforms": {
                     "Xbox": {
                         "name": "Xbox Series X/S & Xbox One",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #ff8f00; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 143, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 0},
@@ -265,19 +270,21 @@ def get_prices():
                 "platforms": {
                     "PC": {
                         "name": "PC (EA PRO)",
-                        "icon": '''<svg width="40" height="40" viewBox="0 0 24 24" fill="#FF8C00" style="display: block; margin: 0 auto;">
-                            <rect x="2" y="4" width="20" height="12" rx="2" fill="#FF8C00"/>
-                            <rect x="4" y="6" width="16" height="8" fill="white"/>
-                            <rect x="8" y="18" width="8" height="2" fill="#FF8C00"/>
-                            <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
-                        </svg>''',
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="#FF8C00" style="display: block; margin: 0 auto;">
+                                <rect x="2" y="4" width="20" height="12" rx="2" fill="#FF8C00"/>
+                                <rect x="4" y="6" width="16" height="8" fill="white"/>
+                                <rect x="8" y="18" width="8" height="2" fill="#FF8C00"/>
+                                <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
+                            </svg>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">ULT</div>
+                        </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0000}
                         }
                     }
                 }
             },
-            # هنا نضيف الـ Steam games بعد الـ PC مباشرة
             "FC26_STEAM_Standard": {
                 "name": "Steam Standard Edition 🖥️",
                 "platforms": {
@@ -297,15 +304,17 @@ def get_prices():
                 "platforms": {
                     "Steam": {
                         "name": "PC (STEAM)",
-                        "icon": '''<div style="text-align: center; margin: 8px auto;">
+                        "icon": '''<div style="text-align: center; margin: 8px auto; position: relative; display: inline-block;">
                             <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل مع First Email", "price": 2850}
                         }
                     }
                 }
-            }, 
+            }
+        },
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",

@@ -225,8 +225,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 0},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 0}
+
                         }
                     }
                 }
@@ -242,8 +241,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 0},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 0}
+  
                         }
                     }
                 }
@@ -277,7 +275,7 @@ def get_prices():
                                 <rect x="8" y="18" width="8" height="2" fill="#FF8C00"/>
                                 <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                             </svg>
-                            <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">ULT</div>
+                            <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">PRO</div>
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0000}

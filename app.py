@@ -224,7 +224,7 @@ def get_prices():
                             <i class="fab fa-xbox" style="color: #107C10; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0},
+                            "Full": {"name": "Full - حساب كامل", "price": 3200},
 
                         }
                     }
@@ -240,14 +240,14 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #ff8f00; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 143, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 0},
+                            "Full": {"name": "Full - حساب كامل", "price": 4200},
   
                         }
                     }
                 }
             },
             "FC26_PC_Standard": {
-                "name": "PC Standard Edition 🖥️",
+                "name": "PC (شهر) (month)  🖥️",
                 "platforms": {
                     "PC": {
                         "name": "PC (EA PRO)",
@@ -264,7 +264,7 @@ def get_prices():
                 }
             },
             "FC26_PC_Ultimate": {
-                "name": "PC Ultimate Edition 🖥️",
+                "name": "PC (سنة) (year)  🖥️",
                 "platforms": {
                     "PC": {
                         "name": "PC (EA PRO)",
@@ -278,7 +278,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">PRO</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0000}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 2800}
                         }
                     }
                 }

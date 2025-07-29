@@ -292,7 +292,7 @@ def get_prices():
                             <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 0000}
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 1700}
                         }
                     }
                 }
@@ -307,7 +307,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 0000}
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 3000}
                         }
                     }
                 }

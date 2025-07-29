@@ -141,7 +141,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4900},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2100}
                         }
                     },

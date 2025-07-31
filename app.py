@@ -112,9 +112,9 @@ def get_prices():
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3400},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1900},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
+                            "Full": {"name": "Full - حساب كامل", "price": 3200},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
                         }
                     },
                     "PS4": {
@@ -123,9 +123,9 @@ def get_prices():
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3400},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1400},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
+                            "Full": {"name": "Full - حساب كامل", "price": 3200},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
                         }
                     }
                 }
@@ -140,9 +140,9 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4900},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2100}
+                            "Full": {"name": "Full - حساب كامل", "price": 4300},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     },
                     "PS4": {
@@ -152,9 +152,9 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4900},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1500},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2100}
+                            "Full": {"name": "Full - حساب كامل", "price": 4300},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1200},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     }
                 }

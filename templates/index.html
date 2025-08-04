@@ -21,6 +21,8 @@
             --danger-color: #dc3545;
             --whatsapp-color: #25D366;
             --card-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            --offer-gold: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            --offer-glow: 0 0 30px rgba(255, 215, 0, 0.8);
         }
         
         body { 
@@ -29,7 +31,253 @@
             min-height: 100vh;
             padding: 15px 0;
         }
-        
+
+        /* 🔥 تصميم العرض المنبثق */
+        .offer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s ease-in-out;
+            backdrop-filter: blur(5px);
+        }
+
+        .offer-modal {
+            background: white;
+            border-radius: 25px;
+            padding: 40px 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideInUp 0.6s ease-out;
+            border: 3px solid #ffd700;
+        }
+
+        .offer-modal::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: var(--offer-gold);
+            border-radius: 28px;
+            z-index: -1;
+            animation: pulseGlow 2s infinite;
+        }
+
+        .offer-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .offer-close:hover {
+            color: #333;
+        }
+
+        .offer-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--offer-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+        }
+
+        .offer-description {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .offer-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-offer-accept {
+            background: var(--offer-gold);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: var(--offer-glow);
+            animation: pulseButton 2s infinite;
+        }
+
+        .btn-offer-accept:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+            color: #000;
+        }
+
+        .btn-offer-decline {
+            background: #6c757d;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-offer-decline:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* تأثيرات الأنميشن للعرض */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 1);
+            }
+        }
+
+        @keyframes pulseButton {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* 🎯 تصميم الكروت الخاصة بالعرض */
+        .product-card.offer-card {
+            position: relative;
+            border: 3px solid #ffd700 !important;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%) !important;
+            box-shadow: var(--offer-glow), 0 20px 50px rgba(0,0,0,0.2) !important;
+            animation: offerCardGlow 3s ease-in-out infinite alternate;
+        }
+
+.product-card.offer-card::before {
+    content: '🔥 عرض خاص';
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    background: #FF6B6B;
+    color: #333;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    z-index: 10;
+}
+
+
+        .product-card.offer-card .product-header {
+            background: var(--offer-gold) !important;
+            color: #333 !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card.offer-card .product-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .product-card.offer-card .account-price {
+            position: relative;
+        }
+
+        .product-card.offer-card .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 14px;
+            display: block;
+        }
+
+        .product-card.offer-card .discounted-price {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 18px;
+            display: block;
+        }
+
+        .product-card.offer-card .discount-badge {
+            position: absolute;
+            top: -5px;
+            left: -10px;
+            background: #d32f2f;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+        }
+
+        @keyframes offerCardGlow {
+            from {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 20px 50px rgba(0,0,0,0.2);
+            }
+            to {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 25px 60px rgba(0,0,0,0.3);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        /* باقي الكود CSS نفسه... */
         .main-card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 20px;
@@ -754,6 +1002,25 @@
             .terms-section {
                 padding: 20px 15px;
             }
+
+            /* العرض المنبثق - موبايل */
+            .offer-modal {
+                width: 95%;
+                padding: 30px 20px;
+            }
+
+            .offer-title {
+                font-size: 2rem;
+            }
+
+            .offer-buttons {
+                flex-direction: column;
+            }
+
+            .btn-offer-accept,
+            .btn-offer-decline {
+                width: 100%;
+            }
         }
         
         @media (max-width: 480px) {
@@ -801,6 +1068,14 @@
             .comparison-table td {
                 padding: 8px 4px;
                 font-size: 12px;
+            }
+
+            .offer-modal {
+                padding: 25px 15px;
+            }
+
+            .offer-title {
+                font-size: 1.8rem;
             }
         }
         
@@ -917,12 +1192,876 @@
                 max-height: 200px;
                 object-fit: contain;
             }
-        }
-    </style>
+}
+
+/* 🔥 Enhanced Popup Styles */
+.enhanced-offer-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid transparent;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-offer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
+}
+
+.enhanced-offer-card:hover::before {
+    left: 100%;
+}
+
+.enhanced-offer-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Game Name Styles */
+.offer-game-header {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.offer-game-name {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 25px;
+    display: inline-block;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Arabic Styles */
+.ar-standard {
+    background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+    color: #3f51b5;
+    border: 2px solid #3f51b5;
+}
+
+.ar-ultimate {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    color: #7b1fa2;
+    border: 2px solid #7b1fa2;
+}
+
+/* English Styles */
+.en-standard {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1976d2;
+    border: 2px solid #1976d2;
+}
+
+.en-ultimate {
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    color: #388e3c;
+    border: 2px solid #388e3c;
+}
+
+/* Xbox Styles */
+.xbox-standard, .xbox-ultimate {
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+}
+
+/* PC Styles */
+.pc-standard, .pc-ultimate {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #f57c00;
+    border: 2px solid #f57c00;
+}
+
+/* Steam Styles */
+.steam-standard, .steam-ultimate {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #d32f2f;
+    border: 2px solid #d32f2f;
+}
+
+/* Platform and Account Info */
+.offer-platform-account {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.offer-platform, .offer-account-type {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+}
+
+/* Enhanced Pricing */
+.enhanced-pricing {
+    text-align: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.premium-badge {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    animation: premiumPulse 2s infinite alternate;
+}
+
+@keyframes premiumPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    }
+    100% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+    }
+}
+
+/* Click Effect */
+.enhanced-offer-card:active {
+    transform: translateY(-4px) scale(0.98);
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+    .offer-platform-account {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .offer-game-name {
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+    
+    .enhanced-pricing {
+        padding: 12px;
+    }
+}
+
+</style>
 
     </style>
+<style>
+/* Popup Styles */
+.offers-popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    animation: fadeIn 0.3s;
+}
+
+.popup-content {
+    background-color: #1a1a2e;
+    margin: 5% auto;
+    padding: 30px;
+    border: none;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.close-popup {
+    color: #ff6b6b;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-popup:hover {
+    color: #ff5252;
+}
+
+.popup-title {
+    color: #00d4ff;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.offer-item {
+    background: linear-gradient(135deg, #16213e, #0f172a);
+    border: 1px solid #00d4ff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.offer-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+    border-color: #ff6b6b;
+}
+
+.offer-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.offer-item:hover::before {
+    left: 100%;
+}
+
+.offer-title {
+    color: #00d4ff;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.offer-description {
+    color: #b8b8b8;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.offer-price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fake-price {
+    color: #888;
+    text-decoration: line-through;
+    font-size: 16px;
+}
+
+.real-price {
+    color: #00ff88;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.discount-badge {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+.offer-validity {
+    color: #ffab00;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    background: rgba(255, 171, 0, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+    border-left: 3px solid #ffab00;
+}
+
+.no-offers {
+    text-align: center;
+    color: #888;
+    font-size: 18px;
+    padding: 40px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .popup-content {
+        margin: 10% auto;
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .offer-title {
+        font-size: 16px;
+    }
+    
+    .real-price {
+        font-size: 18px;
+    }
+}
+    </style>
+
+<style>
+/* Popup Styles */
+.offers-popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    animation: fadeIn 0.3s;
+}
+
+.popup-content {
+    background-color: #1a1a2e;
+    margin: 5% auto;
+    padding: 30px;
+    border: none;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.close-popup {
+    color: #ff6b6b;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-popup:hover {
+    color: #ff5252;
+}
+
+.popup-title {
+    color: #00d4ff;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.offer-item {
+    background: linear-gradient(135deg, #16213e, #0f172a);
+    border: 1px solid #00d4ff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.offer-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+    border-color: #ff6b6b;
+}
+
+.offer-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.offer-item:hover::before {
+    left: 100%;
+}
+
+.offer-title {
+    color: #00d4ff;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.offer-description {
+    color: #b8b8b8;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.offer-price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.fake-price {
+    color: #888;
+    text-decoration: line-through;
+    font-size: 16px;
+}
+
+.real-price {
+    color: #00ff88;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.discount-badge {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+.offer-validity {
+    color: #ffab00;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    background: rgba(255, 171, 0, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+    border-left: 3px solid #ffab00;
+}
+
+.no-offers {
+    text-align: center;
+    color: #888;
+    font-size: 18px;
+    padding: 40px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .popup-content {
+        margin: 10% auto;
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .offer-title {
+        font-size: 16px;
+    }
+    
+    .real-price {
+        font-size: 18px;
+    }
+
+/* 🔥 Enhanced Popup Styles */
+.enhanced-offer-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid transparent;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-offer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
+}
+
+.enhanced-offer-card:hover::before {
+    left: 100%;
+}
+
+.enhanced-offer-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Game Name Styles */
+.offer-game-header {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.offer-game-name {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 25px;
+    display: inline-block;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Arabic Styles */
+.ar-standard {
+    background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+    color: #3f51b5;
+    border: 2px solid #3f51b5;
+}
+
+.ar-ultimate {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    color: #7b1fa2;
+    border: 2px solid #7b1fa2;
+}
+
+/* English Styles */
+.en-standard {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1976d2;
+    border: 2px solid #1976d2;
+}
+
+.en-ultimate {
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    color: #388e3c;
+    border: 2px solid #388e3c;
+}
+
+/* Xbox Styles */
+.xbox-standard, .xbox-ultimate {
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+}
+
+/* PC Styles */
+.pc-standard, .pc-ultimate {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #f57c00;
+    border: 2px solid #f57c00;
+}
+
+/* Steam Styles */
+.steam-standard, .steam-ultimate {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #d32f2f;
+    border: 2px solid #d32f2f;
+}
+
+/* Platform and Account Info */
+.offer-platform-account {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.offer-platform, .offer-account-type {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+}
+
+/* Enhanced Pricing */
+.enhanced-pricing {
+    text-align: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.premium-badge {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    animation: premiumPulse 2s infinite alternate;
+}
+
+@keyframes premiumPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    }
+    100% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+    }
+}
+
+/* Click Effect */
+.enhanced-offer-card:active {
+    transform: translateY(-4px) scale(0.98);
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+    .offer-platform-account {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .offer-game-name {
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+    
+    .enhanced-pricing {
+        padding: 12px;
+    }
+
+}
+</style>
+
 </head>
+<script>
+// Show offers popup
+function showOffers() {
+    fetch('/get_offers')
+        .then(response => response.json())
+        .then(data => {
+            const popup = document.getElementById('offersPopup');
+            const offersContainer = document.getElementById('offersContainer');
+            
+            if (data.offers && data.offers.length > 0) {
+                offersContainer.innerHTML = '';
+                
+                data.offers.forEach(offer => {
+                    const offerElement = document.createElement('div');
+                    offerElement.className = 'offer-item';
+                    offerElement.onclick = () => selectOffer(offer);
+                    
+                    offerElement.innerHTML = `
+                        <div class="offer-title">${offer.title}</div>
+                        <div class="offer-description">${offer.description}</div>
+                        <div class="offer-price">
+                            <span class="fake-price">$${offer.fake_price}</span>
+                            <span class="real-price">$${offer.real_price}</span>
+                            <span class="discount-badge">${offer.discount_percentage}% خصم</span>
+                        </div>
+                        <div class="offer-validity">صالح حتى: ${offer.valid_until}</div>
+                    `;
+                    
+                    offersContainer.appendChild(offerElement);
+                });
+            } else {
+                offersContainer.innerHTML = '<div class="no-offers">لا توجد عروض متاحة حالياً</div>';
+            }
+            
+            popup.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في تحميل العروض');
+        });
+}
+
+// Close popup
+function closePopup() {
+    document.getElementById('offersPopup').style.display = 'none';
+}
+
+// Select offer
+function selectOffer(offer) {
+    alert(`تم اختيار العرض: ${offer.title}\nالسعر: $${offer.real_price}`);
+    closePopup();
+    // يمكنك إضافة المزيد من الكود هنا لمعالجة العرض المختار
+}
+
+// Close popup when clicking outside
+window.onclick = function(event) {
+    const popup = document.getElementById('offersPopup');
+    if (event.target == popup) {
+        popup.style.display = 'none';
+    }
+}
+</script>
+
 <body>
+<!-- 🔥 العرض المنبثق الذكي -->
+{% if offers and offers.active_offer and offers.active_offer.show_popup %}
+<div class="offer-overlay" id="offerOverlay">
+    <div class="offer-modal smart-offers-modal">
+        <button class="offer-close" onclick="closeOfferModal()">&times;</button>
+        <h2 class="offer-title">{{ offers.active_offer.title }}</h2>
+        <p class="offer-description">{{ offers.active_offer.description }}</p>
+        
+<!-- عرض قائمة العروض المتاحة -->
+{% if offers.active_offer.offers_list %}
+<div class="offers-showcase">
+    <h3 class="offers-list-title">🎯 العروض المتاحة الآن:</h3>
+<div class="offers-grid-horizontal">
+    {% for offer in offers.active_offer.offers_list[:6] %}
+    <div class="offer-card-horizontal interactive-card" 
+         data-game="{{ offer.game }}" 
+         data-platform="{{ offer.platform }}" 
+         data-account="{{ offer.account }}"
+         onclick="navigateToProduct('{{ offer.game }}', '{{ offer.platform }}', '{{ offer.account }}')">
+        
+        <div class="offer-header-section">
+            {% if 'AR_Standard' in offer.game %}
+                <div class="offer-title-badge ar-standard-badge">
+                    <i class="fas fa-star"></i>
+                    Standard Edition (Arabic) 🇸🇦
+                </div>
+            {% elif 'AR_Ultimate' in offer.game %}
+                <div class="offer-title-badge ar-ultimate-badge">
+                    <i class="fas fa-crown"></i>
+                    Ultimate Edition (Arabic) 🇸🇦
+                </div>
+            {% elif 'EN_Standard' in offer.game %}
+                <div class="offer-title-badge en-standard-badge">
+                    <i class="fas fa-star"></i>
+                    Standard Edition (English) 🇺🇸
+                </div>
+            {% elif 'EN_Ultimate' in offer.game %}
+                <div class="offer-title-badge en-ultimate-badge">
+                    <i class="fas fa-crown"></i>
+                    Ultimate Edition (English) 🇺🇸
+                </div>
+            {% elif 'XBOX_Standard' in offer.game %}
+                <div class="offer-title-badge xbox-standard-badge">
+                    <i class="fab fa-xbox"></i>
+                    Xbox Standard 🎮
+                </div>
+            {% elif 'XBOX_Ultimate' in offer.game %}
+                <div class="offer-title-badge xbox-ultimate-badge">
+                    <i class="fab fa-xbox"></i>
+                    Xbox Ultimate 🎮
+                </div>
+            {% elif 'PC_Standard' in offer.game %}
+                <div class="offer-title-badge pc-standard-badge">
+                    <i class="fas fa-desktop"></i>
+                    PC Standard 🖥️
+                </div>
+            {% elif 'PC_Ultimate' in offer.game %}
+                <div class="offer-title-badge pc-ultimate-badge">
+                    <i class="fas fa-desktop"></i>
+                    PC Ultimate 🖥️
+                </div>
+            {% elif 'STEAM_Standard' in offer.game %}
+                <div class="offer-title-badge steam-standard-badge">
+                    <i class="fab fa-steam-symbol"></i>
+                    Steam Standard 🖥️
+                </div>
+            {% elif 'STEAM_Ultimate' in offer.game %}
+                <div class="offer-title-badge steam-ultimate-badge">
+                    <i class="fab fa-steam-symbol"></i>
+                    Steam Ultimate 🖥️
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="offer-details-section">
+            <div class="platform-info">
+                <span class="platform-text">{{ offer.platform }}</span>
+                <span class="account-text">{{ offer.account }}</span>
+            </div>
+            
+            <div class="pricing-section-horizontal">
+                <div class="price-container">
+                    <span class="old-price">{{ offer.fake_price|format_number }} جنيه</span>
+                    <span class="new-price">{{ offer.real_price|format_number }} جنيه</span>
+                </div>
+                <div class="discount-percentage">وفر {{ offer.discount }}%</div>
+            </div>
+        </div>
+        
+        <div class="click-indicator">
+            <i class="fas fa-hand-pointer"></i>
+            <span>اضغط للذهاب</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+                
+                <!-- إذا فيه عروض أكتر من 6 -->
+                {% if offers.active_offer.offers_list|length > 6 %}
+                <div class="more-offers-indicator">
+                    <span>+ {{ offers.active_offer.offers_list|length - 6 }} عروض أخرى!</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="offer-buttons">
+            <button class="btn-offer-accept" onclick="acceptOffers()">
+                🔥 أريد الاستفادة من العروض
+            </button>
+            <button class="btn-offer-decline" onclick="declineOffers()">
+                👀 أريد رؤية باقي المنتجات
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
     <div class="container-fluid">
         <div class="row justify-content-center">
             <div class="col-xl-10 col-lg-11 col-md-12">
@@ -974,24 +2113,28 @@
                         <div class="text-center mb-4">
                             <h2 class="fw-bold text-primary">🎯 اختر المنتج المطلوب</h2>
                             <p class="text-muted">اضغط على نوع الحساب و اطلب الان مباشرة عبر الواتساب</p>
+                            <button onclick="showOffers()" class="btn btn-warning btn-lg mb-3" style="background: linear-gradient(45deg, #ffd700, #ffb347); border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);">
+                                🎁 شاهد العروض المتاحة الآن
+                            </button>
                         </div>
                         
                         <div class="products-grid" id="productsGrid">
                             {% for game_id, game in prices.games.items() %}
                                 {% for platform_id, platform in game.platforms.items() %}
+                                    {% set is_offer_card = game_id in offers.offer_cards if offers and offers.offer_cards else false %}
+                                    
                                     {% if 'EN' in game_id %}
-                                        <div class="product-card" data-game-type="english">
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}" data-game-type="english">
                                     {% elif 'AR' in game_id %}
-                                        <div class="product-card" data-game-type="arabic">
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}" data-game-type="arabic">
                                     {% elif 'XBOX' in game_id %}
-                                        <div class="product-card" data-game-type="xbox">
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}" data-game-type="xbox">
                                     {% elif 'PC' in game_id %}
-    <div class="product-card" data-game-type="pc">
-{% elif 'STEAM' in game_id %}
-    <div class="product-card" data-game-type="steam">
-
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}" data-game-type="pc">
+                                    {% elif 'STEAM' in game_id %}
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}" data-game-type="steam">
                                     {% else %}
-                                        <div class="product-card">
+                                        <div class="product-card {% if is_offer_card %}offer-card{% endif %}">
                                     {% endif %}
                                         <div class="product-header">
                                             <div class="product-title">{{ game.name }}</div>
@@ -1019,8 +2162,15 @@
                                                                 {% endif %}
                                                             </div>
                                                         </div>
-                                                        <div class="account-price">{{ account.price|format_number }} {{ prices.settings.currency[:4] }}</div>
-
+                                                        <div class="account-price">
+                                                            {% if account.get('original_price') %}
+                                                                <span class="discount-badge">-{{ account.discount_percentage }}%</span>
+                                                                <span class="original-price">{{ account.original_price|format_number }}</span>
+                                                                <span class="discounted-price">{{ account.price|format_number }}</span>
+                                                            {% else %}
+                                                                {{ account.price|format_number }} {{ prices.settings.currency[:4] }}
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 {% endfor %}
                                             </div>
@@ -1094,6 +2244,7 @@
                             </div>
                         </div>
 
+                        <!-- باقي المحتوى يبقى كما هو... -->
                         <!-- الشروط والأحكام -->
                         <div class="terms-section">
                             <h3>📋 الشروط والأحكام</h3>
@@ -1249,19 +2400,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Offers Popup -->
+<div id="offersPopup" class="offers-popup">
+    <div class="popup-content">
+        <span class="close-popup" onclick="closePopup()">&times;</span>
+        <h2 class="popup-title">🎉 العروض المتاحة</h2>
+        <div id="offersContainer">
+            <!-- العروض ستظهر هنا -->
+        </div>
+    </div>
+</div>
 
 <script>
-        // بيانات الأسعار (نفس الكود الأول)
+        // بيانات الأسعار والعروض
         const pricesData = {{ prices|tojson|safe }};
+        const offersData = {{ offers|tojson|safe }};
         
-        // متغيرات الاختيار (نفس الكود الأول)
+        // متغيرات الاختيار
         let selectedGame = '';
         let selectedPlatform = '';
         let selectedAccount = '';
         let selectedPrice = 0;
         let selectedCurrency = '';
         
-        // متغيرات إضافية من الكود التاني
+        // متغيرات إضافية
         let selectedProductData = {};
         let isRequestInProgress = false;
         
@@ -1269,8 +2431,47 @@
         const alertContainer = document.getElementById('alertContainer');
         const accountOptions = document.querySelectorAll('.account-option');
         const productBtns = document.querySelectorAll('.product-btn');
-        
-        // تحديث الألوان حسب نوع اللعبة (من الكود التاني)
+
+        // 🔥 دوال العرض المنبثق
+        function checkOfferDisplay() {
+            const hasSeenOffer = localStorage.getItem('hasSeenOffer_' + (offersData?.active_offer?.id || 'default'));
+            
+            if (offersData?.active_offer?.show_popup && !hasSeenOffer) {
+                document.getElementById('offerOverlay').style.display = 'flex';
+            }
+        }
+
+        function closeOfferModal() {
+            document.getElementById('offerOverlay').style.display = 'none';
+            localStorage.setItem('hasSeenOffer_' + (offersData?.active_offer?.id || 'default'), 'true');
+        }
+
+        function acceptOffer() {
+            closeOfferModal();
+            
+            // التمرير إلى الكروت المخفضة
+            const firstOfferCard = document.querySelector('.product-card.offer-card');
+            if (firstOfferCard) {
+                firstOfferCard.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center'
+                });
+                
+                // تأثير إضافي للفت الانتباه
+                setTimeout(() => {
+                    firstOfferCard.style.animation = 'offerCardGlow 1s ease-in-out 3 alternate';
+                }, 500);
+            }
+            
+            showAlert('🔥 تم تطبيق العرض! الكروت الذهبية تحتوي على خصومات حصرية', 'success');
+        }
+
+        function declineOffer() {
+            closeOfferModal();
+            showAlert('👍 يمكنك رؤية جميع المنتجات أدناه', 'success');
+        }
+
+        // تحديث الألوان حسب نوع اللعبة
         function updateCardColors() {
             document.querySelectorAll('.product-card').forEach(card => {
                 const gameType = card.getAttribute('data-game-type');
@@ -1280,9 +2481,14 @@
             });
         }
         
-        // إضافة مستمعي الأحداث لخيارات الحساب (مدمج من الكودين)
+        // إضافة مستمعي الأحداث لخيارات الحساب
         document.addEventListener('DOMContentLoaded', function() {
             updateCardColors();
+            
+            // فحص عرض العروض المنبثقة
+            setTimeout(() => {
+                checkOfferDisplay();
+            }, 1000);
             
             // إضافة أحداث النقر على خيارات الحساب
             accountOptions.forEach(option => {
@@ -1296,14 +2502,14 @@
                     // تحديد الخيار الحالي
                     this.classList.add('selected');
                     
-                    // حفظ بيانات الاختيار (نفس الكود الأول)
+                    // حفظ بيانات الاختيار
                     selectedGame = this.dataset.game;
                     selectedPlatform = this.dataset.platform;
                     selectedAccount = this.dataset.account;
                     selectedPrice = this.dataset.price;
                     selectedCurrency = this.dataset.currency;
                     
-                    // تحديث بيانات المنتج المختار (من الكود التاني)
+                    // تحديث بيانات المنتج المختار
                     selectedProductData = {
                         game: this.getAttribute('data-game'),
                         platform: this.getAttribute('data-platform'),
@@ -1311,27 +2517,32 @@
                         price: this.getAttribute('data-price'),
                         currency: this.getAttribute('data-currency')
                     };
-                    // إضافة تأثير على الكارت المختار (من الكود التاني)
+                    
+                    // إضافة تأثير على الكارت المختار
                     document.querySelectorAll('.product-card').forEach(card => {
                         card.classList.remove('active-card');
                     });
                     card.classList.add('active-card');
                     document.getElementById('productsGrid').classList.add('has-active-card');
                     
-                    // تحديث زر الواتساب (مدمج من الكودين)
+                    // تحديث زر الواتساب
                     const btn = card.querySelector('.product-btn');
+                    const priceText = this.querySelector('.discounted-price') ? 
+                        this.querySelector('.discounted-price').textContent :
+                        selectedPrice + ' ' + selectedCurrency.substring(0, 4);
+                    
                     btn.innerHTML = `
                         <svg class="whatsapp-logo-svg" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
                         </svg>
-                        اطلب الآن - ${selectedPrice} ${selectedCurrency.substring(0, 4)}
+                        اطلب الآن - ${priceText}
                     `;
                     btn.disabled = false;
                 });
             });
         });
         
-        // إضافة مستمعي الأحداث لأزرار الواتساب (من الكود الأول الشغال)
+        // إضافة مستمعي الأحداث لأزرار الواتساب
         productBtns.forEach(btn => {
             btn.addEventListener('click', async function(e) {
                 e.preventDefault();
@@ -1360,7 +2571,7 @@
                     }
                 }
                 
-                // إنشاء FormData (طريقة الكود الأول الشغال)
+                // إنشاء FormData
                 const formData = new FormData();
                 formData.append('game_type', selectedOption.dataset.game);
                 formData.append('platform', selectedOption.dataset.platform);
@@ -1372,7 +2583,6 @@
                 isRequestInProgress = true;
                 
                 try {
-                    // نفس طريقة الكود الأول الشغال
                     const response = await fetch('/whatsapp', {
                         method: 'POST',
                         body: formData,
@@ -1382,10 +2592,16 @@
                     const data = await response.json();
                     
                     if (response.ok && data.success) {
+                        // إضافة رسالة للعروض الخاصة
+                        let extraMessage = '';
+                        if (card.classList.contains('offer-card')) {
+                            extraMessage = '<br><strong>🔥 تهانينا! لقد اخترت منتج من العرض الخاص!</strong>';
+                        }
+                        
                         showAlert(`
                             ✅ تم تحضير الاستفسار بنجاح!<br>
                             <strong>رقم المرجع:</strong> ${data.reference_id}<br>
-                            <strong>السعر:</strong> ${data.price} ${data.currency}<br>
+                            <strong>السعر:</strong> ${data.price} ${data.currency}${extraMessage}<br>
                             <strong>سيتم فتح الواتساب الآن...</strong>
                         `, 'success');
                         
@@ -1411,7 +2627,7 @@
             });
         });
         
-        // دالة إظهار الرسائل (نفس الكود الأول)
+        // دالة إظهار الرسائل
         function showAlert(message, type = 'success') {
             const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
             const icon = type === 'success' ? '✅' : '❌';
@@ -1430,7 +2646,7 @@
             }, 5000);
         }
         
-        // إزالة تأثير البلور عند النقر خارج الكروت (من الكود التاني)
+        // إزالة تأثير البلور عند النقر خارج الكروت
         document.addEventListener('click', function(event) {
             if (!event.target.closest('.product-card')) {
                 document.querySelectorAll('.product-card').forEach(card => {
@@ -1443,7 +2659,7 @@
             }
         });
         
-        // تأثيرات إضافية للموبايل (من الكود الأول)
+        // تأثيرات إضافية للموبايل
         document.addEventListener('DOMContentLoaded', function() {
             // تأثير الاهتزاز للموبايل عند الضغط
             if ('vibrate' in navigator) {
@@ -1454,8 +2670,318 @@
                 });
             }
         });
+
+        // إغلاق العرض المنبثق عند الضغط خارجه
+        document.addEventListener('click', function(event) {
+            const offerOverlay = document.getElementById('offerOverlay');
+            if (event.target === offerOverlay) {
+                closeOfferModal();
+            }
+        });
 </script>
 
+<script>
+// Show offers popup with better error handling
+function showOffers() {
+    console.log('🎯 بدء تحميل العروض...');
+    
+    // إظهار الـ popup فوراً مع loading
+    const popup = document.getElementById('offersPopup');
+    const offersContainer = document.getElementById('offersContainer');
+    
+    popup.style.display = 'block';
+    offersContainer.innerHTML = '<div class="text-center p-4"><div class="loading-spinner mx-auto mb-3"></div><p style="color: #00d4ff;">جاري تحميل العروض...</p></div>';
+    
+    fetch('/get_offers')
+        .then(response => {
+            console.log('📡 Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 البيانات المستلمة:', data);
+            
+            if (data.offers && data.offers.length > 0) {
+                offersContainer.innerHTML = '';
+                
+                data.offers.forEach((offer, index) => {
+                    console.log(`🎁 عرض ${index + 1}:`, offer);
+                    
+                    const offerElement = document.createElement('div');
+                    offerElement.className = 'offer-item';
+                    offerElement.setAttribute('data-offer-id', offer.id || index);
+                    
+                    // إضافة onclick مباشرة
+                    offerElement.addEventListener('click', function() {
+                        selectOffer(offer);
+                    });
+                    
+                    offerElement.innerHTML = `
+                        <div class="offer-title">${offer.title || 'عرض خاص'}</div>
+                        <div class="offer-description">${offer.description || 'احصل على خصم رائع'}</div>
+                        <div class="offer-price">
+                            <span class="fake-price">$${offer.fake_price || '0'}</span>
+                            <span class="real-price">$${offer.real_price || '0'}</span>
+                            <span class="discount-badge">${offer.discount_percentage || '0'}% خصم</span>
+                        </div>
+                        <div class="offer-validity">صالح حتى: ${offer.valid_until || 'غير محدود'}</div>
+                        <div class="text-center mt-2">
+                            <small style="color: #888;">👆 اضغط للاختيار</small>
+                        </div>
+                    `;
+                    
+                    offersContainer.appendChild(offerElement);
+                });
+                
+                console.log('✅ تم تحميل العروض بنجاح');
+            } else {
+                console.log('⚠️ لا توجد عروض متاحة');
+                offersContainer.innerHTML = `
+                    <div class="no-offers">
+                        <h4>😔 لا توجد عروض متاحة حالياً</h4>
+                        <p>تابعنا للحصول على أحدث العروض</p>
+                        <button onclick="closePopup()" class="btn btn-primary mt-2">حسناً</button>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('❌ خطأ في تحميل العروض:', error);
+            
+// إظهار عروض تجريبية في حالة الخطأ
+offersContainer.innerHTML = `
+    <div class="text-center mb-3">
+        <h4 style="color: #ff6b6b;">⚠️ مشكلة في الاتصال</h4>
+        <p style="color: #888;">إليك بعض العروض المتاحة:</p>
+    </div>
+    
+    <div class="offer-item" onclick="selectDemoOffer('Standard Edition (Arabic)', '1600', '2500')">
+        <div class="offer-title">🇸🇦 Standard Edition (Arabic)</div>
+        <div class="offer-platform">PS4 • Primary</div>
+        <div class="offer-description">النسخة العربية الكاملة مع جميع المميزات الأساسية</div>
+        <div class="offer-price">
+            <span class="fake-price">2,500</span>
+            <span class="real-price">1,600</span>
+            <span class="discount-badge">36% خصم</span>
+        </div>
+        <div class="offer-validity">⏰ صالح حتى: نفاذ الكمية</div>
+        <div class="text-center mt-2">
+            <small style="color: #888;">👆 اضغط للاختيار</small>
+        </div>
+    </div>
+    
+    <div class="offer-item" onclick="selectDemoOffer('Ultimate Edition (English)', '3500', '5500')">
+        <div class="offer-title">🇺🇸 Ultimate Edition (English)</div>
+        <div class="offer-platform">PS5 • Primary</div>
+        <div class="offer-description">النسخة الفاخرة مع جميع الإضافات والمحتويات الحصرية</div>
+        <div class="offer-price">
+            <span class="fake-price">5,500</span>
+            <span class="real-price">3,500</span>
+            <span class="discount-badge">36% خصم</span>
+        </div>
+        <div class="offer-validity">⏰ صالح حتى: نفاذ الكمية</div>
+        <div class="text-center mt-2">
+            <small style="color: #888;">👆 اضغط للاختيار</small>
+        </div>
+    </div>
+    
+    <div class="offer-item" onclick="selectDemoOffer('Steam Ultimate Edition', '4500', '7000')">
+        <div class="offer-title">🖥️ Steam Ultimate Edition</div>
+        <div class="offer-platform">PC • Full Access</div>
+        <div class="offer-description">أفضل نسخة Steam مع كامل المميزات والتحديثات</div>
+        <div class="offer-price">
+            <span class="fake-price">7,000</span>
+            <span class="real-price">4,500</span>
+            <span class="discount-badge">36% خصم</span>
+        </div>
+        <div class="offer-validity">⏰ صالح حتى: نفاذ الكمية</div>
+        <div class="text-center mt-2">
+            <small style="color: #888;">👆 اضغط للاختيار</small>
+        </div>
+    </div>
+    
+    <div class="offer-item" onclick="selectDemoOffer('Standard Edition (English)', '2200', '3500')">
+        <div class="offer-title">🇺🇸 Standard Edition (English)</div>
+        <div class="offer-platform">PS5 • Secondary</div>
+        <div class="offer-description">نسخة PS5 الثانوية عالية الجودة مع الأساسيات</div>
+        <div class="offer-price">
+            <span class="fake-price">3,500</span>
+            <span class="real-price">2,200</span>
+            <span class="discount-badge">37% خصم</span>
+        </div>
+        <div class="offer-validity">⏰ صالح حتى: نفاذ الكمية</div>
+        <div class="text-center mt-2">
+            <small style="color: #888;">👆 اضغط للاختيار</small>
+        </div>
+    </div>
+`;
+        });
+}
+
+// Close popup
+function closePopup() {
+    const popup = document.getElementById('offersPopup');
+    popup.style.display = 'none';
+    console.log('❌ تم إغلاق العروض');
+}
+
+// Select offer - محسن
+function selectOffer(offer) {
+    console.log('🎯 تم اختيار عرض:', offer);
+    
+    // تأثير بصري
+    const popup = document.getElementById('offersPopup');
+    popup.style.background = 'rgba(0,255,0,0.1)';
+    
+    setTimeout(() => {
+        popup.style.background = 'rgba(0,0,0,0.7)';
+    }, 300);
+    
+    // رسالة تأكيد محسنة
+    const confirmMessage = `
+        🎉 تم اختيار العرض بنجاح!
+        
+        📋 تفاصيل العرض:
+        • ${offer.title || 'عرض خاص'}
+        • السعر: $${offer.real_price || '0'}
+        • الخصم: ${offer.discount_percentage || '0'}%
+        
+        💬 هل تريد التواصل عبر الواتساب الآن؟
+    `;
+    
+    if (confirm(confirmMessage)) {
+        // فتح الواتساب مع رسالة مخصصة
+        const message = encodeURIComponent(`
+مرحباً! 🎉
+
+أريد الاستفادة من العرض الخاص:
+📋 ${offer.title || 'عرض خاص'}
+💰 السعر: $${offer.real_price || '0'}
+🔥 الخصم: ${offer.discount_percentage || '0'}%
+
+يرجى تأكيد توفر العرض
+        `);
+        
+        const whatsappUrl = `https://wa.me/+201094591331?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+    }
+    
+    closePopup();
+}
+
+// دالة للعروض التجريبية
+function selectDemoOffer(title, price, oldPrice) {
+    const discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+    
+    selectOffer({
+        title: title,
+        real_price: price,
+        fake_price: oldPrice,
+        discount_percentage: discount
+    });
+}
+
+// Close popup when clicking outside
+window.onclick = function(event) {
+    const popup = document.getElementById('offersPopup');
+    if (event.target === popup) {
+        closePopup();
+    }
+}
+
+// إضافة لوحة مفاتيح
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closePopup();
+    }
+});
+
+// دوال أزرار العروض
+function acceptOffers() {
+    // إخفاء popup العروض
+    document.getElementById('offersPopup').style.display = 'none';
+    
+    // عرض رسالة ترحيب
+    alert('🎉 ممتاز! تم قبول العروض بنجاح\n\nاختر المنتج اللي عايزه واستفيد من الخصومات الحصرية! 🔥');
+    
+    // تمرير سلس للمنتجات
+    document.querySelector('.products-section').scrollIntoView({
+        behavior: 'smooth'
+    });
+}
+
+function declineOffers() {
+    // إخفاء popup العروض
+    document.getElementById('offersPopup').style.display = 'none';
+    
+    // عرض رسالة مهذبة
+    alert('👀 لا مشكلة!\n\nيمكنك تصفح جميع المنتجات بالأسعار العادية');
+    
+    // تمرير سلس للمنتجات
+    document.querySelector('.products-section').scrollIntoView({
+        behavior: 'smooth'
+    });
+}
+
+.offer-platform {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffd700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    display: inline-block;
+    margin: 8px 0;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.offer-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #fff;
+    margin: 10px 0 5px 0;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.offer-price {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.real-price {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: #00ff88;
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}
+
+.fake-price {
+    font-size: 1.4em;
+    color: #888;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.offer-validity {
+    background: linear-gradient(45deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 8px 15px;
+    margin: 12px 0;
+    color: #ffc107;
+    font-weight: 600;
+    font-size: 0.95em;
+    text-align: center;
+}
+
+console.log('🚀 تم تحميل نظام العروض بنجاح');
+</script>
 
 </body>
 </html>

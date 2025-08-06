@@ -203,8 +203,8 @@ def get_offers():
     
     # English Standard - PS5 - Secondary
     EN_STD_PS5_SECONDARY_ACTIVE = "no"   # yas = العرض شغال | no = مقفول
-    EN_STD_PS5_SECONDARY_FAKE_PRICE = 1600 # السعر الوهمي
-    EN_STD_PS5_SECONDARY_REAL_PRICE = 800  # السعر الحقيقي
+    EN_STD_PS5_SECONDARY_FAKE_PRICE = 1000 # السعر الوهمي
+    EN_STD_PS5_SECONDARY_REAL_PRICE = 750  # السعر الحقيقي
     
     # English Standard - PS4 - Full
     EN_STD_PS4_FULL_ACTIVE = "no"       # yas = العرض شغال | no = مقفول
@@ -213,13 +213,13 @@ def get_offers():
     
     # English Standard - PS4 - Primary
     EN_STD_PS4_PRIMARY_ACTIVE = "no"     # yas = العرض شغال | no = مقفول
-    EN_STD_PS4_PRIMARY_FAKE_PRICE = 1800 # السعر الوهمي
-    EN_STD_PS4_PRIMARY_REAL_PRICE = 850  # السعر الحقيقي
+    EN_STD_PS4_PRIMARY_FAKE_PRICE = 1100 # السعر الوهمي
+    EN_STD_PS4_PRIMARY_REAL_PRICE = 900  # السعر الحقيقي
     
     # English Standard - PS4 - Secondary
     EN_STD_PS4_SECONDARY_ACTIVE = "no"  # yas = العرض شغال | no = مقفول
-    EN_STD_PS4_SECONDARY_FAKE_PRICE = 1400 # السعر الوهمي
-    EN_STD_PS4_SECONDARY_REAL_PRICE = 1000 # السعر الحقيقي
+    EN_STD_PS4_SECONDARY_FAKE_PRICE = 1000 # السعر الوهمي
+    EN_STD_PS4_SECONDARY_REAL_PRICE = 750 # السعر الحقيقي
     
     # 🇺🇸 ================ ENGLISH ULTIMATE EDITION ================
     
@@ -245,8 +245,8 @@ def get_offers():
     
     # English Ultimate - PS4 - Primary
     EN_ULT_PS4_PRIMARY_ACTIVE = "no"     # yas = العرض شغال | no = مقفول
-    EN_ULT_PS4_PRIMARY_FAKE_PRICE = 2000 # السعر الوهمي
-    EN_ULT_PS4_PRIMARY_REAL_PRICE = 1000 # السعر الحقيقي
+    EN_ULT_PS4_PRIMARY_FAKE_PRICE = 1400 # السعر الوهمي
+    EN_ULT_PS4_PRIMARY_REAL_PRICE = 1050 # السعر الحقيقي
     
     # English Ultimate - PS4 - Secondary
     EN_ULT_PS4_SECONDARY_ACTIVE = "yas"  # yas = العرض شغال | no = مقفول
@@ -273,7 +273,7 @@ def get_offers():
     PC_STD_FULL_REAL_PRICE = 0           # السعر الحقيقي (مجاني)
     
     # PC Ultimate (سنة) - Full
-    PC_ULT_FULL_ACTIVE = "yas"            # yas = العرض شغال | no = مقفول
+    PC_ULT_FULL_ACTIVE = "no"            # yas = العرض شغال | no = مقفول
     PC_ULT_FULL_FAKE_PRICE = 4000        # السعر الوهمي
     PC_ULT_FULL_REAL_PRICE = 2800        # السعر الحقيقي
     
@@ -817,7 +817,7 @@ def get_prices():
                             <rect x="6" y="20" width="12" height="2" fill="#FF8C00"/>
                         </svg>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 0}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 750}
                         }
                     }
                 }

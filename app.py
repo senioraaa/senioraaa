@@ -875,7 +875,7 @@ def get_prices():
         "settings": {
             "currency": "جنيه مصري",
             "warranty": "1 سنة",
-            "delivery_time": "15 ساعة كحد أقصى",
+            "delivery_time": "15 دقيقه كحد أقصى",
             "whatsapp_number": "+201094591331"
         }
     }

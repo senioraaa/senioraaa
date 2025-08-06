@@ -673,7 +673,7 @@ def get_prices():
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3200},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 750}
                         }
                     },
                     "PS4": {
@@ -683,8 +683,8 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3200},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1000},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 900},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 750}
                         }
                     }
                 }
@@ -712,7 +712,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4300},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1200},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1050},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     }
@@ -728,8 +728,8 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1900},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
                         }
                     },
                     "PS4": {
@@ -739,8 +739,8 @@ def get_prices():
                         </div>''', 
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1500},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1200}
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1300},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
                         }
                     }
                 }
@@ -756,8 +756,8 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5200},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2300},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2200}
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2200},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2000}
                         }
                     },
                     "PS4": {
@@ -768,8 +768,8 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 5200},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1700},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2200}
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1500},
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 2000}
                         }
                     }
                 }

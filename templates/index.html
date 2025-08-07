@@ -1925,19 +1925,48 @@ function closePopup() {
     document.getElementById('offersPopup').style.display = 'none';
 }
 
-// Select offer
 function selectOffer(offer) {
-    alert(`تم اختيار العرض: ${offer.title}\nالسعر: $${offer.real_price}`);
-    closePopup();
-    // يمكنك إضافة المزيد من الكود هنا لمعالجة العرض المختار
-}
-
-// Close popup when clicking outside
-window.onclick = function(event) {
-    const popup = document.getElementById('offersPopup');
-    if (event.target == popup) {
-        popup.style.display = 'none';
+    console.log('🎯 تم اختيار عرض:', offer);
+    
+    // التأكد من وجود البيانات
+    if (!offer.game_type || !offer.platform || !offer.account_type) {
+        console.error('❌ بيانات العرض ناقصة:', offer);
+        alert('❌ بيانات العرض غير مكتملة');
+        return;
     }
+    
+    // تأثير بصري سريع
+    const popup = document.getElementById('offersPopup');
+    popup.style.background = 'rgba(0,255,0,0.1)';
+    setTimeout(() => popup.style.background = 'rgba(0,0,0,0.7)', 200);
+    
+    // استخدام نفس نظام الواتساب الموجود
+    const formData = new FormData();
+    formData.append('game_type', offer.game_type);
+    formData.append('platform', offer.platform);
+    formData.append('account_type', offer.account_type);
+    
+    // إرسال الطلب
+    fetch('/whatsapp', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`🎉 تم تحضير العرض!\nرقم المرجع: ${data.reference_id}\nالسعر: ${data.price} ${data.currency}\nسيتم فتح الواتساب الآن...`);
+            window.open(data.whatsapp_url, '_blank');
+        } else {
+            alert('❌ ' + (data.error || 'حدث خطأ في الطلب'));
+        }
+        closePopup();
+    })
+    .catch(error => {
+        console.error('خطأ في الشبكة:', error);
+        alert('❌ خطأ في الشبكة - جرب تاني');
+        closePopup();
+    });
 }
 </script>
 
@@ -2627,24 +2656,31 @@ window.onclick = function(event) {
             });
         });
         
-        // دالة إظهار الرسائل
-        function showAlert(message, type = 'success') {
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const icon = type === 'success' ? '✅' : '❌';
-            
-            alertContainer.innerHTML = `
-                <div class="alert ${alertClass} alert-dismissible fade show alert-custom" role="alert">
-                    <strong>${icon} ${message}</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            
-            // إزالة الرسالة بعد 5 ثوان
-            setTimeout(() => {
-                const alert = alertContainer.querySelector('.alert');
-                if (alert) alert.remove();
-            }, 5000);
-        }
+// دالة إظهار الرسائل (لو مش موجودة)
+function showAlert(message, type = 'success') {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) {
+        console.error('❌ alertContainer مش موجود');
+        alert(message.replace(/<br>/g, '\n').replace(/<[^>]*>/g, ''));
+        return;
+    }
+    
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? '✅' : '❌';
+    
+    alertContainer.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show alert-custom" role="alert">
+            <strong>${icon} ${message}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // إزالة الرسالة بعد 5 ثوان
+    setTimeout(() => {
+        const alert = alertContainer.querySelector('.alert');
+        if (alert) alert.remove();
+    }, 5000);
+}
         
         // إزالة تأثير البلور عند النقر خارج الكروت
         document.addEventListener('click', function(event) {
@@ -2681,6 +2717,15 @@ window.onclick = function(event) {
 </script>
 
 <script>
+// دالة لتنسيق الأرقام مع فاصلة الآلاف
+function formatNumberWithCommas(number) {
+    const num = Number(number);
+    if (isNaN(num)) {
+        return number; // لو مش رقم، رجعه زي ما هو
+    }
+    return num.toLocaleString('en-US');
+}
+
 // Show offers popup with better error handling
 function showOffers() {
     console.log('🎯 بدء تحميل العروض...');
@@ -2718,19 +2763,20 @@ function showOffers() {
                         selectOffer(offer);
                     });
                     
-                    offerElement.innerHTML = `
-                        <div class="offer-title">${offer.title || 'عرض خاص'}</div>
-                        <div class="offer-description">${offer.description || 'احصل على خصم رائع'}</div>
-                        <div class="offer-price">
-                            <span class="fake-price">$${offer.fake_price || '0'}</span>
-                            <span class="real-price">$${offer.real_price || '0'}</span>
-                            <span class="discount-badge">${offer.discount_percentage || '0'}% خصم</span>
-                        </div>
-                        <div class="offer-validity">صالح حتى: ${offer.valid_until || 'غير محدود'}</div>
-                        <div class="text-center mt-2">
-                            <small style="color: #888;">👆 اضغط للاختيار</small>
-                        </div>
-                    `;
+// هذا هو الكود الجديد الذي يحل المشكلتين معاً
+offerElement.innerHTML = `
+    <div class="offer-title">${offer.title || 'عرض خاص'}</div>
+    <div class="offer-description">${offer.description || 'احصل على خصم رائع'}</div>
+    <div class="offer-price">
+        <span class="fake-price">${formatNumberWithCommas(offer.fake_price || '0')}</span>
+        <span class="real-price">${formatNumberWithCommas(offer.real_price || '0')}</span>
+        <span class="discount-badge">${offer.discount_percentage || '0'}% خصم</span>
+    </div>
+    <div class="offer-validity">صالح حتى: ${offer.valid_until || 'غير محدود'}</div>
+    <div class="text-center mt-2">
+        <small style="color: #888;">👆 اضغط للاختيار</small>
+    </div>
+`;
                     
                     offersContainer.appendChild(offerElement);
                 });
@@ -2827,60 +2873,83 @@ function closePopup() {
     console.log('❌ تم إغلاق العروض');
 }
 
-// Select offer - محسن
+// الدالة الجديدة (بدون رسالة تأكيد)
 function selectOffer(offer) {
     console.log('🎯 تم اختيار عرض:', offer);
     
-    // تأثير بصري
-    const popup = document.getElementById('offersPopup');
-    popup.style.background = 'rgba(0,255,0,0.1)';
-    
-    setTimeout(() => {
-        popup.style.background = 'rgba(0,0,0,0.7)';
-    }, 300);
-    
-    // رسالة تأكيد محسنة
-    const confirmMessage = `
-        🎉 تم اختيار العرض بنجاح!
-        
-        📋 تفاصيل العرض:
-        • ${offer.title || 'عرض خاص'}
-        • السعر: $${offer.real_price || '0'}
-        • الخصم: ${offer.discount_percentage || '0'}%
-        
-        💬 هل تريد التواصل عبر الواتساب الآن؟
-    `;
-    
-    if (confirm(confirmMessage)) {
-        // فتح الواتساب مع رسالة مخصصة
-        const message = encodeURIComponent(`
-مرحباً! 🎉
-
-أريد الاستفادة من العرض الخاص:
-📋 ${offer.title || 'عرض خاص'}
-💰 السعر: $${offer.real_price || '0'}
-🔥 الخصم: ${offer.discount_percentage || '0'}%
-
-يرجى تأكيد توفر العرض
-        `);
-        
-        const whatsappUrl = `https://wa.me/+201094591331?text=${message}`;
-        window.open(whatsappUrl, '_blank');
+    // التأكد من وجود البيانات المطلوبة
+    if (!offer.game_type || !offer.platform || !offer.account_type) {
+        alert('❌ بيانات العرض غير مكتملة، لا يمكن إرسال الطلب.');
+        return;
     }
     
+    // (تم مسح كود رسالة التأكيد من هنا)
+    
+    // تجهيز بيانات الطلب مباشرة
+    const formData = new FormData();
+    formData.append('game_type', offer.game_type);
+    formData.append('platform', offer.platform);
+    formData.append('account_type', offer.account_type);
+    
+    // إرسال الطلب وفتح الواتساب مباشرة
+    fetch('/whatsapp', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // ممكن تظهر رسالة سريعة في الـ console بدل الـ alert
+            console.log(`طلب ناجح! جاري فتح الواتساب... المرجع: ${data.reference_id}`);
+            window.open(data.whatsapp_url, '_blank');
+        } else {
+            // في حالة الخطأ، لازم نظهر رسالة
+            alert('❌ ' + (data.error || 'حدث خطأ في إرسال الطلب'));
+        }
+    })
+    .catch(error => {
+        console.error('خطأ في الشبكة:', error);
+        alert('❌ حدث خطأ في الاتصال بالشبكة.');
+    });
+    
+    // قفل الـ popup بعد الضغط مباشرة
     closePopup();
 }
 
-// دالة للعروض التجريبية
 function selectDemoOffer(title, price, oldPrice) {
-    const discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+    // تحديد نوع اللعبة حسب العنوان
+    let gameType = 'FC26_EN_Standard';
+    let platform = 'PS4';
+    let accountType = 'Primary';
     
-    selectOffer({
+    if (title.includes('Arabic')) {
+        gameType = 'FC26_AR_Standard';
+    }
+    if (title.includes('Ultimate')) {
+        gameType = gameType.replace('Standard', 'Ultimate');
+    }
+    if (title.includes('PS5')) {
+        platform = 'PS5';
+        accountType = 'Secondary';
+    }
+    if (title.includes('Steam')) {
+        gameType = 'FC26_STEAM_Standard';
+        platform = 'Steam';
+        accountType = 'Full';
+    }
+    
+    const offer = {
         title: title,
         real_price: price,
         fake_price: oldPrice,
-        discount_percentage: discount
-    });
+        discount_percentage: Math.round(((oldPrice - price) / oldPrice) * 100),
+        game_type: gameType,
+        platform: platform,
+        account_type: accountType
+    };
+    
+    selectOffer(offer);
 }
 
 // Close popup when clicking outside
@@ -2898,86 +2967,93 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// دوال أزرار العروض
+// دوال أزرار العروض المنبثقة
 function acceptOffers() {
+    console.log('🔥 المستخدم قبل العروض');
+    
     // إخفاء popup العروض
-    document.getElementById('offersPopup').style.display = 'none';
-    
-    // عرض رسالة ترحيب
-    alert('🎉 ممتاز! تم قبول العروض بنجاح\n\nاختر المنتج اللي عايزه واستفيد من الخصومات الحصرية! 🔥');
-    
-    // تمرير سلس للمنتجات
-    document.querySelector('.products-section').scrollIntoView({
-        behavior: 'smooth'
-    });
+    closeOfferModal();
+        
+    // تمرير سلس للمنتجات مع تأكيد إن العنصر موجود
+    setTimeout(() => {
+        const productsSection = document.querySelector('.products-section');
+        if (productsSection) {
+            productsSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }, 500);
 }
 
 function declineOffers() {
+    console.log('👀 المستخدم رفض العروض');
+    
     // إخفاء popup العروض
-    document.getElementById('offersPopup').style.display = 'none';
+    closeOfferModal();
     
     // عرض رسالة مهذبة
-    alert('👀 لا مشكلة!\n\nيمكنك تصفح جميع المنتجات بالأسعار العادية');
+    showAlert('👀 لا مشكلة!<br>يمكنك تصفح جميع المنتجات بالأسعار العادية', 'success');
     
     // تمرير سلس للمنتجات
-    document.querySelector('.products-section').scrollIntoView({
-        behavior: 'smooth'
-    });
+    setTimeout(() => {
+        const productsSection = document.querySelector('.products-section');
+        if (productsSection) {
+            productsSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }, 500);
 }
 
-.offer-platform {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffd700;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    font-weight: 600;
-    display: inline-block;
-    margin: 8px 0;
-    border: 1px solid rgba(255, 215, 0, 0.3);
+// دالة إغلاق العرض المنبثق (تأكد إنها موجودة)
+function closeOfferModal() {
+    const overlay = document.getElementById('offerOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        // حفظ إن المستخدم شاف العرض
+        localStorage.setItem('hasSeenOffer_' + (offersData?.active_offer?.id || 'default'), 'true');
+    }
 }
 
-.offer-title {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: #fff;
-    margin: 10px 0 5px 0;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+// دوال أزرار العروض المنبثقة - إضافة جديدة
+function acceptOffers() {
+    console.log('🔥 قبول العروض');
+    
+    // إخفاء البوب أب
+    const offerOverlay = document.getElementById('offerOverlay');
+    if (offerOverlay) {
+        offerOverlay.style.display = 'none';
+    }
+        
+    // الانتقال للمنتجات
+    const productsSection = document.querySelector('.products-section');
+    if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // حفظ الاختيار
+    localStorage.setItem('acceptedOffers', 'true');
 }
 
-.offer-price {
-    margin: 15px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.real-price {
-    font-size: 2.2em;
-    font-weight: bold;
-    color: #00ff88;
-    text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
-}
-
-.fake-price {
-    font-size: 1.4em;
-    color: #888;
-    text-decoration: line-through;
-    opacity: 0.8;
-}
-
-.offer-validity {
-    background: linear-gradient(45deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
-    border: 1px solid #ffc107;
-    border-radius: 8px;
-    padding: 8px 15px;
-    margin: 12px 0;
-    color: #ffc107;
-    font-weight: 600;
-    font-size: 0.95em;
-    text-align: center;
+function declineOffers() {
+    console.log('👀 رفض العروض');
+    
+    // إخفاء البوب أب
+    const offerOverlay = document.getElementById('offerOverlay');
+    if (offerOverlay) {
+        offerOverlay.style.display = 'none';
+    }
+        
+    // الانتقال للمنتجات
+    const productsSection = document.querySelector('.products-section');
+    if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // حفظ الاختيار
+    localStorage.setItem('declinedOffers', 'true');
 }
 
 console.log('🚀 تم تحميل نظام العروض بنجاح');

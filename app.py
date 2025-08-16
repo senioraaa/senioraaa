@@ -837,7 +837,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">PRO</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 2800}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 2550}
                         }
                     }
                 }

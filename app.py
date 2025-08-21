@@ -236,7 +236,7 @@ def get_offers():
     # English Ultimate - PS5 - Secondary
     EN_ULT_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
     EN_ULT_PS5_SECONDARY_FAKE_PRICE = 2200 # السعر الوهمي
-    EN_ULT_PS5_SECONDARY_REAL_PRICE = 1650 # السعر الحقيقي
+    EN_ULT_PS5_SECONDARY_REAL_PRICE = 1700 # السعر الحقيقي
     
     # English Ultimate - PS4 - Full
     EN_ULT_PS4_FULL_ACTIVE = "no"       # yas = العرض شغال | no = مقفول
@@ -251,7 +251,7 @@ def get_offers():
     # English Ultimate - PS4 - Secondary
     EN_ULT_PS4_SECONDARY_ACTIVE = "yas"  # yas = العرض شغال | no = مقفول
     EN_ULT_PS4_SECONDARY_FAKE_PRICE = 2200 # السعر الوهمي
-    EN_ULT_PS4_SECONDARY_REAL_PRICE = 1650 # السعر الحقيقي
+    EN_ULT_PS4_SECONDARY_REAL_PRICE = 1700 # السعر الحقيقي
     
     # 🎮 ================ XBOX EDITIONS ================
     

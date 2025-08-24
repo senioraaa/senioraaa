@@ -699,7 +699,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4300},
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
@@ -711,7 +711,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #003087; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(0, 48, 135, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 4300},
+                            "Full": {"name": "Full - حساب كامل", "price": 4500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1050},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }

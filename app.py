@@ -197,9 +197,9 @@ def get_offers():
     EN_STD_PS5_FULL_REAL_PRICE = 0000    # السعر الحقيقي
     
     # English Standard - PS5 - Primary
-    EN_STD_PS5_PRIMARY_ACTIVE = "no"    # yas = العرض شغال | no = مقفول
-    EN_STD_PS5_PRIMARY_FAKE_PRICE = 0000 # السعر الوهمي
-    EN_STD_PS5_PRIMARY_REAL_PRICE = 0000 # السعر الحقيقي
+    EN_STD_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
+    EN_STD_PS5_PRIMARY_FAKE_PRICE = 1900 # السعر الوهمي
+    EN_STD_PS5_PRIMARY_REAL_PRICE = 1500 # السعر الحقيقي
     
     # English Standard - PS5 - Secondary
     EN_STD_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
@@ -229,9 +229,9 @@ def get_offers():
     EN_ULT_PS5_FULL_REAL_PRICE = 0000    # السعر الحقيقي
     
     # English Ultimate - PS5 - Primary
-    EN_ULT_PS5_PRIMARY_ACTIVE = "no"    # yas = العرض شغال | no = مقفول
-    EN_ULT_PS5_PRIMARY_FAKE_PRICE = 0000 # السعر الوهمي
-    EN_ULT_PS5_PRIMARY_REAL_PRICE = 0000 # السعر الحقيقي
+    EN_ULT_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
+    EN_ULT_PS5_PRIMARY_FAKE_PRICE = 2300 # السعر الوهمي
+    EN_ULT_PS5_PRIMARY_REAL_PRICE = 1800 # السعر الحقيقي
     
     # English Ultimate - PS5 - Secondary
     EN_ULT_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
@@ -671,7 +671,7 @@ def get_prices():
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3200},
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1600},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 750}
                         }
@@ -682,7 +682,7 @@ def get_prices():
                             <i class="fab fa-playstation" style="color: #003087; font-size: 40px; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل", "price": 3200},
+                            "Full": {"name": "Full - حساب كامل", "price": 3500},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 900},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 750}
                         }

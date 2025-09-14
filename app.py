@@ -139,7 +139,7 @@ def get_offers():
     
     # Arabic Standard - PS5 - Secondary
     AR_STD_PS5_SECONDARY_ACTIVE = "no"  # yas = العرض شغال | no = مقفول
-    AR_STD_PS5_SECONDARY_FAKE_PRICE = 1800 # السعر الوهمي
+    AR_STD_PS5_SECONDARY_FAKE_PRICE = 0000 # السعر الوهمي
     AR_STD_PS5_SECONDARY_REAL_PRICE = 900  # السعر الحقيقي
     
     # Arabic Standard - PS4 - Full
@@ -149,7 +149,7 @@ def get_offers():
     
     # Arabic Standard - PS4 - Primary
     AR_STD_PS4_PRIMARY_ACTIVE = "no"     # yas = العرض شغال | no = مقفول
-    AR_STD_PS4_PRIMARY_FAKE_PRICE = 1800 # السعر الوهمي
+    AR_STD_PS4_PRIMARY_FAKE_PRICE =  # السعر الوهمي
     AR_STD_PS4_PRIMARY_REAL_PRICE = 800  # السعر الحقيقي
     
     # Arabic Standard - PS4 - Secondary
@@ -171,8 +171,8 @@ def get_offers():
     
     # Arabic Ultimate - PS5 - Secondary
     AR_ULT_PS5_SECONDARY_ACTIVE = "no"   # yas = العرض شغال | no = مقفول
-    AR_ULT_PS5_SECONDARY_FAKE_PRICE = 3500 # السعر الوهمي
-    AR_ULT_PS5_SECONDARY_REAL_PRICE = 1800 # السعر الحقيقي
+    AR_ULT_PS5_SECONDARY_FAKE_PRICE = 0000 # السعر الوهمي
+    AR_ULT_PS5_SECONDARY_REAL_PRICE = 0000 # السعر الحقيقي
     
     # Arabic Ultimate - PS4 - Full
     AR_ULT_PS4_FULL_ACTIVE = "no"       # yas = العرض شغال | no = مقفول
@@ -231,7 +231,7 @@ def get_offers():
     # English Ultimate - PS5 - Primary
     EN_ULT_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
     EN_ULT_PS5_PRIMARY_FAKE_PRICE = 2300 # السعر الوهمي
-    EN_ULT_PS5_PRIMARY_REAL_PRICE = 1800 # السعر الحقيقي
+    EN_ULT_PS5_PRIMARY_REAL_PRICE = 1750 # السعر الحقيقي
     
     # English Ultimate - PS5 - Secondary
     EN_ULT_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
@@ -851,7 +851,7 @@ def get_prices():
                             <i class="fab fa-steam-symbol" style="font-size: 40px; color: #ff0000; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 50%; border: 3px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transition: transform 0.3s ease, box-shadow 0.3s ease; line-height: 1;"></i>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 1700}
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 1850}
                         }
                     }
                 }
@@ -866,7 +866,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #ff0000; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);">ULT</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 3000}
+                            "Full": {"name": "Full - حساب كامل مع First Email", "price": 3200}
                         }
                     }
                 }

@@ -229,9 +229,9 @@ def get_offers():
     EN_ULT_PS5_FULL_REAL_PRICE = 0000    # السعر الحقيقي
     
     # English Ultimate - PS5 - Primary
-    EN_ULT_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
+    EN_ULT_PS5_PRIMARY_ACTIVE = "no"    # yas = العرض شغال | no = مقفول
     EN_ULT_PS5_PRIMARY_FAKE_PRICE = 2300 # السعر الوهمي
-    EN_ULT_PS5_PRIMARY_REAL_PRICE = 1750 # السعر الحقيقي
+    EN_ULT_PS5_PRIMARY_REAL_PRICE = 0000 # السعر الحقيقي
     
     # English Ultimate - PS5 - Secondary
     EN_ULT_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
@@ -700,7 +700,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0000},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     },

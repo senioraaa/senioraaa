@@ -244,7 +244,7 @@ def get_offers():
     EN_ULT_PS4_FULL_REAL_PRICE = 0000    # السعر الحقيقي
     
     # English Ultimate - PS4 - Primary
-    EN_ULT_PS4_PRIMARY_ACTIVE = "yas"     # yas = العرض شغال | no = مقفول
+    EN_ULT_PS4_PRIMARY_ACTIVE = "no"     # yas = العرض شغال | no = مقفول
     EN_ULT_PS4_PRIMARY_FAKE_PRICE = 1400 # السعر الوهمي
     EN_ULT_PS4_PRIMARY_REAL_PRICE = 1150 # السعر الحقيقي
     
@@ -712,7 +712,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1050},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0000},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     }

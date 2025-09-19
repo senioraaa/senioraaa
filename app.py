@@ -246,7 +246,7 @@ def get_offers():
     # English Ultimate - PS4 - Primary
     EN_ULT_PS4_PRIMARY_ACTIVE = "yas"     # yas = العرض شغال | no = مقفول
     EN_ULT_PS4_PRIMARY_FAKE_PRICE = 1400 # السعر الوهمي
-    EN_ULT_PS4_PRIMARY_REAL_PRICE = 1050 # السعر الحقيقي
+    EN_ULT_PS4_PRIMARY_REAL_PRICE = 1150 # السعر الحقيقي
     
     # English Ultimate - PS4 - Secondary
     EN_ULT_PS4_SECONDARY_ACTIVE = "yas"  # yas = العرض شغال | no = مقفول
@@ -837,7 +837,7 @@ def get_prices():
                             <div style="position: absolute; top: -5px; right: -5px; background: #25D366; color: white; font-size: 10px; padding: 2px 4px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 8px rgba(37, 211, 102, 0.6);">PRO</div>
                         </div>''',
                         "accounts": {
-                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 2550}
+                            "Full": {"name": "Full - حساب كامل على حسابك الشخصي 🔐", "price": 2700}
                         }
                     }
                 }

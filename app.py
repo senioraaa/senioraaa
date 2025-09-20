@@ -199,12 +199,12 @@ def get_offers():
     # English Standard - PS5 - Primary
     EN_STD_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
     EN_STD_PS5_PRIMARY_FAKE_PRICE = 1900 # السعر الوهمي
-    EN_STD_PS5_PRIMARY_REAL_PRICE = 1500 # السعر الحقيقي
+    EN_STD_PS5_PRIMARY_REAL_PRICE = 1650 # السعر الحقيقي
     
     # English Standard - PS5 - Secondary
     EN_STD_PS5_SECONDARY_ACTIVE = "yas"   # yas = العرض شغال | no = مقفول
     EN_STD_PS5_SECONDARY_FAKE_PRICE = 1000 # السعر الوهمي
-    EN_STD_PS5_SECONDARY_REAL_PRICE = 750  # السعر الحقيقي
+    EN_STD_PS5_SECONDARY_REAL_PRICE = 850  # السعر الحقيقي
     
     # English Standard - PS4 - Full
     EN_STD_PS4_FULL_ACTIVE = "no"       # yas = العرض شغال | no = مقفول
@@ -219,7 +219,7 @@ def get_offers():
     # English Standard - PS4 - Secondary
     EN_STD_PS4_SECONDARY_ACTIVE = "yas"  # yas = العرض شغال | no = مقفول
     EN_STD_PS4_SECONDARY_FAKE_PRICE = 1000 # السعر الوهمي
-    EN_STD_PS4_SECONDARY_REAL_PRICE = 750 # السعر الحقيقي
+    EN_STD_PS4_SECONDARY_REAL_PRICE = 850 # السعر الحقيقي
     
     # 🇺🇸 ================ ENGLISH ULTIMATE EDITION ================
     
@@ -728,7 +728,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 1900},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
                         }
                     },

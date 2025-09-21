@@ -700,7 +700,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0000},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": خلصت},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     },
@@ -729,7 +729,7 @@ def get_prices():
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 2000},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
                         }
                     },
                     "PS4": {
@@ -740,7 +740,7 @@ def get_prices():
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 3600},
                             "Primary": {"name": "Primary - تفعيل أساسي", "price": 1300},
-                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1000}
+                            "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1100}
                         }
                     }
                 }

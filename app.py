@@ -700,7 +700,7 @@ def get_prices():
                         </div>''',
                         "accounts": {
                             "Full": {"name": "Full - حساب كامل", "price": 4500},
-                            "Primary": {"name": "Primary - تفعيل أساسي", "price": خلصت},
+                            "Primary": {"name": "Primary - تفعيل أساسي", "price": 0000},
                             "Secondary": {"name": "Secondary - تسجيل دخول مؤقت", "price": 1900}
                         }
                     },

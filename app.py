@@ -198,7 +198,7 @@ def get_offers():
     
     # English Standard - PS5 - Primary
     EN_STD_PS5_PRIMARY_ACTIVE = "yas"    # yas = العرض شغال | no = مقفول
-    EN_STD_PS5_PRIMARY_FAKE_PRICE = 1900 # السعر الوهمي
+    EN_STD_PS5_PRIMARY_FAKE_PRICE = 2100 # السعر الوهمي
     EN_STD_PS5_PRIMARY_REAL_PRICE = 1700 # السعر الحقيقي
     
     # English Standard - PS5 - Secondary
